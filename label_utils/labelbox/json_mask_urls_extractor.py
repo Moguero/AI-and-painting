@@ -1,7 +1,7 @@
 import json
 from loguru import logger
 
-json_path = "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/labelbox_export_json/export-2021-06-16T15_59_23.639Z.json"
+json_path = "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/labelbox_export_json/export-2021-07-12T14_48_36.100Z.json"
 
 
 def get_mask_urls(json_path: str) -> dict:

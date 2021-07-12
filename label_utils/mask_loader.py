@@ -9,7 +9,7 @@ image_path = "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/
 
 def load_mask(mask_path: str) -> np.ndarray:
     """Turns png mask into numpy array"""
-    mask_array = np.array(imageio.imread(mask_path))
+    mask_array = imageio.imread(mask_path)
     return mask_array
 
 

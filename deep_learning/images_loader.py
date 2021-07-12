@@ -1,6 +1,6 @@
 import os
 
-input_dir = "/files/dataset/"
+input_dir = "/files/images/"
 target_dir = "C:/Users/thiba/PycharmProjects/mission_IA_JCS/classification_maps/"
 img_size = (160, 160)
 num_classes = 3

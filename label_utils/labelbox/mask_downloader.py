@@ -1,8 +1,7 @@
 import urllib.request
-import argparse
 import os
 
-from label_utils.labelbox_json_mask_urls_extractor import get_mask_urls
+from label_utils.labelbox.json_mask_urls_extractor import get_mask_urls
 from loguru import logger
 
 # Example variables
@@ -10,23 +9,7 @@ mask_url = "https://api.labelbox.com/masks/feature/ckph5r33g00043a6dklihalmq?tok
 output_path = "C:/Users/thiba/OneDrive/Documents/Césure/test/test.png"
 output_dir = "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/masks/test/"
 output_dir = "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/"
-json_path = "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/labelbox_export_json/export-2021-07-01T16_53_01.845Z.json"
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Download an image from an url.")
-    parser.add_argument(
-        "--url", type=str, help="The mask url from Labelbox.", required=True
-    )
-    parser.add_argument(
-        "--output-path",
-        type=str,
-        help="The path where the retrieved image will be stored.",
-        required=True,
-    )
-    args = parser.parse_args()
-    return args
-
+json_path = "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/labelbox_export_json/export-2021-07-12T14_48_36.100Z.json"
 
 def download_mask(mask_url: str, output_path: str) -> None:
     """Download the label mask from Labelbox online archive to local machine."""
@@ -60,12 +43,3 @@ def download_all_masks(json_path: str, output_dir: str) -> None:
                     if os.path.exists(output_path):
                         logger.warning(f"\nFile {file_name} already exists : overwrite previous file")
                     download_mask(mask_url=mask_url, output_path=output_path)
-
-
-def main() -> None:
-    args = parse_args()
-    download_mask(args.url, args.output_path)
-
-
-# if __name__ == "__main__":
-#     main()
