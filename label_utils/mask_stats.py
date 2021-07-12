@@ -1,6 +1,6 @@
 import numpy as np
 from loguru import logger
-from label_utils.mask_loader import load_mask, load_mask_bis
+from label_utils.mask_loader import load_mask
 
 MASK_PATH = "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/masks/test/mask_angular_logo_lettre.png"
 IMAGE_PATH = "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/angular_logo.png"
