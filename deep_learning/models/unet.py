@@ -1,67 +1,53 @@
 from tensorflow import keras
 from tensorflow.keras import layers
 
+# todo : replace {truc}_number par n_{truc}
 
-def get_model(img_size, num_classes):
-    inputs = keras.Input(shape=img_size + (3,))
+# todo : check if better to put a first 32 filters input
 
-    ### [First half of the network: downsampling inputs] ###
+CLASSES_NUMBER = 9
+EPOCHS_NUMBER = 10
 
-    # Entry block
-    x = layers.Conv2D(32, 3, strides=2, padding="same")(inputs)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation("relu")(x)
+def build_unet(n_classes: int) -> keras.Model:
+    inputs = keras.Input(shape=(None, None, 3))
 
-    previous_block_activation = x  # Set aside residual
+    encoder_block_1, skip_features1 = encoder_block(inputs, 32)
+    encoder_block_2, skip_features2 = encoder_block(encoder_block_1, 64)
+    encoder_block_3, skip_features3 = encoder_block(encoder_block_2, 128)
+    encoder_block_4, skip_features4 = encoder_block(encoder_block_3, 256)
 
-    # Blocks 1, 2, 3 are identical apart from the feature depth.
-    for filters in [64, 128, 256]:
-        x = layers.Activation("relu")(x)
-        x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-        x = layers.BatchNormalization()(x)
+    conv_block1 = conv_block(encoder_block_4, 512)
 
-        x = layers.Activation("relu")(x)
-        x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-        x = layers.BatchNormalization()(x)
+    decoder_block1 = decoder_block(conv_block1, skip_features4, 256)
+    decoder_block2 = decoder_block(decoder_block1, skip_features3, 128)
+    decoder_block3 = decoder_block(decoder_block2, skip_features2, 64)
+    decoder_block4 = decoder_block(decoder_block3, skip_features1, 32)
 
-        x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+    outputs = layers.Conv2D(filters=n_classes, kernel_size=1, padding='same', activation='sigmoid')(decoder_block4)
 
-        # Project residual
-        residual = layers.Conv2D(filters, 1, strides=2, padding="same")(
-            previous_block_activation
-        )
-        x = layers.add([x, residual])  # Add back residual
-        previous_block_activation = x  # Set aside next residual
-
-    ### [Second half of the network: upsampling inputs] ###
-
-    for filters in [256, 128, 64, 32]:
-        x = layers.Activation("relu")(x)
-        x = layers.Conv2DTranspose(filters, 3, padding="same")(x)
-        x = layers.BatchNormalization()(x)
-
-        x = layers.Activation("relu")(x)
-        x = layers.Conv2DTranspose(filters, 3, padding="same")(x)
-        x = layers.BatchNormalization()(x)
-
-        x = layers.UpSampling2D(2)(x)
-
-        # Project residual
-        residual = layers.UpSampling2D(2)(previous_block_activation)
-        residual = layers.Conv2D(filters, 1, padding="same")(residual)
-        x = layers.add([x, residual])  # Add back residual
-        previous_block_activation = x  # Set aside next residual
-
-    # Add a per-pixel classification layer
-    outputs = layers.Conv2D(num_classes, 3, activation="softmax", padding="same")(x)
-
-    # Define the model
-    model = keras.Model(inputs, outputs)
+    model = keras.Model(inputs=inputs, outputs=outputs, name='U-Net')
     return model
 
 
-# Free up RAM in case the model definition cells were run multiple times
-keras.backend.clear_session()
+def conv_block(inputs, n_filters):
+    x = layers.Conv2D(filters=n_filters, kernel_size=3, padding='same')(inputs)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
 
-# Build model
-model = get_model(img_size, num_classes)
+    x = layers.Conv2D(filters=n_filters, kernel_size=3, padding='same')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    return x
+
+
+def encoder_block(inputs, n_filters):
+    x = conv_block(inputs, n_filters)
+    p = layers.MaxPooling2D(pool_size=2, strides=2)(x)
+    return p, x
+
+
+def decoder_block(inputs, skip_features, n_filters):
+    x = layers.Conv2DTranspose(filters=n_filters, kernel_size=2, strides=2, padding='same')(inputs)
+    x = layers.Concatenate()([x, skip_features])
+    x = conv_block(x, n_filters)
+    return x

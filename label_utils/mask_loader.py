@@ -43,3 +43,8 @@ def get_image_masks_paths(image_path: str, mask_dir: str):
 def get_image_masks(image_path: str, labels_masks_dir: str):
     image_masks_paths = get_image_masks_paths(image_path, labels_masks_dir)
     return [load_mask(mask_path) for mask_path in image_masks_paths]
+
+
+def get_image_masks_first_channel(image_path: str, labels_masks_dir: str):
+    image_masks_paths = get_image_masks_paths(image_path, labels_masks_dir)
+    return [load_mask(mask_path)[:, :, 0] for mask_path in image_masks_paths]
