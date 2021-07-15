@@ -54,3 +54,6 @@ def test_minimum_one_mask_per_image(json_path: str):
     assert (
         0 not in number_of_masks_per_image.values()
     ), f"The following images have no mask : {[external_id for external_id, masks_number in number_of_masks_per_image.items() if masks_number == 0]}"
+
+
+# todo : check that for each object in the json, the value is equal to the title

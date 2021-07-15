@@ -8,6 +8,7 @@ from tensorflow.keras import layers
 CLASSES_NUMBER = 9
 EPOCHS_NUMBER = 10
 
+
 def build_unet(n_classes: int) -> keras.Model:
     inputs = keras.Input(shape=(None, None, 3))
 
@@ -48,6 +49,6 @@ def encoder_block(inputs, n_filters):
 
 def decoder_block(inputs, skip_features, n_filters):
     x = layers.Conv2DTranspose(filters=n_filters, kernel_size=2, strides=2, padding='same')(inputs)
-    x = layers.Concatenate()([x, skip_features])
+    x = layers.concatenate([x, skip_features])
     x = conv_block(x, n_filters)
     return x
