@@ -12,7 +12,7 @@ def load_mask(mask_path: str) -> np.ndarray:
     return mask_array
 
 
-# todo : check if this is really useful : not sure...
+# todo : check if this is still really useful : not sure...
 def opacify_mask(mask_array: np.ndarray):
     """Delete the alpha channel of an array by deleting the transparency channel (4th channel).
     As a result, the mask will be fully opaque."""

@@ -2,7 +2,7 @@ from deep_learning.models.unet import build_unet
 from tensorflow.keras.optimizers import SGD, Adam
 
 N_CLASSES = 9
-EPOCHS_NUMBER = 5
+N_EPOCHS = 5
 
 # Define the model
 model = build_unet(N_CLASSES)

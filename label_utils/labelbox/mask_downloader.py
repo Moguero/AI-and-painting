@@ -68,7 +68,7 @@ def get_mask_urls(json_path: str) -> dict:
     return mask_urls
 
 
-# todo : get full json
+# debug function
 def get_full_json(json_path: str) -> list:
     with open(json_path) as file:
         json_dict = json.load(file)
@@ -76,4 +76,3 @@ def get_full_json(json_path: str) -> list:
 
 
 # todo : later, merge masks if two in the same
-# todo : mkdir for masques de meme classe

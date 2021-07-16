@@ -1,11 +1,9 @@
 from tensorflow import keras
 from tensorflow.keras import layers
 
-# todo : replace {truc}_number par n_{truc}
-
 # todo : check if better to put a first 32 filters input
 
-CLASSES_NUMBER = 9
+N_CLASSES = 9
 EPOCHS_NUMBER = 10
 
 
