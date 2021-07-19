@@ -11,7 +11,7 @@ IMAGE_PATH = "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/
 # TODO : gather all the tests together at one place
 
 def count_mask_value_occurences(mask_path):
-    mask_array = load_mask_bis(mask_path)
+    mask_array = load_mask(mask_path)
     unique, counts = np.unique(
         mask_array[:, :, 0].flatten(), return_counts=True
     )
