@@ -1,15 +1,13 @@
 import imageio
 import random
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
-import time
-from loguru import logger
-from label_utils.mask_loader import load_mask, get_image_masks
+from dataset_utils.mask_loader import load_mask, get_image_masks
+from pathlib import Path
 
-MASK_PATH = "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/AVZD6310/mask_AVZD6310_Person.png"
-IMAGE_PATH = "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043/_DSC0043.JPG"
-MASKS_DIR = "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/"
+MASK_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/AVZD6310/mask_AVZD6310_Person.png")
+IMAGE_PATH = Path("/files/images/_DSC0043/_DSC0043.JPG")
+MASKS_DIR = Path("/files/labels_masks/")
 
 
 # todo : check that the mask is one of the image designated from image_path
