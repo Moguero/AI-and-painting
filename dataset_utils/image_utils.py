@@ -1,7 +1,7 @@
 import shutil
 from loguru import logger
 from pathlib import Path
-from dataset_utils.mask_loader import get_image_name_without_extension
+from dataset_utils.mask_utils import get_image_name_without_extension
 
 IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images")
 MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks")
@@ -17,6 +17,8 @@ IMAGE_SIZE = (160, 160)
 N_CLASSES = 3
 BATCH_SIZE = 32
 
+
+# todo : merge image_utils and mask_utils
 
 def copy_image(image_source_path: Path, image_target_dir_path: Path):
     """Copy an image from a source path to a target path"""

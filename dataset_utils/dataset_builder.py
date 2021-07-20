@@ -20,7 +20,7 @@ tf.compat.v1.enable_eager_execution()
 # todo : implement a try/except to decode only jpg or png
 def decode_image(file_path: Path, image_type: str, channels=3) -> tf.Tensor:
     """Turns a png or jpeg image into its tensor version."""
-    value = tf.io.read_file(file_path)
+    value = tf.io.read_file(str(file_path))
     if image_type == "png" or image_type == "PNG":
         decoded_image = tf.image.decode_png(value, channels=channels)
     elif (
@@ -39,8 +39,8 @@ def decode_image(file_path: Path, image_type: str, channels=3) -> tf.Tensor:
 def get_dataset(image_paths: [Path], mask_paths: [Path], image_type: str, batch_size: int):
     """We first create a 1D dataset of image_name/mask_name tensors, which we next map to an image dataset by decoding the paths.
     We also split the dataset into batches."""
-    image_paths_tensor = tf.constant(image_paths)
-    mask_paths_tensor = tf.constant(mask_paths)
+    image_paths_tensor = tf.constant([str(image_path) for image_path in image_paths])
+    mask_paths_tensor = tf.constant([str(mask_path) for mask_path in mask_paths])
     dataset = tf.data.Dataset.from_tensor_slices(
         (image_paths_tensor, mask_paths_tensor)
     )

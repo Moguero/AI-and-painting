@@ -1,6 +1,6 @@
 import time
 from loguru import logger
-from dataset_utils.mask_loader import load_mask
+from dataset_utils.mask_utils import load_mask
 import pandas as pd
 from pathlib import Path
 

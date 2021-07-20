@@ -71,3 +71,6 @@ def decoder_block(inputs, skip_features, n_filters):
     x = layers.concatenate([x, skip_features])
     x = conv_block(x, n_filters)
     return x
+
+
+# todo : implement a model_plotter script to plot tf.keras.utils.plot_model
