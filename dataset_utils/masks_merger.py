@@ -7,7 +7,7 @@ from dataset_utils.mask_utils import get_image_name_without_extension, load_mask
 
 
 # todo : optimize the mask merging with tensorflow
-def merge_masks(image_path: Path, masks_dir_path: Path):
+def merge_masks(image_path: Path, masks_dir_path: Path) -> None:
     """Merges masks of all the classes containing more than one mask."""
     image_masks_sub_dir = masks_dir_path / get_image_name_without_extension(image_path)
     for class_sub_dir in image_masks_sub_dir.iterdir():
@@ -30,7 +30,7 @@ def merge_masks(image_path: Path, masks_dir_path: Path):
             create_merged_mask(masks_to_merge_paths_list, output_file_name)
 
 
-def create_merged_mask(masks_to_merge_paths_list: list, output_file_name: Path):
+def create_merged_mask(masks_to_merge_paths_list: [Path], output_file_name: Path) -> None:
     first_mask = load_mask(masks_to_merge_paths_list[0])
     for class_masks_path_idx in range(1, len(masks_to_merge_paths_list)):
         next_mask = load_mask(masks_to_merge_paths_list[class_masks_path_idx])

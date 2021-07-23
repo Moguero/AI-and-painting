@@ -49,6 +49,7 @@ def build_unet_2(n_classes: int, batch_size: int) -> keras.Model:
     return model
 
 
+# todo : type the return type
 def conv_block(inputs, n_filters):
     x = layers.Conv2D(filters=n_filters, kernel_size=3, padding='same')(inputs)
     x = layers.BatchNormalization()(x)
@@ -60,12 +61,14 @@ def conv_block(inputs, n_filters):
     return x
 
 
+# todo : type the return type
 def encoder_block(inputs, n_filters):
     x = conv_block(inputs, n_filters)
     p = layers.MaxPooling2D(pool_size=2, strides=2)(x)
     return p, x
 
 
+# todo : type the return type
 def decoder_block(inputs, skip_features, n_filters):
     x = layers.Conv2DTranspose(filters=n_filters, kernel_size=2, strides=2, padding='same')(inputs)
     x = layers.concatenate([x, skip_features])

@@ -2,16 +2,15 @@ import numpy as np
 from loguru import logger
 import tensorflow as tf
 
-from dataset_utils.dataset_builder import decode_image
+from dataset_utils.image_utils import decode_image
 from pathlib import Path
 
 MASK_PATH = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/masks/test/mask_angular_logo_lettre.png")
 IMAGE_PATH = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/angular_logo.png")
 
 
-# todo : remove hardcoded values in the decode_image function
 def count_mask_value_occurences(mask_path: Path) -> {int: float}:
-    mask_tensor = decode_image(mask_path, "png", channels=4)
+    mask_tensor = decode_image(mask_path)
     unique_with_count_tensor = tf.unique_with_counts(tf.reshape(mask_tensor, [-1]))
     values_array = unique_with_count_tensor.y.numpy()
     count_array = unique_with_count_tensor.count.numpy()

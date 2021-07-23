@@ -1,8 +1,8 @@
 from dataset_utils.mask_utils import get_image_masks_paths
 from pathlib import Path
 import tensorflow as tf
-from dataset_utils.dataset_builder import decode_image
-from constants import MAPPING_CLASS_NUMBER
+from dataset_utils.image_utils import decode_image, get_image_type, get_image_channels_number
+from constants import MAPPING_CLASS_NUMBER, MASK_TRUE_VALUE, MASK_FALSE_VALUE
 
 IMAGE_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043/_DSC0043.JPG")
 MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks")
@@ -12,10 +12,8 @@ CHANNELS = 4
 N_CLASSES = 9
 
 
-# todo : get automatically the type of a picture with its path
-# todo : remove the mask_type and channels parameter of the decode_image function + modify the hardcoded value below
 def get_mask_first_channel(mask_path: Path) -> tf.Tensor:
-    decoded_image = decode_image(mask_path, "png", 4)
+    decoded_image = decode_image(mask_path)
     return decoded_image[:, :, 0]
 
 
@@ -30,12 +28,11 @@ def stack_image_masks(image_path: Path, masks_dir: Path) -> tf.Tensor:
     return stacked_tensor
 
 
-# todo : remove hardcoded values 255 and 0
 def turn_mask_into_categorical_tensor(mask_path: Path) -> tf.Tensor:
     tensor_first_channel = get_mask_first_channel(mask_path)
     mask_class = get_mask_class(mask_path)
     categorical_number = MAPPING_CLASS_NUMBER[mask_class]
-    categorical_tensor = tf.where(tf.equal(tensor_first_channel, 255), categorical_number, 0)
+    categorical_tensor = tf.where(tf.equal(tensor_first_channel, MASK_TRUE_VALUE), categorical_number, MASK_FALSE_VALUE)
     return categorical_tensor
 
 

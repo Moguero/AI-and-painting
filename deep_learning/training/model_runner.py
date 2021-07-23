@@ -21,6 +21,8 @@ N_CLASSES = 9
 OPTIMIZER = "rmsprop"
 LOSS_FUNCTION = "sparse_categorical_crossentropy"
 
+# todo : put all of this in a function
+
 # Define the model
 model = build_unet(N_CLASSES, BATCH_SIZE)
 

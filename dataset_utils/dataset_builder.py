@@ -1,6 +1,8 @@
 import tensorflow as tf
 from pathlib import Path
 
+from dataset_utils.image_utils import decode_image
+
 IMAGE_PATH = Path("/files/images/_DSC0043/_DSC0043.JPG")
 IMAGE_PATHS = [
     Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043/_DSC0043.JPG"),
@@ -17,26 +19,9 @@ BATCH_SIZE = 1
 tf.compat.v1.enable_eager_execution()
 
 
-# todo : implement a try/except to decode only jpg or png
-def decode_image(file_path: Path, image_type: str, channels=3) -> tf.Tensor:
-    """Turns a png or jpeg image into its tensor version."""
-    value = tf.io.read_file(str(file_path))
-    if image_type == "png" or image_type == "PNG":
-        decoded_image = tf.image.decode_png(value, channels=channels)
-    elif (
-        image_type == "jpg"
-        or image_type == "JPG"
-        or image_type == "jpeg"
-        or image_type == "JPEG"
-    ):
-        decoded_image = tf.image.decode_jpeg(value, channels=channels)
-    else:
-        decoded_image = tf.image.decode_image(value, channels=channels)
-    return decoded_image
-
-
 # todo : mask_path should be one-hot encoded and not rgb
-def get_dataset(image_paths: [Path], mask_paths: [Path], image_type: str, batch_size: int):
+# TODO : error with _parse function
+def get_dataset(image_paths: [Path], mask_paths: [Path], batch_size: int) -> tf.data.Dataset:
     """We first create a 1D dataset of image_name/mask_name tensors, which we next map to an image dataset by decoding the paths.
     We also split the dataset into batches."""
     image_paths_tensor = tf.constant([str(image_path) for image_path in image_paths])
@@ -45,22 +30,20 @@ def get_dataset(image_paths: [Path], mask_paths: [Path], image_type: str, batch_
         (image_paths_tensor, mask_paths_tensor)
     )
 
-    def _parse_function(image_path: Path, mask_path: Path):
-        return decode_image(file_path=image_path, image_type=image_type), decode_image(
-            file_path=mask_path, image_type=image_type
-        )
+    def _parse_function(image_path: Path, mask_path: Path) -> (tf.Tensor, tf.Tensor):
+        return decode_image(file_path=image_path), decode_image(file_path=mask_path)
 
     map_dataset = dataset.map(_parse_function)
     dataset = map_dataset.batch(batch_size=batch_size, drop_remainder=False)
     return dataset
 
 
-def get_dataset_iterator(dataset: tf.data.Dataset):
+def get_dataset_iterator(dataset: tf.data.Dataset) -> tf.data.Iterator:
     iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
     return iterator
 
 
-dataset = get_dataset(IMAGE_PATHS, MASK_PATHS, IMAGE_TYPE, BATCH_SIZE)
+dataset = get_dataset(IMAGE_PATHS, MASK_PATHS, BATCH_SIZE)
 iterator = get_dataset_iterator(dataset)
 
 

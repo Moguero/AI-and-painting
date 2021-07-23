@@ -48,6 +48,7 @@ def download_all_masks(json_path: str, output_dir_path: Path) -> None:
                 download_mask(mask_url=mask_url, output_path=output_path)
 
 
+# todo : retyper l'output en détaillant le dict
 def get_mask_urls(json_path: str) -> dict:
     """Associate an image name with a list of its corresponding class mask URLs"""
     mask_urls = dict()
@@ -73,6 +74,7 @@ def get_mask_urls(json_path: str) -> dict:
 
 # DEBUG
 
+# todo : retyper l'output
 def get_full_json(json_path: str) -> list:
     with open(json_path) as file:
         json_dict = json.load(file)

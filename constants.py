@@ -27,3 +27,7 @@ PALETTE = {
     "roche": None
 }
 
+
+# Values in a binary LabelBox mask
+MASK_TRUE_VALUE = 255
+MASK_FALSE_VALUE = 255

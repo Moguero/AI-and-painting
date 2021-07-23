@@ -11,14 +11,14 @@ MASK_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_mas
 JSON_PATH = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/labelbox_export_json/export-2021-07-12T14_48_36.100Z.json")
 
 
-def test_mask_channels_are_equal(mask_path: Path):
+def test_mask_channels_are_equal(mask_path: Path) -> None:
     """Checks that all the mask channels are equal, to be sure that the mask is channel independent."""
     mask_array = load_mask(mask_path)
     for channel_number in (1, 2, 3):
         assert np.array_equal(mask_array[:, :, channel_number], mask_array[:, :, 0]), "The channels of this mask are not equal."
 
 
-def test_mask_first_channel_is_binary(mask_path: Path):
+def test_mask_first_channel_is_binary(mask_path: Path) -> None:
     """Checks that the mask first channel is binary, i.e. contains only 0 or 255 values.
 
     Remark : we only tests on the mask first channel,
@@ -28,7 +28,7 @@ def test_mask_first_channel_is_binary(mask_path: Path):
 
 
 # todo : use get_image_masks_first_channel instead of get_image_masks
-def test_image_masks_do_not_overlap(image_path: Path, masks_dir: Path):
+def test_image_masks_do_not_overlap(image_path: Path, masks_dir: Path) -> None:
     """Checks that the label masks of a given image do not overlap with each other.
     It supposes that the mask has already been checked as binary (with 0 and 255 values only)."""
     image_masks_paths = get_image_masks_paths(image_path, masks_dir)
@@ -42,7 +42,7 @@ def test_image_masks_do_not_overlap(image_path: Path, masks_dir: Path):
 
 # todo : test that the mask is inside the picture
 
-def test_minimum_one_mask_per_image(json_path: str):
+def test_minimum_one_mask_per_image(json_path: str) -> None:
     """Checks if there is at least one mask url per image in the json path."""
     number_of_masks_per_image = dict()
     with open(json_path) as f:
