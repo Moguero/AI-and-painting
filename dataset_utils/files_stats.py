@@ -2,6 +2,7 @@ import numpy as np
 from loguru import logger
 import tensorflow as tf
 
+from constants import MASK_TRUE_VALUE, MASK_FALSE_VALUE
 from dataset_utils.image_utils import decode_image
 from pathlib import Path
 
@@ -15,9 +16,8 @@ def count_mask_value_occurences(mask_path: Path) -> {int: float}:
     values_array = unique_with_count_tensor.y.numpy()
     count_array = unique_with_count_tensor.count.numpy()
     percent_dict = dict(zip(values_array, np.round(count_array / count_array.sum(), decimals=3)))
-    # todo : remove the hardcoded values 0 and 255
     logger.info(
-        f"\nBackground percent : {percent_dict[0] * 100}"
-        f"\nValue percent : {percent_dict[255] * 100}"
+        f"\nBackground percent : {percent_dict[MASK_TRUE_VALUE] * 100}"
+        f"\nValue percent : {percent_dict[MASK_FALSE_VALUE] * 100}"
     )
     return percent_dict

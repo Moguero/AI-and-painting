@@ -21,34 +21,32 @@ N_CLASSES = 9
 OPTIMIZER = "rmsprop"
 LOSS_FUNCTION = "sparse_categorical_crossentropy"
 
-# todo : put all of this in a function
 
-# Define the model
-model = build_unet(N_CLASSES, BATCH_SIZE)
+def main():
+    # Define the model
+    model = build_unet(N_CLASSES, BATCH_SIZE)
 
+    # Compile the model
+    model.compile(optimizer=OPTIMIZER, loss=LOSS_FUNCTION)
+    # model.compile(optimizer=Adam(lr=1e-4), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-# Compile the model
-model.compile(optimizer=OPTIMIZER, loss=LOSS_FUNCTION)
-# model.compile(optimizer=Adam(lr=1e-4), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    # Init the callbacks
+    callbacks = [
+        keras.callbacks.ModelCheckpoint("my_checkpoint.h5", save_best_only=True)
+    ]
 
-# Init the callbacks
-callbacks = [
-    keras.callbacks.ModelCheckpoint("my_checkpoint.h5", save_best_only=True)
-]
+    # Data init
+    (X_train, y_train), (X_test, y_test) = get_dataset(IMAGE_PATHS, MASK_PATHS, IMAGE_TYPE, BATCH_SIZE)
 
-# Data init
-(X_train, y_train), (X_test, y_test) = get_dataset(IMAGE_PATHS, MASK_PATHS, IMAGE_TYPE, BATCH_SIZE)
+    # Fit the model
+    epochs = 15
+    model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks)
 
+    # Save the model weights in HDF5 format
+    model.save_weights('saved_weights.h5')
 
-# Fit the model
-epochs = 15
-model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks)
+    # Evaluate the model
+    loss = model.evaluate(X_test, y_test, verbose=0)
 
-# Save the model weights in HDF5 format
-model.save_weights('saved_weights.h5')
-
-# Evaluate the model
-loss = model.evaluate(X_test, y_test, verbose=0)
-
-# Make a prediction
-predictions = model.predict(X_test)
+    # Make a prediction
+    predictions = model.predict(X_test)

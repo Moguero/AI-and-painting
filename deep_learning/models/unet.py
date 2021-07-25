@@ -1,3 +1,4 @@
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
@@ -49,8 +50,7 @@ def build_unet_2(n_classes: int, batch_size: int) -> keras.Model:
     return model
 
 
-# todo : type the return type
-def conv_block(inputs, n_filters):
+def conv_block(inputs, n_filters) -> tf.Tensor:
     x = layers.Conv2D(filters=n_filters, kernel_size=3, padding='same')(inputs)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
@@ -61,15 +61,13 @@ def conv_block(inputs, n_filters):
     return x
 
 
-# todo : type the return type
-def encoder_block(inputs, n_filters):
+def encoder_block(inputs, n_filters) -> (tf.Tensor, tf.Tensor):
     x = conv_block(inputs, n_filters)
     p = layers.MaxPooling2D(pool_size=2, strides=2)(x)
     return p, x
 
 
-# todo : type the return type
-def decoder_block(inputs, skip_features, n_filters):
+def decoder_block(inputs, skip_features, n_filters) -> tf.Tensor:
     x = layers.Conv2DTranspose(filters=n_filters, kernel_size=2, strides=2, padding='same')(inputs)
     x = layers.concatenate([x, skip_features])
     x = conv_block(x, n_filters)

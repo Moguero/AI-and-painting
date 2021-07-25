@@ -13,21 +13,30 @@ MAPPING_CLASS_NUMBER = {
 }
 
 
-# todo : associate a color value to the class, and add it to the plotter script
-PALETTE = {
-    "background": None,
-    "poils_cheveux": None,
-    "vetements": None,
-    "peau": None,
-    "bois_tronc": None,
-    "ciel": None,
-    "feuilles_vertes": None,
-    "herbe": None,
-    "eau": None,
-    "roche": None
+PALETTE_HEXA = {
+    "background": "#DCDCDC",  #gainsboro
+    "poils_cheveux": "#8B6914",  #goldenrod4
+    "vetements": "#BF3EFF", #darkorchid1
+    "peau": "#FF7D40",  #flesh
+    "bois_tronc": "#E3CF57",  #banana
+    "ciel": "#6495ED",  #cornerflowblue
+    "feuilles_vertes": "#458B00",  #chartreuse4
+    "herbe": "#7FFF00",  #chartreuse1
+    "eau": "#00FFFF",  #aqua
+    "roche": "#FF6103"  #cadmiumorange
 }
 
 
 # Values in a binary LabelBox mask
 MASK_TRUE_VALUE = 255
 MASK_FALSE_VALUE = 255
+
+
+def turn_hexadecimal_color_into_rgb_list(hexadecimal_color: str) -> [int]:
+    hexadecimal_color = hexadecimal_color.lstrip("#")
+    return tuple(int(hexadecimal_color[i:i+2], 16) / 255 for i in (0, 2, 4))
+
+
+PALETTE_RGB = {
+    key: turn_hexadecimal_color_into_rgb_list(value) for key, value in PALETTE_HEXA.items()
+}

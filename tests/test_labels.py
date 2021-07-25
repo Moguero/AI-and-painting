@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
 import numpy as np
-from dataset_utils.mask_utils import load_mask, get_image_masks_paths
+
+from dataset_utils.image_utils import decode_image
+from dataset_utils.image_utils import get_image_masks_paths
 
 IMAGE_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043/_DSC0043.JPG")
-# IMAGE_PATH = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/airflow_logo.png")
-# IMAGE_PATH = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/AVZD6310.png")
 MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/")
 MASK_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/_DSC0043/feuilles_vertes/mask__DSC0043_feuilles_vertes__3466c2cda646448fbe8f4927f918e247.png")
 JSON_PATH = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/labelbox_export_json/export-2021-07-12T14_48_36.100Z.json")
@@ -13,7 +13,7 @@ JSON_PATH = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peint
 
 def test_mask_channels_are_equal(mask_path: Path) -> None:
     """Checks that all the mask channels are equal, to be sure that the mask is channel independent."""
-    mask_array = load_mask(mask_path)
+    mask_array = decode_image(mask_path).numpy()
     for channel_number in (1, 2, 3):
         assert np.array_equal(mask_array[:, :, channel_number], mask_array[:, :, 0]), "The channels of this mask are not equal."
 
@@ -23,20 +23,18 @@ def test_mask_first_channel_is_binary(mask_path: Path) -> None:
 
     Remark : we only tests on the mask first channel,
     supposing we will run test_mask_channels_are_equal() function later."""
-    mask_array = load_mask(mask_path)
+    mask_array = decode_image(mask_path).numpy()
     assert set(np.unique(mask_array[:, :, 0])) == {0, 255}, "Mask is not binary, i.e. contains other values than 0 or 255."
 
 
-# todo : use get_image_masks_first_channel instead of get_image_masks
 def test_image_masks_do_not_overlap(image_path: Path, masks_dir: Path) -> None:
     """Checks that the label masks of a given image do not overlap with each other.
     It supposes that the mask has already been checked as binary (with 0 and 255 values only)."""
     image_masks_paths = get_image_masks_paths(image_path, masks_dir)
-    image_masks = [load_mask(mask_path) for mask_path in image_masks_paths]
-    if len(image_masks) != 1:
-        image_first_mask = image_masks[0]
-        for mask_number in range(1, len(image_masks)):
-            image_first_mask = image_first_mask & image_masks[mask_number]
+    if len(image_masks_paths) != 1:
+        image_first_mask = decode_image(image_masks_paths[0]).numpy()
+        for mask_number in range(1, len(image_masks_paths)):
+            image_first_mask = image_first_mask & decode_image(image_masks_paths[mask_number]).numpy()
         assert 255 not in image_first_mask, "Some masks overlap with each other."
 
 

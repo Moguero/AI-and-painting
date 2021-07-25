@@ -1,7 +1,7 @@
-from dataset_utils.mask_utils import get_image_masks_paths
+from dataset_utils.image_utils import get_image_masks_paths
 from pathlib import Path
 import tensorflow as tf
-from dataset_utils.image_utils import decode_image, get_image_type, get_image_channels_number
+from dataset_utils.image_utils import decode_image
 from constants import MAPPING_CLASS_NUMBER, MASK_TRUE_VALUE, MASK_FALSE_VALUE
 
 IMAGE_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043/_DSC0043.JPG")
@@ -44,6 +44,3 @@ def one_hot_encode_image_masks(image_path: Path, masks_dir: Path, n_classes: int
     stacked_masks_tensor = stack_image_masks(image_path, masks_dir)
     one_hot_encoded_tensor = tf.one_hot(stacked_masks_tensor, n_classes, dtype=tf.int32)
     return one_hot_encoded_tensor
-
-
-# todo : transform all the numpy array to tensor directly

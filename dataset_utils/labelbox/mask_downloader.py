@@ -12,7 +12,6 @@ JSON_PATH = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peint
 
 
 # todo : use try/except statement with urlretrieve to check if the image is well downloaded
-# todo : check if we can put the mask_url as a Path
 def download_mask(mask_url: str, output_path: Path) -> None:
     """Download the label mask from Labelbox online archive to local machine."""
     # todo : cases where finished by JPG or PNG or ...
@@ -24,10 +23,9 @@ def download_mask(mask_url: str, output_path: Path) -> None:
     urllib.request.urlretrieve(url=mask_url, filename=str(output_path))
 
 
-# todo : check if the Path are correct
 # todo : gérer le cas où il a deux masques pour la même catégorie : les fusionner
 # todo : put logger with loguru
-def download_all_masks(json_path: str, output_dir_path: Path) -> None:
+def download_all_masks(json_path: Path, output_dir_path: Path) -> None:
     """Download all the masks"""
     urls_dict = get_mask_urls(json_path)
     for image_name, url_dict in urls_dict.items():
@@ -48,11 +46,10 @@ def download_all_masks(json_path: str, output_dir_path: Path) -> None:
                 download_mask(mask_url=mask_url, output_path=output_path)
 
 
-# todo : retyper l'output en détaillant le dict
-def get_mask_urls(json_path: str) -> dict:
+def get_mask_urls(json_path: Path) -> {{str: str}}:
     """Associate an image name with a list of its corresponding class mask URLs"""
     mask_urls = dict()
-    with open(json_path) as file:
+    with open(str(json_path)) as file:
         json_list = json.load(file)
         for image_dict in json_list:
             reformatted_external_id = image_dict["External ID"].split(".")[0]
@@ -73,9 +70,7 @@ def get_mask_urls(json_path: str) -> dict:
 
 
 # DEBUG
-
-# todo : retyper l'output
-def get_full_json(json_path: str) -> list:
+def get_full_json(json_path: str) -> [dict]:
     with open(json_path) as file:
         json_dict = json.load(file)
     return json_dict

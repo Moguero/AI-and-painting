@@ -3,7 +3,6 @@ import time
 
 from loguru import logger
 from pathlib import Path
-from dataset_utils.mask_utils import get_image_name_without_extension
 import tensorflow as tf
 
 IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images")
@@ -15,10 +14,43 @@ IMAGE_SOURCE_PATH = Path(
 IMAGE_TARGET_DIR_PATH = Path(
     "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/test/"
 )
+IMAGE_PATH = Path(
+    "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043/_DSC0043.JPG"
+)
 
 IMAGE_SIZE = (160, 160)
 N_CLASSES = 3
 BATCH_SIZE = 32
+
+# todo : documenter toutes les fonctions
+
+
+def get_image_name_without_extension(image_path: Path) -> str:
+    return image_path.parts[-1].split(".")[0]
+
+
+def get_image_name_with_extension(image_path: Path) -> str:
+    return image_path.parts[-1]
+
+
+def get_image_masks_paths(image_path: Path, masks_dir: Path) -> [Path]:
+    """Get the paths of the image masks.
+
+    Remark: If the masks sub directory associated to the image does not exist,
+    an AssertionError will be thrown."""
+    image_masks_sub_dir = masks_dir / get_image_name_without_extension(image_path)
+    assert (
+        image_masks_sub_dir.exists()
+    ), f"Image masks sub directory {image_masks_sub_dir} does not exist"
+    return [
+        image_masks_sub_dir / class_mask_sub_dir / mask_name
+        for class_mask_sub_dir in image_masks_sub_dir.iterdir()
+        for mask_name in (image_masks_sub_dir / class_mask_sub_dir).iterdir()
+    ]
+
+
+def get_mask_class(mask_path: Path) -> str:
+    return mask_path.parts[-2]
 
 
 # todo : implement a try/except to decode only jpg or png (not based on image_type but metadata format of the image)
@@ -63,9 +95,6 @@ def get_image_channels_number(image_path: Path) -> int:
     return image_channels_number
 
 
-# todo : merge image_utils and mask_utils
-
-
 def copy_image(image_source_path: Path, image_target_dir_path: Path) -> None:
     """Copy an image from a source path to a target path"""
     image_name = get_image_name_without_extension(image_source_path)
@@ -102,14 +131,3 @@ def timeit(method):
         return result
 
     return timed
-
-
-# Some logs
-# todo : put this in a function
-image_paths = get_files_paths(IMAGES_DIR)
-mask_paths = get_files_paths(MASKS_DIR)
-
-print("Number of images:", len(get_files_paths(IMAGES_DIR)))
-
-for input_path, target_path in zip(image_paths, mask_paths):
-    print(input_path, "|", target_path)

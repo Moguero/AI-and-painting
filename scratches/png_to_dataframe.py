@@ -1,9 +1,11 @@
 import time
 from loguru import logger
-from dataset_utils.mask_utils import load_mask
+from scratches.masks_merger import load_mask
 import pandas as pd
 from pathlib import Path
 
+
+# delete this
 def transform_png_image_ndarray_to_dataframe(mask_path: Path):
     # transform png to numpy array to dataframe
     start_time = time.time()
