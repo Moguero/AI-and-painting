@@ -8,7 +8,7 @@ from pathlib import Path
 MASK_URL = "https://api.labelbox.com/masks/feature/ckph5r33g00043a6dklihalmq?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja3BneTBhZDc4OXAwMHk5dzZlcWM2bzNlIiwib3JnYW5pemF0aW9uSWQiOiJja3BneTBhY3U4OW96MHk5dzNrcW43MGxmIiwiaWF0IjoxNjIyNzQwNjczLCJleHAiOjE2MjUzMzI2NzN9.VeR0ot2_MAkY769kcXSz8RWqRguopgO1rlbRIGwZWV0"
 OUTPUT_PATH = Path("C:/Users/thiba/OneDrive/Documents/Césure/test/test.png")
 OUTPUT_DIR_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks")
-JSON_PATH = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/labelbox_export_json/export-2021-07-13T17_55_24.684Z.json")
+JSON_PATH = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/labelbox_export_json/export-2021-07-26T14_40_28.059Z.json")
 
 
 # todo : use try/except statement with urlretrieve to check if the image is well downloaded
@@ -40,13 +40,12 @@ def download_all_masks(json_path: Path, output_dir_path: Path) -> None:
                     class_dir_name.mkdir()
                 file_name = "mask_" + image_name + "_" + hash_class_name + ".png"
                 output_path = class_dir_name / file_name
-                breakpoint()
                 if output_path.exists():
                     logger.warning(f"\nFile {file_name} already exists : overwrite previous file")
                 download_mask(mask_url=mask_url, output_path=output_path)
 
 
-def get_mask_urls(json_path: Path) -> {{str: str}}:
+def get_mask_urls(json_path: Path) -> dict:
     """Associate an image name with a list of its corresponding class mask URLs"""
     mask_urls = dict()
     with open(str(json_path)) as file:
@@ -70,7 +69,7 @@ def get_mask_urls(json_path: Path) -> {{str: str}}:
 
 
 # DEBUG
-def get_full_json(json_path: str) -> [dict]:
-    with open(json_path) as file:
+def get_full_json(json_path: Path) -> [dict]:
+    with open(str(json_path)) as file:
         json_dict = json.load(file)
     return json_dict

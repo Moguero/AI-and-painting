@@ -1,15 +1,22 @@
-from dataset_utils.image_utils import get_image_masks_paths
+from loguru import logger
+
+from dataset_utils.image_utils import get_image_masks_paths, get_mask_class, get_image_name_without_extension, \
+    get_images_paths
 from pathlib import Path
 import tensorflow as tf
 from dataset_utils.image_utils import decode_image
 from constants import MAPPING_CLASS_NUMBER, MASK_TRUE_VALUE, MASK_FALSE_VALUE
 
-IMAGE_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043/_DSC0043.JPG")
+IMAGE_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/1/1.JPG")
 MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks")
 MASK_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/_DSC0043/feuilles_vertes/mask__DSC0043_feuilles_vertes__3466c2cda646448fbe8f4927f918e247.png")
 IMAGE_TYPE = "png"
+OUTPUT_FILEPATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/dataset/_DSC0043/label/categorical_mask.jpg")
 CHANNELS = 4
 N_CLASSES = 9
+CATEGORICAL_MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks")
+IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images")
+CATEGORICAL_MASK_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks/_DSC0030/mask__DSC0030.jpg")
 
 
 def get_mask_first_channel(mask_path: Path) -> tf.Tensor:
@@ -36,11 +43,34 @@ def turn_mask_into_categorical_tensor(mask_path: Path) -> tf.Tensor:
     return categorical_tensor
 
 
-def get_mask_class(mask_path: Path) -> str:
-    return mask_path.parts[-2]
-
-
-def one_hot_encode_image_masks(image_path: Path, masks_dir: Path, n_classes: int) -> tf.Tensor:
-    stacked_masks_tensor = stack_image_masks(image_path, masks_dir)
-    one_hot_encoded_tensor = tf.one_hot(stacked_masks_tensor, n_classes, dtype=tf.int32)
+def one_hot_encode_image_masks(image_path: Path, categorical_masks_dir: Path, n_classes: int) -> tf.Tensor:
+    categorical_mask_tensor = get_mask_first_channel(get_categorical_mask_path(image_path, categorical_masks_dir))
+    one_hot_encoded_tensor = tf.one_hot(categorical_mask_tensor, n_classes, dtype=tf.int32)
     return one_hot_encoded_tensor
+
+
+def save_categorical_mask(image_path: Path, masks_dir: Path, output_filepath: Path) -> None:
+    """Encode a categorical tensor into a png."""
+    stacked_image_tensor = tf.expand_dims(tf.cast(stack_image_masks(image_path, masks_dir), tf.uint8), -1)
+    encoded_image_tensor = tf.io.encode_jpeg(stacked_image_tensor)
+    tf.io.write_file(filename=str(output_filepath), contents=encoded_image_tensor)
+
+
+def save_all_categorical_masks(images_dir: Path, masks_dir: Path, categorical_masks_dir: Path) -> None:
+    image_dir_paths = get_images_paths(images_dir)
+    for image_path in image_dir_paths:
+        image_name = get_image_name_without_extension(image_path)
+        output_sub_dir = categorical_masks_dir / image_name
+        if not output_sub_dir.exists():
+            output_sub_dir.mkdir()
+            logger.info(f"\nSub folder {output_sub_dir} was created.")
+        output_path = output_sub_dir / ("categorical_mask_" + image_name + ".jpg")
+        save_categorical_mask(image_path, masks_dir, output_path)
+
+
+def get_categorical_mask_path(image_path: Path, categorical_masks_dir: Path):
+    image_name = get_image_name_without_extension(image_path)
+    categorical_masks_subdir = categorical_masks_dir / image_name
+    assert categorical_masks_subdir.exists(), f"Subdir {categorical_masks_subdir} does not exist."
+    assert len(list(categorical_masks_subdir.iterdir())) == 1, f"Subdir {categorical_masks_subdir} contains more than one mask."
+    return list(categorical_masks_subdir.iterdir())[0]

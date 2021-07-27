@@ -36,7 +36,7 @@ def load_mask(mask_path: Path) -> np.ndarray:
     return mask_array
 
 
-# todo : delete this : deprecated because of the new tf stack_masks function
+# todo : redo it with tensorflow
 def create_merged_mask(masks_to_merge_paths_list: [Path], output_file_name: Path) -> None:
     first_mask = load_mask(masks_to_merge_paths_list[0])
     for class_masks_path_idx in range(1, len(masks_to_merge_paths_list)):
