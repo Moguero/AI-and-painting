@@ -1,20 +1,25 @@
 from tensorflow import keras
-from deep_learning.models.unet import build_unet
-from dataset_utils.dataset_builder import get_dataset
+from deep_learning.models.unet import build_unet, build_unet_2
+from dataset_utils.dataset_builder import get_dataset, get_dataset_2, get_dataset_3
 from pathlib import Path
 
 IMAGE_PATH = Path("C:/Users:thiba:PycharmProjects:mission_IA_JCS:files:images:_DSC0043:_DSC0043.JPG")
 MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks")
+CATEGORICAL_MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks")
 IMAGE_PATHS = [
-    Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043/_DSC0043.JPG"),
-    Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0061/_DSC0061.JPG")
+    Path(
+        "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/1/1.jpg"
+    ),
+    Path(
+        "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0130/_DSC0130.jpg"
+    ),
 ]
 MASK_PATHS = [
     Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/_DSC0043/feuilles_vertes/mask__DSC0043_feuilles_vertes__3466c2cda646448fbe8f4927f918e247.png"),
     Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/_DSC0061/feuilles_vertes/mask__DSC0061_feuilles_vertes__eef687829eb641c59f63ad80199b0de0.png")
 ]
 IMAGE_TYPE = 'JPG'
-BATCH_SIZE = 1
+BATCH_SIZE = None
 
 
 N_CLASSES = 9
@@ -24,7 +29,7 @@ LOSS_FUNCTION = "sparse_categorical_crossentropy"
 
 def main():
     # Define the model
-    model = build_unet(N_CLASSES, BATCH_SIZE)
+    model = build_unet_2(N_CLASSES, BATCH_SIZE)
 
     # Compile the model
     model.compile(optimizer=OPTIMIZER, loss=LOSS_FUNCTION)
@@ -36,13 +41,15 @@ def main():
     ]
 
     # Data init
-    (X_train, y_train), (X_test, y_test) = get_dataset(IMAGE_PATHS, MASK_PATHS, IMAGE_TYPE, BATCH_SIZE)
+    X, y = get_dataset_3(IMAGE_PATHS, CATEGORICAL_MASKS_DIR, N_CLASSES)
 
     # Fit the model
     epochs = 15
-    model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks)
+    breakpoint()
+    model.fit(x=X, y=y, epochs=epochs, callbacks=callbacks)
 
     # Save the model weights in HDF5 format
+    breakpoint()
     model.save_weights('saved_weights.h5')
 
     # Evaluate the model
