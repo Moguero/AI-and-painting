@@ -7,7 +7,7 @@ from dataset_utils.image_utils import (
     get_dir_paths,
 )
 from dataset_utils.image_utils import get_image_masks_paths
-from dataset_utils.labelbox.mask_downloader import get_full_json
+from labelbox_utils.mask_downloader import get_full_json
 
 IMAGE_PATH = Path(
     "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043/_DSC0043.JPG"
@@ -22,6 +22,8 @@ JSON_PATH = Path(
     "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/labelbox_export_json/export-2021-07-26T14_40_28.059Z.json"
 )
 
+
+# todo : make those tests run automatically in a shell script
 
 def test_mask_channels_are_equal(mask_path: Path) -> None:
     """Checks that all the mask channels are equal, to be sure that the mask is channel independent."""

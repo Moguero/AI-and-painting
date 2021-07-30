@@ -109,7 +109,7 @@ def copy_image(image_source_path: Path, image_target_dir_path: Path) -> None:
     output_path = sub_dir / file_name
     if not Path(sub_dir).exists():
         Path(sub_dir).mkdir()
-        logger.info(f"Sub folder {sub_dir} was created")
+        logger.info(f"\nSub folder {sub_dir} was created")
     shutil.copyfile(str(image_source_path), str(output_path))
 
 
