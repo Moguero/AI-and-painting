@@ -1,8 +1,15 @@
 import time
 from loguru import logger
-from scratches.masks_merger import load_mask
+import numpy as np
+import imageio
 import pandas as pd
 from pathlib import Path
+
+
+def load_mask(mask_path: Path) -> np.ndarray:
+    """Turns png mask into numpy ndarray"""
+    mask_array = np.asarray(imageio.imread(mask_path))
+    return mask_array
 
 
 # delete this

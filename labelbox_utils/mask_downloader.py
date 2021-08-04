@@ -19,7 +19,7 @@ JSON_PATH = Path(
 
 def get_mask_urls(json_path: Path) -> dict:
     """
-    Associate an image name with a list of its corresponding class mask URLs.
+    Associate an images name with a list of its corresponding class mask URLs.
 
     :param json_path : The JSON exported from LabelBox.
     :return: A dictionary of tuples (<image_name>, <dictionary_class_name/mask_url>)
@@ -38,11 +38,11 @@ def get_mask_urls(json_path: Path) -> dict:
                         image_object["title"] + "__" + uuid.uuid4().hex
                     ] = mask_url
                 logger.info(
-                    f"""\nNumber of masks for image with external id "{reformatted_external_id}" : {len(mask_urls[reformatted_external_id])}"""
+                    f"""\nNumber of masks for images with external id "{reformatted_external_id}" : {len(mask_urls[reformatted_external_id])}"""
                 )
             else:
                 logger.warning(
-                    f"\nNo masks for image with external id : {reformatted_external_id}"
+                    f"\nNo masks for images with external id : {reformatted_external_id}"
                 )
     return mask_urls
 
@@ -80,7 +80,7 @@ def download_all_masks(json_path: Path, output_dir_path: Path) -> None:
         image_dir_name = output_dir_path / image_name
         if not image_dir_name.exists():
             image_dir_name.mkdir()
-            logger.info(f"\nClass folder {image_dir_name} was created.")
+            logger.info(f"\nImage folder {image_dir_name} was created.")
         if url_dict:
             for hash_class_name, mask_url in url_dict.items():
                 real_class_name = hash_class_name.split("__")[0]

@@ -2,7 +2,7 @@ import tensorflow as tf
 from pathlib import Path
 
 from dataset_utils.image_utils import decode_image
-from dataset_utils.mask_processing import one_hot_encode_image_masks
+from dataset_utils.masks_encoder import one_hot_encode_image_masks
 
 IMAGE_PATH = Path("/files/images/_DSC0043/_DSC0043.JPG")
 IMAGE_PATHS = [
@@ -37,7 +37,7 @@ def get_dataset(
     n_classes: int,
     batch_size: int,
 ) -> tf.data.Dataset:
-    """We first create a 1D dataset of image_name/mask_name tensors, which we next map to an image dataset by decoding the paths.
+    """We first create a 1D dataset of image_name/mask_name tensors, which we next map to an images dataset by decoding the paths.
     We also split the dataset into batches."""
     image_tensors = [decode_image(image_path) for image_path in image_paths]
     mask_tensors = [
@@ -103,8 +103,8 @@ def main():
     return dataset, iterator
 
 
-# todo : sort images/masks paths in the right order to be sure the good mask is associated with the good image \
-# by putting every pair image/mask in the files/dataset/<image_name> folder with 2 subfolders image/ and mask/
+# todo : sort images/masks paths in the right order to be sure the good mask is associated with the good images \
+# by putting every pair images/mask in the files/dataset/<image_name> folder with 2 subfolders images/ and mask/
 
 
 # get_dataset(IMAGE_PATHS, CATEGORICAL_MASKS_DIR, N_CLASSES, BATCH_SIZE)

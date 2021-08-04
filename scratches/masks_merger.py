@@ -1,45 +1,65 @@
 import uuid
 from pathlib import Path
 
+import tensorflow as tf
 import imageio
-import numpy as np
+from loguru import logger
 
-from dataset_utils.image_utils import get_image_name_without_extension
+from dataset_utils.image_utils import decode_image
 
-
-def merge_masks(image_path: Path, masks_dir_path: Path) -> None:
-    """Merges masks of all the classes containing more than one mask."""
-    image_masks_sub_dir = masks_dir_path / get_image_name_without_extension(image_path)
-    for class_sub_dir in image_masks_sub_dir.iterdir():
-        class_sub_dir_path = image_masks_sub_dir / "/" / class_sub_dir / "/"
-        if len(list(class_sub_dir_path.iterdir())) > 1:
-            masks_to_merge_paths_list = [
-                class_sub_dir_path / class_mask_name
-                for class_mask_name in class_sub_dir_path.iterdir()
-            ]
-            output_file_name = (
-                class_sub_dir_path
-                / "merged_mask_"
-                / get_image_name_without_extension(image_path)
-                / "_"
-                / class_sub_dir
-                / "__"
-                / uuid.uuid4().hex
-                / ".png"
-            )
-            create_merged_mask(masks_to_merge_paths_list, output_file_name)
+MASKS_DIR = Path(
+    "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/marie"
+)
 
 
-def load_mask(mask_path: Path) -> np.ndarray:
-    """Turns png mask into numpy ndarray"""
-    mask_array = np.asarray(imageio.imread(mask_path))
-    return mask_array
+def merge_all_masks(masks_dir: Path) -> None:
+    """
+
+    :param masks_dir: Path of the folder where the images masks folder are.
+    """
+    for image_masks_sub_dir in masks_dir.iterdir():
+        for class_sub_dir in image_masks_sub_dir.iterdir():
+            if len(list(class_sub_dir.iterdir())) > 1:
+                masks_to_merge_paths_list = list(class_sub_dir.iterdir())
+                image_name = image_masks_sub_dir.parts[-1]
+                class_name = image_masks_sub_dir.parts[-1]
+                output_file_name = class_sub_dir / (
+                    "merged_mask_"
+                    + image_name
+                    + "_"
+                    + class_name
+                    + "__"
+                    + uuid.uuid4().hex
+                    + ".png"
+                )
+                create_merged_mask(masks_to_merge_paths_list, output_file_name)
 
 
-# todo : redo it with tensorflow
-def create_merged_mask(masks_to_merge_paths_list: [Path], output_file_name: Path) -> None:
-    first_mask = load_mask(masks_to_merge_paths_list[0])
-    for class_masks_path_idx in range(1, len(masks_to_merge_paths_list)):
-        next_mask = load_mask(masks_to_merge_paths_list[class_masks_path_idx])
-        first_mask = first_mask + next_mask
+def create_merged_mask(
+    masks_to_merge_paths_list: [Path], output_file_name: Path
+) -> None:
+    """
+    Create a merged mask for images with more than 1 mask for the same class.
+
+    :param masks_to_merge_paths_list:
+    :param output_file_name:
+    """
+    first_mask = decode_image(masks_to_merge_paths_list[0])
+    for class_mask_path in masks_to_merge_paths_list[1:]:
+        first_mask = tf.add(first_mask, decode_image(class_mask_path))
     imageio.imwrite(output_file_name, first_mask)
+    logger.info(f"\nMerged mask {output_file_name} created successfully.")
+
+
+def get_masks_to_merge(masks_dir: Path) -> [Path]:
+    """
+
+    :param masks_dir: Path of the folder where the images masks folder are.
+    :return: List of list of masks to merge together.
+    """
+    masks_to_merge = list()
+    for image_masks_subdir in masks_dir.iterdir():
+        for class_subdir in image_masks_subdir.iterdir():
+            if len(list(class_subdir.iterdir())) > 1:
+                masks_to_merge.append(list(class_subdir.iterdir()))
+    return masks_to_merge

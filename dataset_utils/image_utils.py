@@ -8,7 +8,7 @@ import tensorflow as tf
 # from tests.test_labels import test_same_folders_of_images_and_masks, test_same_folders_of_images_and_categorical_masks
 
 IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images")
-MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks")
+MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/all")
 CATEGORICAL_MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks")
 DATASET_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/dataset")
 FILES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043")
@@ -18,15 +18,15 @@ IMAGE_SOURCE_PATH = Path(
 IMAGE_TARGET_DIR_PATH = Path(
     "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/"
 )
+IMAGES_SOURCE_DIR = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/sorted_images/kept/all")
 IMAGE_PATH = Path(
-    "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043/_DSC0043.JPG"
+    "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/1/1.jpg"
 )
 
 IMAGE_SIZE = (160, 160)
 N_CLASSES = 3
 BATCH_SIZE = 32
 
-IMAGES_SOURCE_DIR = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/sorted_images/kept/Adrien_images")
 
 # todo : documenter toutes les fonctions
 
@@ -40,9 +40,9 @@ def get_file_name_with_extension(file_path: Path) -> str:
 
 
 def get_image_masks_paths(image_path: Path, masks_dir: Path) -> [Path]:
-    """Get the paths of the image masks.
+    """Get the paths of the images masks.
 
-    Remark: If the masks sub directory associated to the image does not exist,
+    Remark: If the masks sub directory associated to the images does not exist,
     an AssertionError will be thrown."""
     image_masks_sub_dir = masks_dir / get_image_name_without_extension(image_path)
     assert (
@@ -59,9 +59,9 @@ def get_mask_class(mask_path: Path) -> str:
     return mask_path.parts[-2]
 
 
-# todo : implement a try/except to decode only jpg or png (not based on image_type but metadata format of the image)
+# todo : implement a try/except to decode only jpg or png (not based on image_type but metadata format of the images)
 def decode_image(file_path: Path) -> tf.Tensor:
-    """Turns a png or jpeg image into its tensor version."""
+    """Turns a png or jpeg images into its tensor version."""
     value = tf.io.read_file(str(file_path))
     image_type = get_image_type(file_path)
     channels = get_image_channels_number(file_path)
@@ -97,12 +97,12 @@ def get_image_channels_number(image_path: Path) -> int:
         image_channels_number = 3
     assert (
         image_channels_number is not None
-    ), f"Incorrect image type {image_type} of image with path {image_path}"
+    ), f"Incorrect images type {image_type} of images with path {image_path}"
     return image_channels_number
 
 
 def copy_image(image_source_path: Path, image_target_dir_path: Path) -> None:
-    """Copy an image from a source path to a target path"""
+    """Copy an images from a source path to a target path"""
     image_name = get_image_name_without_extension(image_source_path)
     sub_dir = image_target_dir_path / image_name
     file_name = image_name + ".jpg"
@@ -126,6 +126,14 @@ def get_files_paths(files_dir: Path) -> [Path]:
 
 
 def copy_images_with_masks(images_source_dir: Path, masks_dir: Path, image_target_dir_path: Path):
+    """
+    Copy/paste images that have a mask in the labels mask directory.
+
+    :param images_source_dir: The folder where the images are stored.
+    :param masks_dir: The folder where the images masks are stored.
+    :param image_target_dir_path: The folder where to copy the images.
+    :return:
+    """
     names_of_images_with_masks = get_names_of_images_with_masks(masks_dir)
     for image_path in list(images_source_dir.iterdir()):
         image_name_without_extension = get_image_name_without_extension(image_path)
