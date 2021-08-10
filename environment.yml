@@ -32,7 +32,6 @@ dependencies:
   - grpcio=1.36.1
   - h5py=2.10.0
   - hdf5=1.10.4
-  - icc_rt=2019.0.0
   - icu=58.2
   - idna=2.10
   - imageio=2.9.0
@@ -70,7 +69,6 @@ dependencies:
   - pyopenssl=20.0.1
   - pyparsing=2.4.7
   - pyqt=5.9.2
-  - pyreadline=2.1
   - pysocks=1.7.1
   - python=3.8.10
   - python-dateutil=2.8.1
@@ -96,13 +94,9 @@ dependencies:
   - typing-extensions=3.10.0.0
   - typing_extensions=3.10.0.0
   - urllib3=1.26.6
-  - vc=14.2
-  - vs2015_runtime=14.27.29016
   - werkzeug=1.0.1
   - wheel=0.36.2
   - win32_setctime=1.0.3
-  - win_inet_pton=1.1.0
-  - wincertstore=0.2
   - wrapt=1.12.1
   - xz=5.2.5
   - yarl=1.6.3
@@ -114,13 +108,19 @@ dependencies:
     - black==21.7b0
     - boto3==1.18.4
     - botocore==1.21.4
+    - icc_rt=2019.0.0
     - jmespath==0.10.0
     - mypy-extensions==0.4.3
     - numpy==1.19.5
     - pathspec==0.9.0
+    - pyreadline=2.1
     - regex==2021.7.6
     - s3transfer==0.5.0
     - tensorboard-data-server==0.6.1
     - tomli==1.0.4
     - tqdm==4.62.0
+    - vc=14.2
+    - vs2015_runtime=14.27.29016
+    - win_inet_pton=1.1.0
+    - wincertstore=0.2
 prefix: C:\Users\thiba\anaconda3\envs\mission_IA_JCS
