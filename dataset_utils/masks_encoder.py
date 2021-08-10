@@ -1,7 +1,7 @@
 from loguru import logger
 
 from dataset_utils.image_utils import get_image_masks_paths, get_mask_class, get_image_name_without_extension, \
-    get_images_paths
+    get_images_paths, get_image_patch_masks_paths
 from pathlib import Path
 import tensorflow as tf
 from dataset_utils.image_utils import decode_image
@@ -17,6 +17,7 @@ N_CLASSES = 9
 CATEGORICAL_MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks")
 IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images")
 CATEGORICAL_MASK_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks/_DSC0030/mask__DSC0030.jpg")
+IMAGE_PATCH_PATH = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches\1\1\image\patch_1.jpg")
 
 
 def get_mask_first_channel(mask_path: Path) -> tf.Tensor:
@@ -27,6 +28,17 @@ def get_mask_first_channel(mask_path: Path) -> tf.Tensor:
 def stack_image_masks(image_path: Path, masks_dir: Path) -> tf.Tensor:
     """Fetches the images mask first channels, transform it into a categorical tensor and add the categorical together."""
     image_masks_paths = get_image_masks_paths(image_path, masks_dir)
+    shape = get_mask_first_channel(image_masks_paths[0]).shape
+    stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
+    for mask_path in image_masks_paths:
+        categorical_tensor = turn_mask_into_categorical_tensor(mask_path)
+        stacked_tensor = tf.math.add(stacked_tensor, categorical_tensor)
+    return stacked_tensor
+
+
+def stack_image_patch_masks(image_patch_path: Path) -> tf.Tensor:
+    """Fetches the images mask first channels, transform it into a categorical tensor and add the categorical together."""
+    image_masks_paths = get_image_patch_masks_paths(image_patch_path)
     shape = get_mask_first_channel(image_masks_paths[0]).shape
     stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
     for mask_path in image_masks_paths:
@@ -46,6 +58,12 @@ def turn_mask_into_categorical_tensor(mask_path: Path) -> tf.Tensor:
 def one_hot_encode_image_masks(image_path: Path, categorical_masks_dir: Path, n_classes: int) -> tf.Tensor:
     categorical_mask_tensor = get_mask_first_channel(get_categorical_mask_path(image_path, categorical_masks_dir))
     one_hot_encoded_tensor = tf.one_hot(categorical_mask_tensor, n_classes, dtype=tf.int32)
+    return one_hot_encoded_tensor
+
+
+def one_hot_encode_image_patch_masks(image_patch_path: Path, n_classes: int) -> tf.Tensor:
+    categorical_mask_tensor = stack_image_patch_masks(image_patch_path)
+    one_hot_encoded_tensor = tf.one_hot(categorical_mask_tensor, n_classes + 1, dtype=tf.int32)
     return one_hot_encoded_tensor
 
 

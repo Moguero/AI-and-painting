@@ -1,6 +1,9 @@
+import numpy as np
 from tensorflow import keras
-from deep_learning.models.unet import build_unet, build_unet_2
-from dataset_utils.dataset_builder import get_dataset, get_dataset_2, get_dataset_3
+from tensorflow.keras.optimizers import Adam
+
+from deep_learning.models.unet import build_unet_2
+from dataset_utils.dataset_builder import get_small_dataset, get_small_dataset_2
 from pathlib import Path
 
 IMAGE_PATH = Path("C:/Users:thiba:PycharmProjects:mission_IA_JCS:files:images:_DSC0043:_DSC0043.JPG")
@@ -18,18 +21,23 @@ MASK_PATHS = [
     Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/_DSC0043/feuilles_vertes/mask__DSC0043_feuilles_vertes__3466c2cda646448fbe8f4927f918e247.png"),
     Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/_DSC0061/feuilles_vertes/mask__DSC0061_feuilles_vertes__eef687829eb641c59f63ad80199b0de0.png")
 ]
+PATCHES_DIR = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches")
 IMAGE_TYPE = 'JPG'
-BATCH_SIZE = None
+BATCH_SIZE = 2
+TEST_PROPORTION = 0.2
 
 
 N_CLASSES = 9
-OPTIMIZER = "rmsprop"
-LOSS_FUNCTION = "sparse_categorical_crossentropy"
+N_PATCHES = 10
+INPUT_SHAPE = 256
+# OPTIMIZER = "rmsprop"
+OPTIMIZER = Adam(lr=1e-4)
+LOSS_FUNCTION = "categorical_crossentropy"
 
 
 def main():
     # Define the model
-    model = build_unet_2(N_CLASSES, BATCH_SIZE)
+    model = build_unet_2(N_CLASSES, INPUT_SHAPE, BATCH_SIZE)
 
     # Compile the model
     model.compile(optimizer=OPTIMIZER, loss=LOSS_FUNCTION)
@@ -41,19 +49,24 @@ def main():
     ]
 
     # Data init
-    X, y = get_dataset_3(IMAGE_PATHS, CATEGORICAL_MASKS_DIR, N_CLASSES)
+    # X_train, X_test, y_train, y_test = get_small_dataset(PATCHES_DIR, N_PATCHES, N_CLASSES, BATCH_SIZE)
+    dataset = get_small_dataset_2(PATCHES_DIR, N_PATCHES, N_CLASSES, BATCH_SIZE, TEST_PROPORTION)
+    # todo : generate a test dataset and a train dataset in the get_dataset function
 
     # Fit the model
     epochs = 15
     breakpoint()
-    model.fit(x=X, y=y, epochs=epochs, callbacks=callbacks)
+    # history = model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks)
+    history = model.fit(dataset, epochs=epochs, callbacks=callbacks)
+    # todo : use model.fit but with a generator instead of a Dataset
 
     # Save the model weights in HDF5 format
-    breakpoint()
-    model.save_weights('saved_weights.h5')
+    # model.save_weights('./saved_weights.h5')
 
     # Evaluate the model
-    loss = model.evaluate(X_test, y_test, verbose=0)
+    loss = model.evaluate(X_test, y_test, verbose=1)
 
     # Make a prediction
     predictions = model.predict(X_test)
+    classes = np.argmax(predictions, axis=3)
+    breakpoint()

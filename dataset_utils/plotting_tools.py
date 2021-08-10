@@ -59,3 +59,8 @@ def save_colored_masks_with_background_image(image_path: Path, masks_dir: Path, 
     plt.savefig(output_path, bbox_inches="tight")
 
 
+def plot_image_from_tensor(tensor: tf.Tensor) -> None:
+    image = tensor.numpy()
+    plt.imshow(image)
+    plt.axis("off")
+    plt.show()

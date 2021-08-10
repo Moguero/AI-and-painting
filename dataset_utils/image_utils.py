@@ -5,7 +5,6 @@ from loguru import logger
 from pathlib import Path
 import tensorflow as tf
 
-# from tests.test_labels import test_same_folders_of_images_and_masks, test_same_folders_of_images_and_categorical_masks
 
 IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images")
 MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/all")
@@ -23,12 +22,10 @@ IMAGE_PATH = Path(
     "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/1/1.jpg"
 )
 
+
 IMAGE_SIZE = (160, 160)
 N_CLASSES = 3
 BATCH_SIZE = 32
-
-
-# todo : documenter toutes les fonctions
 
 
 def get_image_name_without_extension(image_path: Path) -> str:
@@ -45,6 +42,22 @@ def get_image_masks_paths(image_path: Path, masks_dir: Path) -> [Path]:
     Remark: If the masks sub directory associated to the images does not exist,
     an AssertionError will be thrown."""
     image_masks_sub_dir = masks_dir / get_image_name_without_extension(image_path)
+    assert (
+        image_masks_sub_dir.exists()
+    ), f"Image masks sub directory {image_masks_sub_dir} does not exist"
+    return [
+        image_masks_sub_dir / class_mask_sub_dir / mask_name
+        for class_mask_sub_dir in image_masks_sub_dir.iterdir()
+        for mask_name in (image_masks_sub_dir / class_mask_sub_dir).iterdir()
+    ]
+
+
+def get_image_patch_masks_paths(image_patch_path: Path):
+    """Get the paths of the image patch masks.
+
+    Remark: If the masks sub directory associated to the image does not exist,
+    an AssertionError will be thrown."""
+    image_masks_sub_dir = image_patch_path.parents[1] / "labels"
     assert (
         image_masks_sub_dir.exists()
     ), f"Image masks sub directory {image_masks_sub_dir} does not exist"
@@ -152,19 +165,6 @@ def get_dir_paths(dir_path: Path) -> [Path]:
 
 def get_images_paths(images_dir: Path) -> [Path]:
     return [image_path for image_dir_path in images_dir.iterdir() for image_path in image_dir_path.iterdir()]
-
-
-def timeit(method):
-    """Decorator to time the execution of a function."""
-
-    def timed(*args, **kw):
-        start_time = time.time()
-        result = method(*args, **kw)
-        end_time = time.time()
-        print(f"{method.__name__} : {int(end_time - start_time)}s to execute")
-        return result
-
-    return timed
 
 
 def group_images_and_all_masks_together(dataset_dir: Path, images_dir: Path, masks_dir: Path, categorical_masks_dir: Path) -> None:

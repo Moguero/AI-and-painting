@@ -11,6 +11,8 @@ from dataset_utils.image_utils import (
 )
 from pathlib import Path
 
+from dataset_utils.masks_encoder import stack_image_patch_masks
+
 MASK_PATH = Path(
     "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/masks/test/mask_angular_logo_lettre.png"
 )
@@ -22,17 +24,22 @@ CATEGORICAL_MASKS_DIR = Path(
     "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks"
 )
 IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images")
-IMAGES_DIR = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/sorted_images/kept/Marie_images")
+IMAGES_DIR = Path(
+    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/sorted_images/kept/Marie_images"
+)
+PATCHES_DIR = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches")
+PATCH_PATH = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches\1\1\image\patch_1.jpg")
+INPUT_SHAPE = 256
 
 
 def count_mask_value_occurences(mask_path: Path) -> {int: float}:
     mask_tensor = decode_image(mask_path)
-    unique_with_count_tensor = tf.unique_with_counts(tf.reshape(mask_tensor[:, :, 0], [-1]))
+    unique_with_count_tensor = tf.unique_with_counts(
+        tf.reshape(mask_tensor[:, :, 0], [-1])
+    )
     values_array = unique_with_count_tensor.y.numpy()
     count_array = unique_with_count_tensor.count.numpy()
-    count_dict = dict(
-        zip(values_array, count_array)
-    )
+    count_dict = dict(zip(values_array, count_array))
     return count_dict
 
 
@@ -40,9 +47,7 @@ def count_mask_value_occurences_of_2d_tensor(tensor: tf.Tensor) -> {int: float}:
     unique_with_count_tensor = tf.unique_with_counts(tf.reshape(tensor, [-1]))
     values_array = unique_with_count_tensor.y.numpy()
     count_array = unique_with_count_tensor.count.numpy()
-    count_dict = dict(
-        zip(values_array, count_array)
-    )
+    count_dict = dict(zip(values_array, count_array))
     return count_dict
 
 
@@ -53,6 +58,17 @@ def count_mask_value_occurences_percent(mask_path: Path) -> {int: float}:
     count_array = unique_with_count_tensor.count.numpy()
     percent_dict = dict(
         zip(values_array, np.round(count_array / count_array.sum(), decimals=3))
+    )
+    return percent_dict
+# todo : test all those 4 functions
+
+
+def count_mask_value_occurences_percent_of_2d_tensor(tensor: tf.Tensor) -> {int: float}:
+    unique_with_count_tensor = tf.unique_with_counts(tf.reshape(tensor, [-1]))
+    values_array = unique_with_count_tensor.y.numpy()
+    count_array = unique_with_count_tensor.count.numpy()
+    percent_dict = dict(
+        zip(values_array, np.round(count_array / count_array.sum() * 100, decimals=3))
     )
     return percent_dict
 
@@ -103,5 +119,6 @@ def get_images_with_shape_different_than(shape: tuple, images_dir: Path):
 def get_image_shape(image_path: Path) -> tuple:
     return tuple(decode_image(image_path).shape)
 
-# get_images_with_shape_different_than((2848, 4288, 3), IMAGES_DIR)
-# dict(Counter([tuple(decode_image(image_path).shape) for image_path in [image_path for image_path in IMAGES_DIR.iterdir()]]))
+
+def count_total_number_of_patches(patches_dir: Path) -> int:
+    return sum([len(list(image_dir.iterdir())) for image_dir in patches_dir.iterdir()])
