@@ -1,4 +1,7 @@
+from pathlib import Path
+
 import tensorflow as tf
+from loguru import logger
 from tensorflow import keras
 from tensorflow.keras import layers
 
@@ -34,8 +37,9 @@ def build_unet(n_classes: int, batch_size: int) -> keras.Model:
     return model
 
 
-def build_unet_2(n_classes: int, input_shape: int, batch_size: int) -> keras.Model:
+def build_small_unet(n_classes: int, input_shape: int, batch_size: int) -> keras.Model:
     """One encoder-decoder level less. Divides by a factor 4 the number of total paramaters of the model."""
+    logger.info("\nStart to build model...")
     inputs = keras.Input(shape=(input_shape, input_shape, 3), batch_size=batch_size)
 
     encoder_block_1, skip_features1 = encoder_block(inputs, 32)
@@ -49,9 +53,9 @@ def build_unet_2(n_classes: int, input_shape: int, batch_size: int) -> keras.Mod
     decoder_block3 = decoder_block(decoder_block2, skip_features1, 32)
 
     outputs = layers.Conv2D(filters=n_classes + 1, kernel_size=1, padding=PADDING_TYPE, activation='sigmoid')(decoder_block3)
-    # outputs = layers.Conv2D(filters=n_classes + 1, kernel_size=1, padding=PADDING_TYPE)(decoder_block3)
 
     model = keras.Model(inputs=inputs, outputs=outputs, name='U-Net')
+    logger.info("\nModel built successfully.")
     return model
 
 
@@ -100,4 +104,9 @@ def get_crop_shape(reference_tensor: tf.Tensor, target_tensor: tf.Tensor) -> tup
     return height_crop_shape, width_crop_shape
 
 
-# todo : implement a model_plotter script to plot tf.keras.utils.plot_model
+def save_plotted_model(model: keras.Model, model_plot_path: Path) -> None:
+    keras.utils.plot_model(
+        model=model,
+        to_file=model_plot_path,
+        show_shapes=True,
+    )

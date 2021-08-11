@@ -4,6 +4,7 @@ import time
 
 OUTPUT_PATH = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\deep_learning\test5.csv")
 TEST_LIST = range(10)
+PATCHES_COVERAGE_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\temp_files\patches_coverage.csv")
 
 
 def save_list_to_csv(list_to_export: list, output_path: Path) -> None:
@@ -46,7 +47,13 @@ def timeit(method):
         start_time = time.time()
         result = method(*args, **kw)
         end_time = time.time()
-        print(f"{method.__name__} : {int(end_time - start_time)}s to execute")
+        n_seconds = int(end_time - start_time)
+        if n_seconds < 60:
+            print(f"{method.__name__} : {n_seconds}s to execute")
+        elif 60 < n_seconds < 3600:
+            print(f"{method.__name__} : {n_seconds // 60}min {n_seconds % 60}s to execute")
+        else:
+            print(f"{method.__name__} : {n_seconds // 3600}h {n_seconds % 3600 // 60}min {n_seconds // 3600 % 60}s to execute")
         return result
 
     return timed

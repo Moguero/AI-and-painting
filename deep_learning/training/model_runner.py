@@ -1,72 +1,105 @@
 import numpy as np
+import tensorflow as tf
+from loguru import logger
 from tensorflow import keras
 from tensorflow.keras.optimizers import Adam
 
-from deep_learning.models.unet import build_unet_2
-from dataset_utils.dataset_builder import get_small_dataset, get_small_dataset_2
+from dataset_utils.file_utils import timeit
+from deep_learning.models.unet import build_small_unet
+from dataset_utils.dataset_builder import get_dataset
 from pathlib import Path
 
-IMAGE_PATH = Path("C:/Users:thiba:PycharmProjects:mission_IA_JCS:files:images:_DSC0043:_DSC0043.JPG")
-MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks")
-CATEGORICAL_MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks")
-IMAGE_PATHS = [
-    Path(
-        "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/1/1.jpg"
-    ),
-    Path(
-        "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0130/_DSC0130.jpg"
-    ),
-]
-MASK_PATHS = [
-    Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/_DSC0043/feuilles_vertes/mask__DSC0043_feuilles_vertes__3466c2cda646448fbe8f4927f918e247.png"),
-    Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/_DSC0061/feuilles_vertes/mask__DSC0061_feuilles_vertes__eef687829eb641c59f63ad80199b0de0.png")
-]
-PATCHES_DIR = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches")
-IMAGE_TYPE = 'JPG'
+
+CHECKPOINT_PATH = Path(
+    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\checkpoints\cp.ckpt"
+)
+CHECKPOINT_DIR_PATH = Path(
+    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\checkpoints"
+)
+MODEL_PLOT_PATH = Path(
+    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\models\model.png"
+)
+SAVED_PATCHES_COVERAGE_PERCENT_PATH = Path(
+    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\temp_files\patches_coverage.csv"
+)
+
 BATCH_SIZE = 2
 TEST_PROPORTION = 0.2
-
-
+PATCH_COVERAGE_PERCENT_LIMIT = 75
 N_CLASSES = 9
-N_PATCHES = 10
+N_PATCHES_LIMIT = 10
 INPUT_SHAPE = 256
 # OPTIMIZER = "rmsprop"
 OPTIMIZER = Adam(lr=1e-4)
 LOSS_FUNCTION = "categorical_crossentropy"
+METRICS = ["accuracy"]
+EPOCHS = 5
 
 
+@timeit
 def main():
     # Define the model
-    model = build_unet_2(N_CLASSES, INPUT_SHAPE, BATCH_SIZE)
+    model = build_small_unet(N_CLASSES, INPUT_SHAPE, BATCH_SIZE)
 
     # Compile the model
-    model.compile(optimizer=OPTIMIZER, loss=LOSS_FUNCTION)
-    # model.compile(optimizer=Adam(lr=1e-4), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=OPTIMIZER, loss=LOSS_FUNCTION, metrics=METRICS)
 
     # Init the callbacks
     callbacks = [
-        keras.callbacks.ModelCheckpoint("my_checkpoint.h5", save_best_only=True)
+        keras.callbacks.ModelCheckpoint(
+            filepath=CHECKPOINT_PATH, verbose=1, save_weights_only=True
+        )
     ]
 
-    # Data init
-    # X_train, X_test, y_train, y_test = get_small_dataset(PATCHES_DIR, N_PATCHES, N_CLASSES, BATCH_SIZE)
-    dataset = get_small_dataset_2(PATCHES_DIR, N_PATCHES, N_CLASSES, BATCH_SIZE, TEST_PROPORTION)
-    # todo : generate a test dataset and a train dataset in the get_dataset function
-
-    # Fit the model
-    epochs = 15
+    # Init dataset
+    train_dataset, test_dataset = get_dataset(
+        n_patches_limit=N_PATCHES_LIMIT,
+        n_classes=N_CLASSES,
+        batch_size=BATCH_SIZE,
+        test_proportion=TEST_PROPORTION,
+        patch_coverage_percent_limit=PATCH_COVERAGE_PERCENT_LIMIT,
+        saved_patches_coverage_percent_path=SAVED_PATCHES_COVERAGE_PERCENT_PATH,
+    )
     breakpoint()
-    # history = model.fit(x=X_train, y=y_train, epochs=epochs, callbacks=callbacks)
-    history = model.fit(dataset, epochs=epochs, callbacks=callbacks)
-    # todo : use model.fit but with a generator instead of a Dataset
 
-    # Save the model weights in HDF5 format
-    # model.save_weights('./saved_weights.h5')
+    # todo : use model.fit but with a generator instead of a Dataset
+    # Fit the model
+    logger.info("\nStart model training...")
+    history = model.fit(train_dataset, epochs=EPOCHS, callbacks=callbacks)
+    logger.info("\nEnd of model training.")
 
     # Evaluate the model
-    loss = model.evaluate(X_test, y_test, verbose=1)
+    loss, accuracy = model.evaluate(test_dataset, verbose=1)
 
-    # Make a prediction
-    predictions = model.predict(X_test)
+    # Make predictions
+    predictions = model.predict(test_dataset)
     classes = np.argmax(predictions, axis=3)
+
     breakpoint()
+
+
+def make_predictions(target_image_path, patch_size: int):
+    # cut the image into patches of size patch_size
+
+    # build the model
+
+    # apply saved weights to the built model
+
+    # format the image patches to feed the model.predict function
+
+    # make predictions on the patches
+
+    # remove background predictions so it we take the max on the non background classes
+
+    # rebuild the image with the predictions patches
+
+    # export the predicted image
+
+    pass
+
+
+def load_saved_model():
+    model = build_small_unet(N_CLASSES, INPUT_SHAPE, BATCH_SIZE)
+    filepath = tf.train.latest_checkpoint(checkpoint_dir=CHECKPOINT_DIR_PATH)
+    model.load_weights(filepath=filepath)
+    # the warnings logs due to load_weights are here because we don't train (compile/fit) after : they disappear if we do
