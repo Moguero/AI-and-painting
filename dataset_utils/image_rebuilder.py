@@ -40,4 +40,31 @@ def rebuild_image(image_patches_dir: Path, original_image_path: Path, patch_size
     return rebuilt_tensor
 
 
+def rebuild_predictions(predictions_patches: [tf.Tensor], target_image_path: Path, patch_size: int) -> tf.Tensor:
+    original_image_tensor = decode_image(target_image_path)
+    n_horizontal_patches = original_image_tensor.shape[0] // patch_size
+    n_vertical_patches = original_image_tensor.shape[1] // patch_size
+
+    assert n_horizontal_patches * n_vertical_patches == len(
+        predictions_patches
+    ), f"The number of patches is not the same : original image should have {n_vertical_patches*n_horizontal_patches} while we have {len(predictions_patches)} "
+
+    logger.info("\nRebuilding predictions patches...")
+    for row_number in range(n_horizontal_patches):
+        for column_number in range(n_vertical_patches):
+            patch_number = row_number * n_vertical_patches + column_number
+            prediction_patch = predictions_patches[patch_number]
+            if column_number == 0:
+                line_rebuilt_tensor = prediction_patch
+            else:
+                line_rebuilt_tensor = tf.concat([line_rebuilt_tensor, prediction_patch], axis=1)
+        if row_number == 0:
+            rebuilt_tensor = line_rebuilt_tensor
+        else:
+            rebuilt_tensor = tf.concat([rebuilt_tensor, line_rebuilt_tensor], axis=0)
+    logger.info(f"\nFull image predictions has been successfully built with size {rebuilt_tensor.shape} (original image size : {original_image_tensor.shape})")
+    return rebuilt_tensor
+
+
+
 # rebuild_image(IMAGE_PATCHES_DIR, ORIGINAL_IMAGE_PATH, PATCH_SIZE)

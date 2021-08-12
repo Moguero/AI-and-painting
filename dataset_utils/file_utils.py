@@ -45,6 +45,7 @@ def timeit(method):
 
     def timed(*args, **kw):
         start_time = time.time()
+        print(f"Starting execution of {method.__name__}.")
         result = method(*args, **kw)
         end_time = time.time()
         n_seconds = int(end_time - start_time)
@@ -57,3 +58,7 @@ def timeit(method):
         return result
 
     return timed
+
+
+def get_formatted_time():
+    return time.strftime("%Y_%m_%d__%H_%M_%S", time.localtime())

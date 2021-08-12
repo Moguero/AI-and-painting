@@ -39,7 +39,6 @@ def build_unet(n_classes: int, batch_size: int) -> keras.Model:
 
 def build_small_unet(n_classes: int, input_shape: int, batch_size: int) -> keras.Model:
     """One encoder-decoder level less. Divides by a factor 4 the number of total paramaters of the model."""
-    logger.info("\nStart to build model...")
     inputs = keras.Input(shape=(input_shape, input_shape, 3), batch_size=batch_size)
 
     encoder_block_1, skip_features1 = encoder_block(inputs, 32)
@@ -55,7 +54,6 @@ def build_small_unet(n_classes: int, input_shape: int, batch_size: int) -> keras
     outputs = layers.Conv2D(filters=n_classes + 1, kernel_size=1, padding=PADDING_TYPE, activation='sigmoid')(decoder_block3)
 
     model = keras.Model(inputs=inputs, outputs=outputs, name='U-Net')
-    logger.info("\nModel built successfully.")
     return model
 
 

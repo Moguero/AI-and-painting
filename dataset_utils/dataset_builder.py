@@ -7,6 +7,7 @@ from tqdm import tqdm
 from dataset_utils.file_utils import timeit
 from dataset_utils.image_utils import decode_image
 from dataset_utils.masks_encoder import one_hot_encode_image_patch_masks
+from deep_learning.patches_generator import extract_image_patches
 from deep_learning.patches_sorter import get_patches_above_coverage_percent_limit
 
 
@@ -19,6 +20,8 @@ PATCHES_DIR = Path(
 SAVED_PATCHES_COVERAGE_PERCENT_PATH = Path(
     r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\temp_files\patches_coverage.csv"
 )
+TARGET_IMAGE_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\images\_DSC0048\_DSC0048.jpg")
+PATCH_SIZE = 256
 BATCH_SIZE = 2
 N_CLASSES = 9
 N_PATCHES = 10
@@ -73,6 +76,19 @@ def get_dataset(
 
     logger.info("\nDataset built successfully.")
     return train_dataset, test_dataset
+
+
+# todo : don't hardcode the batch_size to 1
+def build_predictions_dataset(target_image_path: Path, patch_size: int) -> tf.data.Dataset:
+    logger.info("\nSlice the image into patches...")
+    image_patches_tensors: list = extract_image_patches(
+        image_path=target_image_path,
+        patch_size=patch_size,
+    )
+    prediction_dataset = tf.data.Dataset.from_tensor_slices(image_patches_tensors)
+    prediction_dataset = prediction_dataset.batch(batch_size=1, drop_remainder=True)
+    logger.info(f"\n{len(prediction_dataset)} patches created successfully.")
+    return prediction_dataset
 
 
 def get_dataset_generator(dataset: tf.data.Dataset) -> tf.data.Iterator:

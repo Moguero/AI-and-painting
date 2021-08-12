@@ -23,8 +23,6 @@ CATEGORICAL_MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/file
 MASKS_DIR = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\labels_masks\all")
 
 
-# todo : add padding to the images if its shape is not a multiple of the patch_size
-# todo : save this padding in the labels_masking not to train on it
 def extract_image_patches(
     image_path: Path,
     patch_size: int,

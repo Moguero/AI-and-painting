@@ -1,9 +1,13 @@
+import ast
 from collections import Counter
 
 import numpy as np
 import tensorflow as tf
 import os
 
+from tqdm import tqdm
+
+from dataset_utils.file_utils import save_dict_to_csv, load_saved_dict
 from dataset_utils.image_utils import (
     decode_image,
     get_images_paths,
@@ -11,7 +15,7 @@ from dataset_utils.image_utils import (
 )
 from pathlib import Path
 
-from dataset_utils.masks_encoder import stack_image_patch_masks
+from dataset_utils.masks_encoder import stack_image_patch_masks, stack_image_masks
 
 MASK_PATH = Path(
     "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/masks/test/mask_angular_logo_lettre.png"
@@ -19,17 +23,24 @@ MASK_PATH = Path(
 IMAGE_PATH = Path(
     "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/1/1.png"
 )
-MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/all")
-CATEGORICAL_MASKS_DIR = Path(
-    "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks"
+MASKS_DIR = Path(
+    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/files/labels_masks/all"
 )
-IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images")
+CATEGORICAL_MASKS_DIR = Path(
+    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/files/categorical_masks"
+)
 IMAGES_DIR = Path(
-    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/sorted_images/kept/Marie_images"
+    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/files/images"
 )
 PATCHES_DIR = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches")
-PATCH_PATH = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches\1\1\image\patch_1.jpg")
+PATCH_PATH = Path(
+    r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches\1\1\image\patch_1.jpg"
+)
+COUNT_ALL_CATEGORICAL_MASK_IRREGULAR_PIXELS_OUTPUT_PATH = Path(
+    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\temp_files\categorical_mask_irregular_pixels_count.csv"
+)
 INPUT_SHAPE = 256
+N_CLASSES = 9
 
 
 def count_mask_value_occurences(mask_path: Path) -> {int: float}:
@@ -60,6 +71,8 @@ def count_mask_value_occurences_percent(mask_path: Path) -> {int: float}:
         zip(values_array, np.round(count_array / count_array.sum(), decimals=3))
     )
     return percent_dict
+
+
 # todo : test all those 4 functions
 
 
@@ -122,3 +135,58 @@ def get_image_shape(image_path: Path) -> tuple:
 
 def count_total_number_of_patches(patches_dir: Path) -> int:
     return sum([len(list(image_dir.iterdir())) for image_dir in patches_dir.iterdir()])
+
+
+def count_mask_value_occurences_of_categorical_mask(
+    image_path: Path, masks_dir: Path
+) -> {int: float}:
+    return count_mask_value_occurences_of_2d_tensor(
+        stack_image_masks(image_path, masks_dir)
+    )
+
+
+def count_categorical_mask_irregular_pixels(
+    image_path: Path, masks_dir: Path, n_classes
+) -> {int: int}:
+    mask_value_occurences_of_categorical_mask_dict = (
+        count_mask_value_occurences_of_categorical_mask(image_path, masks_dir)
+    )
+    irregular_pixels_dict = {
+        key: value
+        for key, value in mask_value_occurences_of_categorical_mask_dict.items()
+        if key > n_classes
+    }
+    return irregular_pixels_dict
+
+
+def save_count_all_categorical_mask_irregular_pixels(
+    images_dir_path: Path, masks_dir: Path, n_classes: int, output_path: Path
+) -> None:
+    dict_to_save = {
+        image_path: count_categorical_mask_irregular_pixels(
+            image_path, masks_dir, n_classes
+        )
+        for image_path in tqdm(
+            get_images_paths(images_dir_path),
+            desc="Counting all categorical masks irregular pixels...",
+            colour="yellow",
+        )
+    }
+    save_dict_to_csv(dict_to_save, output_path)
+
+
+def get_image_with_more_than_irregular_pixels_limit(
+    irregular_pixels_limit: int,
+    all_categorical_mask_irregular_pixels_count_save_path: Path,
+):
+    saved_dict = load_saved_dict(all_categorical_mask_irregular_pixels_count_save_path)
+    irregular_pixel_count_dict = {
+        image_path: sum(ast.literal_eval(count_dict).values())
+        for image_path, count_dict in saved_dict.items()
+    }
+    filtered_with_count_limit_dict = {
+        image_path: count
+        for image_path, count in irregular_pixel_count_dict.items()
+        if count > irregular_pixels_limit
+    }
+    return filtered_with_count_limit_dict

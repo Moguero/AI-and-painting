@@ -14,16 +14,16 @@ MAPPING_CLASS_NUMBER = {
 
 
 PALETTE_HEXA = {
-    "background": "#DCDCDC",  #gainsboro
-    "poils-cheveux": "#8B6914",  #goldenrod4
-    "vetements": "#BF3EFF", #darkorchid1
-    "peau": "#FF7D40",  #flesh
-    "bois-tronc": "#E3CF57",  #banana
-    "ciel": "#6495ED",  #cornerflowblue
-    "feuilles-vertes": "#458B00",  #chartreuse4
-    "herbe": "#7FFF00",  #chartreuse1
-    "eau": "#00FFFF",  #aqua
-    "roche": "#FF6103"  #cadmiumorange
+    0: "#DCDCDC",  #gainsboro
+    1: "#8B6914",  #goldenrod4
+    2: "#BF3EFF", #darkorchid1
+    3: "#FF7D40",  #flesh
+    4: "#E3CF57",  #banana
+    5: "#6495ED",  #cornerflowblue
+    6: "#458B00",  #chartreuse4
+    7: "#7FFF00",  #chartreuse1
+    8: "#00FFFF",  #aqua
+    9: "#FF0000"  #red
 }
 
 
@@ -32,10 +32,19 @@ MASK_TRUE_VALUE = 255
 MASK_FALSE_VALUE = 0
 
 
-def turn_hexadecimal_color_into_rgb_list(hexadecimal_color: str) -> [int]:
+def turn_hexadecimal_color_into_nomalized_rgb_list(hexadecimal_color: str) -> [int]:
     hexadecimal_color = hexadecimal_color.lstrip("#")
     return tuple(int(hexadecimal_color[i:i+2], 16) / 255 for i in (0, 2, 4))
 
+
+def turn_hexadecimal_color_into_rgb_list(hexadecimal_color: str) -> [int]:
+    hexadecimal_color = hexadecimal_color.lstrip("#")
+    return tuple(int(hexadecimal_color[i:i+2], 16) for i in (0, 2, 4))
+
+
+PALETTE_RGB_NORMALIZED = {
+    key: turn_hexadecimal_color_into_nomalized_rgb_list(value) for key, value in PALETTE_HEXA.items()
+}
 
 PALETTE_RGB = {
     key: turn_hexadecimal_color_into_rgb_list(value) for key, value in PALETTE_HEXA.items()
