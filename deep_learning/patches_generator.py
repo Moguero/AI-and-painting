@@ -2,6 +2,7 @@ import time
 from pathlib import Path
 import tensorflow as tf
 from loguru import logger
+from tqdm import tqdm
 
 from dataset_utils.image_utils import (
     decode_image,
@@ -132,7 +133,7 @@ def save_all_images_and_labels_patches(
     logger.info("\nStarting to save images and labels patches...")
     start_time = time.time()
     image_dir_paths = get_images_paths(images_dir)
-    for image_path in image_dir_paths:
+    for image_path in tqdm(image_dir_paths):
         save_image_and_labels_patches(image_path, masks_dir, images_patches_dir_path, patch_size, padding)
     logger.info(
         f"\nImages and labels patches saving finished in {(time.time() - start_time)/60:.1f} minutes.\n"
