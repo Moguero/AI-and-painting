@@ -7,38 +7,35 @@ import os
 
 from tqdm import tqdm
 
+from constants import MASK_FALSE_VALUE, MASK_TRUE_VALUE
 from dataset_utils.file_utils import save_dict_to_csv, load_saved_dict
 from dataset_utils.image_utils import (
     decode_image,
     get_images_paths,
     get_file_name_with_extension,
+    get_image_masks_paths, get_image_patch_masks_paths,
 )
 from pathlib import Path
+from dataset_utils.masks_encoder import stack_image_masks
 
-from dataset_utils.masks_encoder import stack_image_patch_masks, stack_image_masks
 
-MASK_PATH = Path(
-    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/masks/test/mask_angular_logo_lettre.png"
+# DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+DATA_DIR_ROOT = Path(
+    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/files"
 )
-IMAGE_PATH = Path(
-    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/1/1.png"
+
+IMAGE_PATH = DATA_DIR_ROOT / "images/1/1.png"
+# MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
+MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
+IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
+PATCHES_DIR = DATA_DIR_ROOT / "patches"
+COUNT_ALL_CATEGORICAL_MASK_IRREGULAR_PIXELS_OUTPUT_PATH = (
+    DATA_DIR_ROOT / "temp_files\categorical_mask_irregular_pixels_count.csv"
 )
-MASKS_DIR = Path(
-    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/files/labels_masks/all"
+ALL_MASKS_OVERLAP_INDICES_OUTPUT_PATH = (
+    DATA_DIR_ROOT / "temp_files/all_masks_overlap_indices.csv"
 )
-CATEGORICAL_MASKS_DIR = Path(
-    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/files/categorical_masks"
-)
-IMAGES_DIR = Path(
-    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/files/images"
-)
-PATCHES_DIR = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches")
-PATCH_PATH = Path(
-    r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches\1\1\image\patch_1.jpg"
-)
-COUNT_ALL_CATEGORICAL_MASK_IRREGULAR_PIXELS_OUTPUT_PATH = Path(
-    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\temp_files\categorical_mask_irregular_pixels_count.csv"
-)
+ALL_PATCH_MASKS_OVERLAP_INDICES_PATH = DATA_DIR_ROOT / "temp_files/all_patch_masks_overlap_indices.csv"
 INPUT_SHAPE = 256
 N_CLASSES = 9
 
@@ -138,18 +135,18 @@ def count_total_number_of_patches(patches_dir: Path) -> int:
 
 
 def count_mask_value_occurences_of_categorical_mask(
-    image_path: Path, masks_dir: Path
+    image_path: Path, masks_dir: Path, all_patch_masks_overlap_indices_path: Path
 ) -> {int: float}:
     return count_mask_value_occurences_of_2d_tensor(
-        stack_image_masks(image_path, masks_dir)
+        stack_image_masks(image_path, masks_dir, all_patch_masks_overlap_indices_path)
     )
 
 
 def count_categorical_mask_irregular_pixels(
-    image_path: Path, masks_dir: Path, n_classes
+    image_path: Path, masks_dir: Path, n_classes, all_patch_masks_overlap_indices_path: Path
 ) -> {int: int}:
     mask_value_occurences_of_categorical_mask_dict = (
-        count_mask_value_occurences_of_categorical_mask(image_path, masks_dir)
+        count_mask_value_occurences_of_categorical_mask(image_path, masks_dir, all_patch_masks_overlap_indices_path)
     )
     irregular_pixels_dict = {
         key: value
@@ -160,11 +157,11 @@ def count_categorical_mask_irregular_pixels(
 
 
 def save_count_all_categorical_mask_irregular_pixels(
-    images_dir_path: Path, masks_dir: Path, n_classes: int, output_path: Path
+    images_dir_path: Path, masks_dir: Path, n_classes: int, output_path: Path, all_patch_masks_overlap_indices_path: Path
 ) -> None:
     dict_to_save = {
         image_path: count_categorical_mask_irregular_pixels(
-            image_path, masks_dir, n_classes
+            image_path, masks_dir, n_classes, all_patch_masks_overlap_indices_path
         )
         for image_path in tqdm(
             get_images_paths(images_dir_path),
@@ -172,6 +169,7 @@ def save_count_all_categorical_mask_irregular_pixels(
             colour="yellow",
         )
     }
+    breakpoint()
     save_dict_to_csv(dict_to_save, output_path)
 
 
@@ -190,3 +188,105 @@ def get_image_with_more_than_irregular_pixels_limit(
         if count > irregular_pixels_limit
     }
     return filtered_with_count_limit_dict
+
+
+def save_all_masks_overlap_indices(
+    images_dir_path: Path, masks_dir: Path, output_path
+) -> None:
+    masks_overlap_indices_dict = dict()
+    for image_dir_path in tqdm(
+        images_dir_path.iterdir(), desc="Getting overlap indices...", colour="yellow"
+    ):
+        for image_path in image_dir_path.iterdir(): # loop of size 1
+            image_masks_paths = get_image_masks_paths(image_path, masks_dir)
+            if len(image_masks_paths) != 1:
+                shape = decode_image(image_masks_paths[0])[:, :, 0].shape
+                stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
+                for mask_path in image_masks_paths:
+                    stacked_tensor = tf.math.add(
+                        stacked_tensor, tf.cast(decode_image(mask_path)[:, :, 0], tf.int32)
+                    )
+                stacked_values = list(
+                    tf.unique_with_counts(tf.reshape(stacked_tensor, [-1])).y.numpy()
+                )
+                values_with_count_dict = count_mask_value_occurences_of_2d_tensor(
+                    stacked_tensor
+                )
+                masks_overlap_indices_dict[image_path] = {
+                    "n_overlap_indices": sum(
+                        [
+                            value
+                            for key, value in values_with_count_dict.items()
+                            if key != MASK_FALSE_VALUE and key != MASK_TRUE_VALUE
+                        ]
+                    ),
+                    "problematic_indices": [
+                        item
+                        for indices_list in [
+                            tf.where(tf.equal(stacked_tensor, value)).numpy().tolist()
+                            for value in set(stacked_values)
+                            - {MASK_FALSE_VALUE, MASK_TRUE_VALUE}
+                        ]
+                        for item in indices_list
+                    ],
+                }
+    save_dict_to_csv(masks_overlap_indices_dict, output_path)
+
+
+def save_all_patch_masks_overlap_indices(
+    image_patches_dir_path: Path, output_path
+) -> None:
+    masks_overlap_indices_dict = dict()
+    for image_dir_path in tqdm(
+        image_patches_dir_path.iterdir(), desc="Getting overlap indices...", colour="yellow"
+    ):
+        for patch_dir_path in image_dir_path.iterdir():
+            for patch_path in (patch_dir_path / "image").iterdir(): # loop of size 1
+                image_masks_paths = get_image_patch_masks_paths(patch_path)
+                if len(image_masks_paths) != 1:
+                    shape = decode_image(image_masks_paths[0])[:, :, 0].shape
+                    stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
+                    for mask_path in image_masks_paths:
+                        stacked_tensor = tf.math.add(
+                            stacked_tensor, tf.cast(decode_image(mask_path)[:, :, 0], tf.int32)
+                        )
+                    stacked_values = list(
+                        tf.unique_with_counts(tf.reshape(stacked_tensor, [-1])).y.numpy()
+                    )
+                    values_with_count_dict = count_mask_value_occurences_of_2d_tensor(
+                        stacked_tensor
+                    )
+                    masks_overlap_indices_dict[patch_path] = {
+                        "n_overlap_indices": sum(
+                            [
+                                value
+                                for key, value in values_with_count_dict.items()
+                                if key != MASK_FALSE_VALUE and key != MASK_TRUE_VALUE
+                            ]
+                        ),
+                        "problematic_indices": [
+                            item
+                            for indices_list in [
+                                tf.where(tf.equal(stacked_tensor, value)).numpy().tolist()
+                                for value in set(stacked_values)
+                                - {MASK_FALSE_VALUE, MASK_TRUE_VALUE}
+                            ]
+                            for item in indices_list
+                        ],
+                    }
+    breakpoint()
+    save_dict_to_csv(masks_overlap_indices_dict, output_path)
+
+
+def count_all_irregular_pixels(
+    all_masks_overlap_indices_path: Path,
+):
+    all_masks_overlap_indices_dict = load_saved_dict(all_masks_overlap_indices_path)
+    return sum(
+        [
+            value
+            for image_path, masks_overlap_indices_dict in all_masks_overlap_indices_dict.items()
+            for key, value in ast.literal_eval(masks_overlap_indices_dict).items()
+            if key == "n_overlap_indices"
+        ]
+    )

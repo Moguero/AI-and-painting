@@ -1,5 +1,8 @@
+import ast
+
 from loguru import logger
 
+from dataset_utils.file_utils import load_saved_dict
 from dataset_utils.image_utils import (
     get_image_masks_paths,
     get_mask_class,
@@ -12,7 +15,9 @@ import tensorflow as tf
 from dataset_utils.image_utils import decode_image
 from constants import MAPPING_CLASS_NUMBER, MASK_TRUE_VALUE, MASK_FALSE_VALUE
 
-IMAGE_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\images\_DSC0050\_DSC0050.jpg")
+IMAGE_PATH = Path(
+    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\images\_DSC0050\_DSC0050.jpg"
+)
 MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/all")
 MASK_PATH = Path(
     r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\labels_masks\all\1\feuilles-vertes\mask_1_feuilles-vertes__090f44ab03ee43d7aaabe92aa58b06c1.png"
@@ -31,6 +36,9 @@ CATEGORICAL_MASK_PATH = Path(
 IMAGE_PATCH_PATH = Path(
     r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches\1\1\image\patch_1.jpg"
 )
+ALL_PATCH_MASKS_OVERLAP_INDICES_PATH = Path(
+    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\temp_files\all_patch_masks_overlap_indices.csv"
+)
 
 
 def get_mask_first_channel(mask_path: Path) -> tf.Tensor:
@@ -38,7 +46,9 @@ def get_mask_first_channel(mask_path: Path) -> tf.Tensor:
     return decoded_image[:, :, 0]
 
 
-def stack_image_patch_masks(image_patch_path: Path) -> tf.Tensor:
+def stack_image_patch_masks(
+    image_patch_path: Path, all_patch_masks_overlap_indices_path: Path
+) -> tf.Tensor:
     """Fetches the images mask first channels, transform it into a categorical tensor and add the categorical together."""
     image_masks_paths = get_image_patch_masks_paths(image_patch_path)
     shape = get_mask_first_channel(image_masks_paths[0]).shape
@@ -46,13 +56,31 @@ def stack_image_patch_masks(image_patch_path: Path) -> tf.Tensor:
     for mask_path in image_masks_paths:
         categorical_tensor = turn_mask_into_categorical_tensor(mask_path)
         stacked_tensor = tf.math.add(stacked_tensor, categorical_tensor)
+
+    # setting the irregular pixels to background class
+    all_patch_masks_overlap_indices_dict = load_saved_dict(
+        all_patch_masks_overlap_indices_path
+    )
+    problematic_indices_list = ast.literal_eval(
+        all_patch_masks_overlap_indices_dict[str(image_patch_path)]
+    )["problematic_indices"]
+    if problematic_indices_list:
+        categorical_array = stacked_tensor.numpy()
+        for pixels_coordinates in problematic_indices_list:
+            categorical_array[
+                pixels_coordinates[0], pixels_coordinates[1]
+            ] = MAPPING_CLASS_NUMBER["background"]
+        stacked_tensor = tf.constant(categorical_array, dtype=tf.int32)
+
     return stacked_tensor
 
 
 def one_hot_encode_image_patch_masks(
-    image_patch_path: Path, n_classes: int
+    image_patch_path: Path, n_classes: int, all_masks_overlap_indices_path: Path
 ) -> tf.Tensor:
-    categorical_mask_tensor = stack_image_patch_masks(image_patch_path)
+    categorical_mask_tensor = stack_image_patch_masks(
+        image_patch_path, all_masks_overlap_indices_path
+    )
     one_hot_encoded_tensor = tf.one_hot(
         categorical_mask_tensor, n_classes + 1, dtype=tf.int32
     )
@@ -74,20 +102,6 @@ def save_tensor_to_jpg(tensor: tf.Tensor, output_filepath: Path) -> None:
     )
 
 
-# todo : delete
-def stack_image_masks(image_path: Path, masks_dir: Path) -> tf.Tensor:
-    """Fetches the images mask first channels, transform it into a categorical tensor and add the categorical together."""
-    image_masks_paths = get_image_masks_paths(image_path, masks_dir)
-    shape = get_mask_first_channel(image_masks_paths[0]).shape
-    stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
-    for mask_path in image_masks_paths:
-        categorical_tensor = turn_mask_into_categorical_tensor(mask_path)
-        stacked_tensor = tf.math.add(stacked_tensor, categorical_tensor)
-    return stacked_tensor
-
-
-# todo : tackle the case where we have 10, 11 appearing by creating image_tensor :
-#  due to overlap glitch for a couple of pixels
 def turn_mask_into_categorical_tensor(mask_path: Path) -> tf.Tensor:
     tensor_first_channel = get_mask_first_channel(mask_path)
     mask_class = get_mask_class(mask_path)
@@ -98,6 +112,35 @@ def turn_mask_into_categorical_tensor(mask_path: Path) -> tf.Tensor:
         MASK_FALSE_VALUE,
     )
     return categorical_tensor
+
+
+def stack_image_masks(
+    image_path: Path, masks_dir: Path, all_patch_masks_overlap_indices_path: Path
+) -> tf.Tensor:
+    """Fetches the images mask first channels, transform it into a categorical tensor and add the categorical together."""
+    image_masks_paths = get_image_masks_paths(image_path, masks_dir)
+    shape = get_mask_first_channel(image_masks_paths[0]).shape
+    stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
+    for mask_path in image_masks_paths:
+        categorical_tensor = turn_mask_into_categorical_tensor(mask_path)
+        stacked_tensor = tf.math.add(stacked_tensor, categorical_tensor)
+
+    # setting the irregular pixels to background class
+    all_patch_masks_overlap_indices_dict = load_saved_dict(
+        all_patch_masks_overlap_indices_path
+    )
+    problematic_indices_list = ast.literal_eval(
+        all_patch_masks_overlap_indices_dict[str(image_path)]
+    )["problematic_indices"]
+    if problematic_indices_list:
+        categorical_array = stacked_tensor.numpy()
+        for pixels_coordinates in problematic_indices_list:
+            categorical_array[
+                pixels_coordinates[0], pixels_coordinates[1]
+            ] = MAPPING_CLASS_NUMBER["background"]
+        stacked_tensor = tf.constant(categorical_array, dtype=tf.int32)
+
+    return stacked_tensor
 
 
 # todo : delete
@@ -115,20 +158,31 @@ def one_hot_encode_image_masks(
 
 # todo : delete
 def save_categorical_mask(
-    image_path: Path, masks_dir: Path, output_filepath: Path
+    image_path: Path,
+    masks_dir: Path,
+    output_filepath: Path,
+    all_patch_masks_overlap_indices_path: Path,
 ) -> None:
     """Encode a categorical tensor into a png."""
     stacked_image_tensor = tf.expand_dims(
-        tf.cast(stack_image_masks(image_path, masks_dir), tf.uint8), -1
+        tf.cast(
+            stack_image_masks(
+                image_path, masks_dir, all_patch_masks_overlap_indices_path
+            ),
+            tf.uint8,
+        ),
+        -1,
     )
     save_tensor_to_jpg(stacked_image_tensor, output_filepath)
     logger.info(f"\nCategorical mask {output_filepath} was saved successfully.")
 
 
 # todo: delete
-# todo : mkdir in the save_categorical_mask function instead of the save_all one
 def save_all_categorical_masks(
-    images_dir: Path, masks_dir: Path, categorical_masks_dir: Path
+    images_dir: Path,
+    masks_dir: Path,
+    categorical_masks_dir: Path,
+    all_patch_masks_overlap_indices_path: Path,
 ) -> None:
     image_dir_paths = get_images_paths(images_dir)
     for image_path in image_dir_paths:
@@ -138,7 +192,9 @@ def save_all_categorical_masks(
             output_sub_dir.mkdir()
             logger.info(f"\nSub folder {output_sub_dir} was created.")
         output_path = output_sub_dir / ("categorical_mask__" + image_name + ".jpg")
-        save_categorical_mask(image_path, masks_dir, output_path)
+        save_categorical_mask(
+            image_path, masks_dir, output_path, all_patch_masks_overlap_indices_path
+        )
 
 
 # todo: delete

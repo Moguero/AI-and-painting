@@ -12,9 +12,9 @@ from dataset_utils.image_utils import (
 from dataset_utils.image_utils import get_image_masks_paths
 from labelbox_utils.mask_downloader import get_full_json
 
-IMAGE_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/1/1.jpg")
+IMAGE_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\images\_DSC0030\_DSC0030.jpg")
+MASKS_DIR = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\labels_masks\all")
 IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/")
-MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/all")
 CATEGORICAL_MASKS_DIR = Path(
     "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks/"
 )

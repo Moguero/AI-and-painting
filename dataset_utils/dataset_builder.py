@@ -21,6 +21,7 @@ SAVED_PATCHES_COVERAGE_PERCENT_PATH = Path(
     r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\temp_files\patches_coverage.csv"
 )
 TARGET_IMAGE_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\images\_DSC0048\_DSC0048.jpg")
+ALL_MASKS_OVERLAP_INDICES_PATH = Path(r"")
 PATCH_SIZE = 256
 BATCH_SIZE = 2
 N_CLASSES = 9
@@ -37,6 +38,7 @@ def get_dataset(
     test_proportion: float,
     patch_coverage_percent_limit: int,
     saved_patches_coverage_percent_path: Path,
+    all_masks_overlap_indices_path: Path
 ) -> [tf.Tensor]:
     assert (
         0 <= test_proportion < 1
@@ -60,6 +62,7 @@ def get_dataset(
         one_hot_encode_image_patch_masks(
             image_patch_path=Path(image_patch_path),
             n_classes=n_classes,
+            all_masks_overlap_indices_path=all_masks_overlap_indices_path
         )
         for image_patch_path in tqdm(image_patches_paths, desc="Loading mask tensors")
     ]
@@ -104,6 +107,7 @@ def get_train_and_test_dataset_iterators():
         test_proportion=TEST_PROPORTION,
         patch_coverage_percent_limit=PATCH_COVERAGE_PERCENT_LIMIT,
         saved_patches_coverage_percent_path=SAVED_PATCHES_COVERAGE_PERCENT_PATH,
+        all_masks_overlap_indices_path=ALL_MASKS_OVERLAP_INDICES_PATH
     )
     train_generator, test_generator = get_dataset_generator(
         train_dataset

@@ -10,17 +10,15 @@ from dataset_utils.image_utils import (
 )
 from dataset_utils.masks_encoder import save_tensor_to_jpg
 
-IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images")
-IMAGES_PATCHES_DIR_PATH = Path(
-    "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/patches"
-)
-IMAGE_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/1/1.jpg")
-OUTPUT_DIR_PATH = Path(
-    "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/patches/"
-)
+
+DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+# DATA_DIR_ROOT = Path(r"C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/")
+IMAGES_DIR = DATA_DIR_ROOT / "images"
+IMAGES_PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches"
+IMAGE_PATH = DATA_DIR_ROOT / "images/1/1.jpg"
+# MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
+MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
 PATCH_SIZE = 256
-CATEGORICAL_MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks")
-MASKS_DIR = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\labels_masks\all")
 
 
 def extract_image_patches(

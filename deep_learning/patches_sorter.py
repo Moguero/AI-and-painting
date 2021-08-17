@@ -28,10 +28,13 @@ IMAGE_PATCH_PATH = Path(
 )
 PATCH_SIZE = 256
 SAVED_PATCHES_COVERAGE_PERCENT_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\temp_files\patches_coverage.csv")
+ALL_PATCH_MASKS_OVERLAP_INDICES_PATH = Path(
+    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\temp_files\all_patch_masks_overlap_indices.csv"
+)
 
 
-def get_patch_coverage(image_patch_path) -> float:
-    mask_tensor = stack_image_patch_masks(image_patch_path)
+def get_patch_coverage(image_patch_path, all_masks_overlap_indices_path: Path) -> float:
+    mask_tensor = stack_image_patch_masks(image_patch_path, all_masks_overlap_indices_path)
     count_mask_value_occurrence = count_mask_value_occurences_percent_of_2d_tensor(
         mask_tensor
     )
@@ -42,17 +45,17 @@ def get_patch_coverage(image_patch_path) -> float:
 
 
 def create_generator_patches_coverage(
-    patches_dir_path: Path,
+    patches_dir_path: Path, all_masks_overlap_indices_path: Path
 ) -> [Path]:
     for image_dir_path in patches_dir_path.iterdir():
         for patch_dir_path in image_dir_path.iterdir():
             for image_patch_path in (patch_dir_path / "image").iterdir():
-                yield image_patch_path, get_patch_coverage(image_patch_path)
+                yield image_patch_path, get_patch_coverage(image_patch_path, all_masks_overlap_indices_path)
 
 
-def save_all_patches_coverage(patches_dir_path: Path, output_path: Path) -> dict:
+def save_all_patches_coverage(patches_dir_path: Path, output_path: Path, all_masks_overlap_indices_path: Path) -> dict:
     patches_coverage_dict = dict()
-    generator = create_generator_patches_coverage(patches_dir_path)
+    generator = create_generator_patches_coverage(patches_dir_path, all_masks_overlap_indices_path)
     while True:
         try:
             image_patch_path, patch_coverage = next(generator)
@@ -77,12 +80,12 @@ def get_patches_above_coverage_percent_limit(
     return patches_under_coverage_percent_limit_list
 
 
-def is_patch_only_background(image_patch_path: Path, patch_size: int) -> bool:
+def is_patch_only_background(image_patch_path: Path, patch_size: int, all_masks_overlap_indices_path: Path) -> bool:
     """
     Test if the labels of a patch is background only, i.e. a patch_size x patch_size array of zeros.
     """
     background_array = tf.zeros((patch_size, patch_size), dtype=tf.int32).numpy()
-    patch_mask_array = stack_image_patch_masks(image_patch_path).numpy()
+    patch_mask_array = stack_image_patch_masks(image_patch_path, all_masks_overlap_indices_path).numpy()
     try:
         np.testing.assert_array_equal(patch_mask_array, background_array)
         return True
@@ -90,31 +93,31 @@ def is_patch_only_background(image_patch_path: Path, patch_size: int) -> bool:
         return False
 
 
-def get_only_background_patches_dir_paths(image_dir_path: Path, patch_size: int) -> [Path]:
+def get_only_background_patches_dir_paths(image_dir_path: Path, patch_size: int, all_masks_overlap_indices_path: Path) -> [Path]:
     only_background_patches_dir_paths = list()
     for image_patch_dir_path in image_dir_path.iterdir():
         for image_patch_path in (image_patch_dir_path / "image").iterdir():
-            if is_patch_only_background(image_patch_path, patch_size):
+            if is_patch_only_background(image_patch_path, patch_size, all_masks_overlap_indices_path):
                 only_background_patches_dir_paths.append(image_patch_dir_path)
     return only_background_patches_dir_paths
 
 
 def create_generator_all_only_background_patches(
-    patches_dir_path: Path, patch_size: int
+    patches_dir_path: Path, patch_size: int, all_masks_overlap_indices_path: Path
 ) -> [Path]:
     for image_dir_path in patches_dir_path.iterdir():
         only_background_patches_dir_paths = get_only_background_patches_dir_paths(
-            image_dir_path, patch_size
+            image_dir_path, patch_size, all_masks_overlap_indices_path
         )
         yield image_dir_path, only_background_patches_dir_paths
 
 
 def save_all_only_background_patches_dir_paths(
-    patches_dir_path: Path, patch_size: int, output_path: Path, save_list=True
+    patches_dir_path: Path, patch_size: int, output_path: Path, all_masks_overlap_indices_path: Path
 ) -> [Path]:
     all_only_background_patches_dir_paths = list()
     generator = create_generator_all_only_background_patches(
-        patches_dir_path, patch_size
+        patches_dir_path, patch_size, all_masks_overlap_indices_path
     )
     while True:
         try:
