@@ -11,18 +11,12 @@ from pathlib import Path
 
 from dataset_utils.masks_encoder import stack_image_masks
 
-MASK_PATH = Path(
-    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\labels_masks/_DSC0043/feuilles_vertes/mask__DSC0043_feuilles_vertes__3466c2cda646448fbe8f4927f918e247.png"
-)
-IMAGE_PATH = Path(
-    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\images\IMG_2304\IMG_2304.jpg"
-)
-MASKS_DIR = Path(
-    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\labels_masks/all"
-)
-OUTPUT_PATH = Path(
-    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\test.jpg"
-)
+DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+MASK_PATH = DATA_DIR_ROOT / "labels_masks/_DSC0043/feuilles_vertes/mask__DSC0043_feuilles_vertes__3466c2cda646448fbe8f4927f918e247.png"
+IMAGE_PATH = DATA_DIR_ROOT / "images/IMG_2304/IMG_2304.jpg"
+# MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
+MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
+OUTPUT_PATH = DATA_DIR_ROOT / "predictions/test.jpg"
 
 
 def plot_mask_with_color(image_path: Path, mask_path: Path) -> None:
@@ -139,7 +133,41 @@ def full_plot_image(
     ax3.legend(handles=handles, bbox_to_anchor=(1.4, 1), loc="upper left", prop=fontP)
 
     plt.show()
-    plt.savefig(Path(rf"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\predictions\predictions_{get_image_name_without_extension(image_path)}.jpg"), bbox_inches="tight")
 
 
-# full_plot_image(IMAGE_PATH, MASKS_DIR, predictions)
+@timeit
+def save_full_plot_image(
+    image_path: Path, masks_dir: Path, predictions_tensor: tf.Tensor, output_path: Path
+) -> None:
+    image = decode_image(image_path).numpy()
+    categorical_tensor = stack_image_masks(image_path, masks_dir)
+    mapped_categorical_array = map_categorical_mask_to_3_color_channels_tensor(
+        categorical_tensor
+    )
+    mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
+        predictions_tensor
+    )
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    fig.suptitle(get_image_name_without_extension(image_path))
+    ax1.set_title("Original image")
+    ax2.set_title("Predictions")
+    ax3.set_title("Labels (ground truth)")
+    ax1.imshow(image)
+    ax2.imshow(mapped_predictions_array)
+    ax3.imshow(mapped_categorical_array)
+    ax1.axis("off")
+    ax2.axis("off")
+    ax3.axis("off")
+    ax4.axis("off")
+
+    fontP = matplotlib.font_manager.FontProperties()
+    fontP.set_size("x-small")
+    handles = [
+        matplotlib.patches.Patch(color=PALETTE_HEXA[MAPPING_CLASS_NUMBER[class_name]], label=class_name)
+        for class_name in MAPPING_CLASS_NUMBER.keys()
+    ]
+    ax3.legend(handles=handles, bbox_to_anchor=(1.4, 1), loc="upper left", prop=fontP)
+
+    plt.savefig(output_path, bbox_inches="tight")
+
+# save_full_plot_image(IMAGE_PATH, MASKS_DIR, predictions, OUTPUT_PATH)

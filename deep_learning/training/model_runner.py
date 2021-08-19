@@ -11,28 +11,25 @@ from dataset_utils.dataset_builder import get_dataset, build_predictions_dataset
 from pathlib import Path
 
 
-# DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
-DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
+DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+# DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
 
 CHECKPOINT_ROOT_DIR_PATH = DATA_DIR_ROOT / "checkpoints"
-CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_08_12__17_33_34"
-MODEL_PLOT_PATH = DATA_DIR_ROOT / "models\model.png"
-SAVED_PATCHES_COVERAGE_PERCENT_PATH = DATA_DIR_ROOT / "temp_files/patches_coverage.csv"
-ALL_MASKS_OVERLAP_INDICES_PATH = DATA_DIR_ROOT / "temp_files/all_masks_overlap_indices.csv"
-# PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches"
-PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches2"
+# CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_08_12__17_33_34"
+PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches"
+# PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches2"
 
 BATCH_SIZE = 8
-TEST_PROPORTION = 0.2
+TEST_PROPORTION = 0.25
 PATCH_COVERAGE_PERCENT_LIMIT = 75
 N_CLASSES = 9
-N_PATCHES_LIMIT = 10
+N_PATCHES_LIMIT = 2048
 INPUT_SHAPE = 256
 # OPTIMIZER = "rmsprop"
 OPTIMIZER = Adam(lr=1e-4)
 LOSS_FUNCTION = "categorical_crossentropy"
 METRICS = ["accuracy"]
-EPOCHS = 2
+EPOCHS = 10
 PATCH_SIZE = 256
 
 
