@@ -19,6 +19,8 @@ CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_08_12__17_33_34"
 MODEL_PLOT_PATH = DATA_DIR_ROOT / "models\model.png"
 SAVED_PATCHES_COVERAGE_PERCENT_PATH = DATA_DIR_ROOT / "temp_files/patches_coverage.csv"
 ALL_MASKS_OVERLAP_INDICES_PATH = DATA_DIR_ROOT / "temp_files/all_masks_overlap_indices.csv"
+# PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches"
+PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches2"
 
 BATCH_SIZE = 8
 TEST_PROPORTION = 0.2
@@ -47,9 +49,8 @@ def main(
         batch_size: int,
         test_proportion: float,
         patch_coverage_percent_limit: int,
-        saved_patches_coverage_percent_path: Path,
         epochs: int,
-        all_masks_overlap_indices_path: Path
+        patches_dir_path: Path
 ):
     assert input_shape == patch_size, f"Input shape must be the same as the patch size, but patch size {PATCH_SIZE} and input shape {INPUT_SHAPE} were given."
     # Define the model
@@ -75,8 +76,7 @@ def main(
         batch_size=batch_size,
         test_proportion=test_proportion,
         patch_coverage_percent_limit=patch_coverage_percent_limit,
-        saved_patches_coverage_percent_path=saved_patches_coverage_percent_path,
-        all_masks_overlap_indices_path=all_masks_overlap_indices_path
+        patches_dir_path=patches_dir_path,
     )
     breakpoint()
 
@@ -122,3 +122,5 @@ def load_saved_model(
 #     EPOCHS,
 #     ALL_MASKS_OVERLAP_INDICES_PATH
 # )
+
+# main(N_CLASSES, INPUT_SHAPE, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, CHECKPOINT_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, EPOCHS, PATCHES_DIR_PATH)

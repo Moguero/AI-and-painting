@@ -33,8 +33,7 @@ def get_dataset(
     batch_size: int,
     test_proportion: float,
     patch_coverage_percent_limit: int,
-    saved_patches_coverage_percent_path: Path,
-    all_masks_overlap_indices_path: Path
+    patches_dir_path: Path,
 ) -> [tf.Tensor]:
     assert (
         0 <= test_proportion < 1
@@ -44,7 +43,7 @@ def get_dataset(
     # Get the paths of the valid patches for training
     image_patches_paths = get_patches_above_coverage_percent_limit(
         coverage_percent_limit=patch_coverage_percent_limit,
-        saved_patches_coverage_percent_path=saved_patches_coverage_percent_path,
+        patches_dir=patches_dir_path,
     )
     if n_patches_limit < len(image_patches_paths):
         image_patches_paths = image_patches_paths[:n_patches_limit]
@@ -57,8 +56,7 @@ def get_dataset(
     mask_tensors = [
         one_hot_encode_image_patch_masks(
             image_patch_path=Path(image_patch_path),
-            n_classes=n_classes,
-            all_masks_overlap_indices_path=all_masks_overlap_indices_path
+            n_classes=n_classes
         )
         for image_patch_path in tqdm(image_patches_paths, desc="Loading mask tensors")
     ]
@@ -155,3 +153,5 @@ def get_train_and_test_dataset_iterators():
 
 # get_dataset(IMAGE_PATHS, CATEGORICAL_MASKS_DIR, N_CLASSES, BATCH_SIZE)
 # train, test = get_small_dataset_2(N_PATCHES, N_CLASSES, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, SAVED_PATCHES_COVERAGE_PERCENT_PATH)
+
+# get_dataset(N_PATCHES_LIMIT, N_CLASSES, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, PATCHES_DIR_PATH)
