@@ -4,7 +4,10 @@ from loguru import logger
 from pathlib import Path
 import tensorflow as tf
 
+from dataset_utils.file_utils import timeit
 
+
+DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
 IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images")
 MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/all")
 CATEGORICAL_MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks")
@@ -197,3 +200,15 @@ def group_images_and_all_masks_together(dataset_dir: Path, images_dir: Path, mas
             for mask_path in class_dir_path.iterdir():
                 output_path = dataset_subdir / get_file_name_with_extension(mask_path)
                 shutil.copyfile(str(mask_path), str(output_path))
+
+
+@timeit
+def get_image_patch_paths(patches_dir: Path) -> list:
+    logger.info("\nRetrieving image patch paths...")
+    patch_paths_list = list()
+    for image_dir_path in patches_dir.iterdir():
+        for patch_dir in image_dir_path.iterdir():
+            for patch_path in (patch_dir / "image").iterdir():
+                patch_paths_list.append(patch_path)
+    logger.info("\nImage patch paths retrieved succesfully.")
+    return patch_paths_list

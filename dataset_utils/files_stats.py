@@ -5,10 +5,11 @@ import numpy as np
 import tensorflow as tf
 import os
 
+from loguru import logger
 from tqdm import tqdm
 
 from constants import MASK_FALSE_VALUE, MASK_TRUE_VALUE
-from dataset_utils.file_utils import save_dict_to_csv, load_saved_dict
+from dataset_utils.file_utils import save_dict_to_csv, load_saved_dict, save_list_to_csv
 from dataset_utils.image_utils import (
     decode_image,
     get_images_paths,
@@ -142,6 +143,7 @@ def count_mask_value_occurences_of_categorical_mask(
     )
 
 
+# todo : delete cause moved
 def count_categorical_mask_irregular_pixels(
     image_path: Path, masks_dir: Path, n_classes, all_patch_masks_overlap_indices_path: Path
 ) -> {int: int}:
@@ -236,7 +238,8 @@ def save_all_masks_overlap_indices(
 def save_all_patch_masks_overlap_indices(
     image_patches_dir_path: Path, output_path
 ) -> None:
-    masks_overlap_indices_dict = dict()
+    logger.info("\nStarting to get all patch masks overlap indices...")
+    masks_overlap_indices_list = list()
     for image_dir_path in tqdm(
         image_patches_dir_path.iterdir(), desc="Getting overlap indices...", colour="yellow"
     ):
@@ -256,26 +259,29 @@ def save_all_patch_masks_overlap_indices(
                     values_with_count_dict = count_mask_value_occurences_of_2d_tensor(
                         stacked_tensor
                     )
-                    masks_overlap_indices_dict[patch_path] = {
-                        "n_overlap_indices": sum(
-                            [
-                                value
-                                for key, value in values_with_count_dict.items()
-                                if key != MASK_FALSE_VALUE and key != MASK_TRUE_VALUE
-                            ]
-                        ),
-                        "problematic_indices": [
-                            item
-                            for indices_list in [
-                                tf.where(tf.equal(stacked_tensor, value)).numpy().tolist()
-                                for value in set(stacked_values)
-                                - {MASK_FALSE_VALUE, MASK_TRUE_VALUE}
-                            ]
-                            for item in indices_list
-                        ],
-                    }
-    breakpoint()
-    save_dict_to_csv(masks_overlap_indices_dict, output_path)
+                    masks_overlap_indices_list.append(
+                        {
+                            "patch_path": patch_path,
+                            "n_overlap_indices": sum(
+                                [
+                                    value
+                                    for key, value in values_with_count_dict.items()
+                                    if key != MASK_FALSE_VALUE and key != MASK_TRUE_VALUE
+                                ]
+                            ),
+                            "problematic_indices": [
+                                item
+                                for indices_list in [
+                                    tf.where(tf.equal(stacked_tensor, value)).numpy().tolist()
+                                    for value in set(stacked_values)
+                                                 - {MASK_FALSE_VALUE, MASK_TRUE_VALUE}
+                                ]
+                                for item in indices_list
+                            ],
+                        }
+                    )
+    save_list_to_csv(masks_overlap_indices_list, output_path)
+    logger.info(f"\nAll patch masks overlap indices saved successfully at {output_path}.")
 
 
 def count_all_irregular_pixels(

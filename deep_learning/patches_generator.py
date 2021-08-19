@@ -12,13 +12,14 @@ from dataset_utils.image_utils import (
 from dataset_utils.masks_encoder import save_tensor_to_jpg
 
 
-DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
-# DATA_DIR_ROOT = Path(r"C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/")
+# DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
 IMAGES_DIR = DATA_DIR_ROOT / "images"
 IMAGES_PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches"
 IMAGE_PATH = DATA_DIR_ROOT / "images/1/1.jpg"
 # MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
-MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
+MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
+# MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
 PATCH_SIZE = 256
 
 
@@ -138,3 +139,5 @@ def save_all_images_and_labels_patches(
     logger.info(
         f"\nImages and labels patches saving finished in {(time.time() - start_time)/60:.1f} minutes.\n"
     )
+
+# save_all_images_and_labels_patches(IMAGES_DIR, MASKS_DIR, IMAGES_PATCHES_DIR_PATH, PATCH_SIZE)

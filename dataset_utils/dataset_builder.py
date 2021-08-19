@@ -10,22 +10,18 @@ from dataset_utils.masks_encoder import one_hot_encode_image_patch_masks
 from deep_learning.patches_generator import extract_image_patches
 from deep_learning.patches_sorter import get_patches_above_coverage_percent_limit
 
+# DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
+DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
+PATCHES_DIR = DATA_DIR_ROOT / "patches"
+SAVED_PATCHES_COVERAGE_PERCENT_PATH = DATA_DIR_ROOT / "temp_files\patches_coverage.csv"
+TARGET_IMAGE_PATH = DATA_DIR_ROOT / "images\_DSC0048\_DSC0048.jpg"
+ALL_MASKS_OVERLAP_INDICES_PATH = DATA_DIR_ROOT / "temp_files/all_masks_overlap_indices.csv"
 
-MASKS_DIR = Path(
-    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\labels_masks"
-)
-PATCHES_DIR = Path(
-    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\patches"
-)
-SAVED_PATCHES_COVERAGE_PERCENT_PATH = Path(
-    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\temp_files\patches_coverage.csv"
-)
-TARGET_IMAGE_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\images\_DSC0048\_DSC0048.jpg")
-ALL_MASKS_OVERLAP_INDICES_PATH = Path(r"")
 PATCH_SIZE = 256
 BATCH_SIZE = 2
 N_CLASSES = 9
-N_PATCHES = 10
+N_PATCHES_LIMIT = 10
 TEST_PROPORTION = 0.2
 PATCH_COVERAGE_PERCENT_LIMIT = 75
 
@@ -101,7 +97,7 @@ def get_dataset_generator(dataset: tf.data.Dataset) -> tf.data.Iterator:
 
 def get_train_and_test_dataset_iterators():
     train_dataset, test_dataset = get_dataset(
-        n_patches_limit=N_PATCHES,
+        n_patches_limit=N_PATCHES_LIMIT,
         n_classes=N_CLASSES,
         batch_size=BATCH_SIZE,
         test_proportion=TEST_PROPORTION,

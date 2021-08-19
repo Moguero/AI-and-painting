@@ -3,9 +3,8 @@ import tensorflow as tf
 import ast
 
 from constants import MAPPING_CLASS_NUMBER
-from dataset_utils.image_utils import get_image_patch_masks_paths
-from dataset_utils.masks_encoder import turn_mask_into_categorical_tensor, get_mask_first_channel
-
+from dataset_utils.image_utils import get_image_patch_masks_paths, decode_image
+from dataset_utils.masks_encoder import turn_mask_into_categorical_tensor
 
 # todo : test turn_mask_into_categorical_tensor
 
@@ -13,7 +12,7 @@ from dataset_utils.masks_encoder import turn_mask_into_categorical_tensor, get_m
 def stack_image_patch_masks_reformatted(image_patch_path: Path, all_patch_masks_overlap_indices_dict: dict) -> tf.Tensor:
     """Fetches the images mask first channels, transform it into a categorical tensor and add the categorical together."""
     image_masks_paths = get_image_patch_masks_paths(image_patch_path)
-    shape = get_mask_first_channel(image_masks_paths[0]).shape
+    shape = decode_image(image_masks_paths[0])[:, :, 0].shape
     stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
     for mask_path in image_masks_paths:
         categorical_tensor = turn_mask_into_categorical_tensor(mask_path)

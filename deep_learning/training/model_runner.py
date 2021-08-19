@@ -11,20 +11,20 @@ from dataset_utils.dataset_builder import get_dataset, build_predictions_dataset
 from pathlib import Path
 
 
-DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+# DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
 
 CHECKPOINT_ROOT_DIR_PATH = DATA_DIR_ROOT / "checkpoints"
 CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_08_12__17_33_34"
 MODEL_PLOT_PATH = DATA_DIR_ROOT / "models\model.png"
 SAVED_PATCHES_COVERAGE_PERCENT_PATH = DATA_DIR_ROOT / "temp_files/patches_coverage.csv"
-TARGET_IMAGE_PATH = DATA_DIR_ROOT / "images/IMG_2304/IMG_2304.jpg"
-
+ALL_MASKS_OVERLAP_INDICES_PATH = DATA_DIR_ROOT / "temp_files/all_masks_overlap_indices.csv"
 
 BATCH_SIZE = 8
 TEST_PROPORTION = 0.2
 PATCH_COVERAGE_PERCENT_LIMIT = 75
 N_CLASSES = 9
-N_PATCHES_LIMIT = 100
+N_PATCHES_LIMIT = 10
 INPUT_SHAPE = 256
 # OPTIMIZER = "rmsprop"
 OPTIMIZER = Adam(lr=1e-4)
@@ -105,3 +105,20 @@ def load_saved_model(
 
 
 # predictions = make_predictions(TARGET_IMAGE_PATH, CHECKPOINT_DIR_PATH, INPUT_SHAPE, N_CLASSES, BATCH_SIZE)
+
+# main(
+#     N_CLASSES,
+#     INPUT_SHAPE,
+#     PATCH_SIZE,
+#     OPTIMIZER,
+#     LOSS_FUNCTION,
+#     METRICS,
+#     CHECKPOINT_ROOT_DIR_PATH,
+#     N_PATCHES_LIMIT,
+#     BATCH_SIZE,
+#     TEST_PROPORTION,
+#     PATCH_COVERAGE_PERCENT_LIMIT,
+#     SAVED_PATCHES_COVERAGE_PERCENT_PATH,
+#     EPOCHS,
+#     ALL_MASKS_OVERLAP_INDICES_PATH
+# )
