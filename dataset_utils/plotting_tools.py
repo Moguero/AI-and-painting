@@ -1,6 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import tensorflow as tf
+from tensorflow import keras
 import numpy as np
 
 from constants import PALETTE_RGB_NORMALIZED, MAPPING_CLASS_NUMBER, PALETTE_RGB, PALETTE_HEXA
@@ -11,6 +12,7 @@ from pathlib import Path
 
 from dataset_utils.masks_encoder import stack_image_masks
 
+DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
 DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
 MASK_PATH = DATA_DIR_ROOT / "labels_masks/_DSC0043/feuilles_vertes/mask__DSC0043_feuilles_vertes__3466c2cda646448fbe8f4927f918e247.png"
 IMAGE_PATH = DATA_DIR_ROOT / "images/IMG_2304/IMG_2304.jpg"
@@ -93,6 +95,12 @@ def plot_image_from_array(array: np.ndarray) -> None:
 def map_categorical_mask_to_3_color_channels_tensor(
     categorical_mask_tensor: tf.Tensor,
 ) -> np.ndarray:
+    """
+    Turn a 2D tensor into a 3D array by converting its categorical values in its RGB correspondant values.
+
+    :param categorical_mask_tensor: A 2D categorical tensor of size (width_size, height_size)
+    :return: A 3D array of size (width_size, height_size, 3)
+    """
     categorical_mask_array = categorical_mask_tensor.numpy()
     vectorize_function = np.vectorize(lambda x: PALETTE_RGB[x])
     three_channels_array = np.stack(vectorize_function(categorical_mask_array), axis=2)
@@ -135,39 +143,43 @@ def full_plot_image(
     plt.show()
 
 
+# save_full_plot_image(IMAGE_PATH, MASKS_DIR, predictions, OUTPUT_PATH)
+
+
+
 @timeit
-def save_full_plot_image(
-    image_path: Path, masks_dir: Path, predictions_tensor: tf.Tensor, output_path: Path
+def save_plot_predictions_only(
+    image_path: Path, predictions_tensor: tf.Tensor, output_path: Path
 ) -> None:
-    image = decode_image(image_path).numpy()
-    categorical_tensor = stack_image_masks(image_path, masks_dir)
-    mapped_categorical_array = map_categorical_mask_to_3_color_channels_tensor(
-        categorical_tensor
-    )
+    plt.cla()
     mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
         predictions_tensor
     )
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-    fig.suptitle(get_image_name_without_extension(image_path))
-    ax1.set_title("Original image")
-    ax2.set_title("Predictions")
-    ax3.set_title("Labels (ground truth)")
-    ax1.imshow(image)
-    ax2.imshow(mapped_predictions_array)
-    ax3.imshow(mapped_categorical_array)
-    ax1.axis("off")
-    ax2.axis("off")
-    ax3.axis("off")
-    ax4.axis("off")
+    plt.title(f"Predictions : {get_image_name_without_extension(image_path)}")
+    plt.imshow(mapped_predictions_array)
+    plt.axis("off")
 
-    fontP = matplotlib.font_manager.FontProperties()
-    fontP.set_size("x-small")
-    handles = [
-        matplotlib.patches.Patch(color=PALETTE_HEXA[MAPPING_CLASS_NUMBER[class_name]], label=class_name)
-        for class_name in MAPPING_CLASS_NUMBER.keys()
-    ]
-    ax3.legend(handles=handles, bbox_to_anchor=(1.4, 1), loc="upper left", prop=fontP)
+    plt.savefig(output_path, bbox_inches="tight", dpi=300)
 
-    plt.savefig(output_path, bbox_inches="tight")
+# save_plot_predictions_only(IMAGE_PATH, predictions, DATA_DIR_ROOT / "predictions/test2.jpg")
 
-# save_full_plot_image(IMAGE_PATH, MASKS_DIR, predictions, OUTPUT_PATH)
+
+# todo : develop this plot
+# {'loss': [2.4902284145355225, 2.272948980331421, 2.180922746658325, 2.123626708984375, 2.0806949138641357, 2.0426666736602783, 2.0098025798797607, 1.9834508895874023, 1.954201102256775, 1.9568171501159668], 'accuracy': [0.12945209443569183, 0.20466716587543488, 0.24759912490844727, 0.2723337709903717, 0.2895956039428711, 0.3004612624645233, 0.3144834637641907, 0.32735636830329895, 0.34158948063850403, 0.3489217460155487]}
+def plot_training_history(history: keras.callbacks.History) -> None:
+    # summarize history for accuracy
+    plt.plot(history.history['accuracy'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(["train"], loc='upper left')
+    plt.grid(True)
+    plt.show()
+    # summarize history for loss
+    plt.plot(history.history['loss'])
+    plt.title('Model loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend(['train'], loc='upper left')
+    plt.grid(True)
+    plt.show()

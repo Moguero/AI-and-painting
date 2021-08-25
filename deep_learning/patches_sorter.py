@@ -78,9 +78,10 @@ def save_all_patches_coverage(patches_dir_path: Path, output_path: Path, all_mas
 def get_patches_above_coverage_percent_limit(
     coverage_percent_limit: int,
     patches_dir: Path,
+    n_patches_limit: int
 ) -> [Path]:
     patches_under_coverage_percent_limit_list = list()
-    image_patch_paths = get_image_patch_paths(patches_dir)
+    image_patch_paths = get_image_patch_paths(patches_dir, n_patches_limit)
     for image_patch_path in tqdm(image_patch_paths, desc="Iterating over patches..."):
         coverage_percent = get_patch_coverage(image_patch_path)
         if int(float(coverage_percent)) > coverage_percent_limit:

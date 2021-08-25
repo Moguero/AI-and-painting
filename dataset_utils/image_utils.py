@@ -8,21 +8,9 @@ from dataset_utils.file_utils import timeit
 
 
 DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
-IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images")
-MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/all")
-CATEGORICAL_MASKS_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks")
-DATASET_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/dataset")
-FILES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0043")
-IMAGE_SOURCE_PATH = Path(
-    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/sorted_images/unkept/Végétation 2/_DSC0069 - Copie.JPG"
-)
-IMAGE_TARGET_DIR_PATH = Path(
-    "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/"
-)
-IMAGES_SOURCE_DIR = Path("C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/images/sorted_images/kept/all")
-IMAGE_PATH = Path(
-    "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/1/1.jpg"
-)
+IMAGES_DIR = DATA_DIR_ROOT / "images"
+MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
+PATCHES_DIR = DATA_DIR_ROOT / "patches2"
 
 
 IMAGE_SIZE = (160, 160)
@@ -203,12 +191,43 @@ def group_images_and_all_masks_together(dataset_dir: Path, images_dir: Path, mas
 
 
 @timeit
-def get_image_patch_paths(patches_dir: Path) -> list:
+def get_image_patch_paths(patches_dir: Path, n_patches_limit: int = None) -> list:
     logger.info("\nRetrieving image patch paths...")
     patch_paths_list = list()
+    if n_patches_limit is not None:
+        counter = 0
     for image_dir_path in patches_dir.iterdir():
+        if n_patches_limit is not None:
+            if counter > n_patches_limit:
+                break
         for patch_dir in image_dir_path.iterdir():
+            if n_patches_limit is not None:
+                if counter > n_patches_limit:
+                    break
             for patch_path in (patch_dir / "image").iterdir():
+                if n_patches_limit is not None:
+                    counter += 1
+                    if counter > n_patches_limit:
+                        break
                 patch_paths_list.append(patch_path)
     logger.info("\nImage patch paths retrieved succesfully.")
     return patch_paths_list
+
+
+def get_tensor_dims(tensor: tf.Tensor) -> tuple:
+    n_dims = len(list(tensor.shape))
+    if n_dims == 2:
+        width_index = 0
+        height_index = 1
+        channels_index = None
+    elif n_dims == 3:
+        width_index = 0
+        height_index = 1
+        channels_index = 2
+    elif n_dims == 4:
+        width_index = 1
+        height_index = 2
+        channels_index = 3
+    else:
+        raise ValueError(f"Dimension is {n_dims} : expected 2, 3 or 4.")
+    return width_index, height_index, channels_index

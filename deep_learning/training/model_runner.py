@@ -5,9 +5,8 @@ from tensorflow import keras
 from tensorflow.keras.optimizers import Adam
 
 from dataset_utils.file_utils import timeit, get_formatted_time
-from dataset_utils.image_rebuilder import rebuild_predictions
 from deep_learning.models.unet import build_small_unet
-from dataset_utils.dataset_builder import get_dataset, build_predictions_dataset
+from dataset_utils.dataset_builder import get_train_and_test_dataset
 from pathlib import Path
 
 
@@ -19,17 +18,20 @@ CHECKPOINT_ROOT_DIR_PATH = DATA_DIR_ROOT / "checkpoints"
 PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches"
 # PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches2"
 
-BATCH_SIZE = 8
+BATCH_SIZE = 32
 TEST_PROPORTION = 0.25
-PATCH_COVERAGE_PERCENT_LIMIT = 75
+PATCH_COVERAGE_PERCENT_LIMIT = 95
 N_CLASSES = 9
 N_PATCHES_LIMIT = 2048
 INPUT_SHAPE = 256
 # OPTIMIZER = "rmsprop"
 OPTIMIZER = Adam(lr=1e-4)
-LOSS_FUNCTION = "categorical_crossentropy"
-METRICS = ["accuracy"]
-EPOCHS = 10
+# LOSS_FUNCTION = "categorical_crossentropy"
+LOSS_FUNCTION = keras.losses.categorical_crossentropy
+# METRICS = ["accuracy", keras.metrics.MeanIoU]
+# METRICS = [keras.metrics.MeanIoU(N_CLASSES)]
+METRICS = [keras.metrics.categorical_accuracy, keras.metrics.MeanIoU(N_CLASSES)]
+EPOCHS = 7
 PATCH_SIZE = 256
 
 
@@ -52,7 +54,7 @@ def main(
     assert input_shape == patch_size, f"Input shape must be the same as the patch size, but patch size {PATCH_SIZE} and input shape {INPUT_SHAPE} were given."
     # Define the model
     logger.info("\nStart to build model...")
-    model = build_small_unet(n_classes, input_shape, patch_size)
+    model = build_small_unet(n_classes, input_shape, batch_size)
     logger.info("\nModel built successfully.")
 
     # Compile the model
@@ -67,7 +69,7 @@ def main(
     ]
 
     # Init dataset
-    train_dataset, test_dataset = get_dataset(
+    train_dataset, test_dataset = get_train_and_test_dataset(
         n_patches_limit=n_patches_limit,
         n_classes=n_classes,
         batch_size=batch_size,
@@ -75,18 +77,17 @@ def main(
         patch_coverage_percent_limit=patch_coverage_percent_limit,
         patches_dir_path=patches_dir_path,
     )
-    breakpoint()
 
-    # todo : use model.fit but with a generator instead of a Dataset
+    # todo : use model.fit but with a generator instead of a Dataset ?
     # Fit the model
     logger.info("\nStart model training...")
     history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks)
     logger.info("\nEnd of model training.")
 
     # # Evaluate the model
-    # loss, accuracy = model.evaluate(test_dataset, verbose=1)
+    loss, accuracy = model.evaluate(test_dataset, verbose=1)
 
-    breakpoint()
+    return model, history, loss, accuracy
 
 
 def load_saved_model(
@@ -100,24 +101,5 @@ def load_saved_model(
     logger.info("\nModel loaded successfully.")
     return model
 
-
-# predictions = make_predictions(TARGET_IMAGE_PATH, CHECKPOINT_DIR_PATH, INPUT_SHAPE, N_CLASSES, BATCH_SIZE)
-
-# main(
-#     N_CLASSES,
-#     INPUT_SHAPE,
-#     PATCH_SIZE,
-#     OPTIMIZER,
-#     LOSS_FUNCTION,
-#     METRICS,
-#     CHECKPOINT_ROOT_DIR_PATH,
-#     N_PATCHES_LIMIT,
-#     BATCH_SIZE,
-#     TEST_PROPORTION,
-#     PATCH_COVERAGE_PERCENT_LIMIT,
-#     SAVED_PATCHES_COVERAGE_PERCENT_PATH,
-#     EPOCHS,
-#     ALL_MASKS_OVERLAP_INDICES_PATH
-# )
 
 # main(N_CLASSES, INPUT_SHAPE, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, CHECKPOINT_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, EPOCHS, PATCHES_DIR_PATH)

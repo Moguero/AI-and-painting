@@ -65,31 +65,3 @@ def timeit(method):
 
 def get_formatted_time():
     return time.strftime("%Y_%m_%d__%H_%M_%S", time.localtime())
-
-# todo: delete this debug part
-# debug
-# def f():
-#     with open(DATA_DIR_ROOT / "test.csv", "w", newline="") as f:
-#         my_list = [{'id': "one", 'a': 1, 'b': [1, 2, 3]}, {'id': 'two', 'a': 3, 'b': [4, 5, 6]}]
-#         writer = csv.DictWriter(f, fieldnames=list(my_list[0].keys()))
-#         writer.writeheader()
-#         for data in my_list:
-#             # breakpoint()
-#             writer.writerow(data)
-#
-#
-# def g():
-#     my_list = list()
-#     with open(DATA_DIR_ROOT / 'test.csv', 'r') as csv_file:
-#         reader = csv.reader(csv_file)
-#         my_list = list(reader)
-#     return my_list
-#
-#
-# def h():
-#     my_dict = dict()
-#     with open(DATA_DIR_ROOT / 'test.csv') as csv_file:
-#         reader = csv.reader(csv_file)
-#         for row in reader:
-#             pass
-#     return my_dict
