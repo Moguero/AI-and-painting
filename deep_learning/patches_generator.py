@@ -11,20 +11,7 @@ from dataset_utils.image_utils import (
     get_image_masks_paths,
 )
 from dataset_utils.masks_encoder import save_tensor_to_jpg
-
-
-# DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
-DATA_DIR_ROOT = Path(
-    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files"
-)
-IMAGES_DIR = DATA_DIR_ROOT / "images"
-IMAGES_PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches"
-IMAGE_PATH = DATA_DIR_ROOT / "images/1/1.jpg"
-# MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
-MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
-# MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
-PATCH_SIZE = 256
-PATCH_OVERLAP = 10
+from constants import *
 
 
 def extract_image_patches(
@@ -195,8 +182,8 @@ def extract_patches_with_overlap(
         while column_idx + patch_size - 1 < n_columns:
             patch = image[
                 :,
-                row_idx : row_idx + patch_size,
-                column_idx : column_idx + patch_size,
+                row_idx: row_idx + patch_size,
+                column_idx: column_idx + patch_size,
                 :,
             ]
             # dropping the first dimension

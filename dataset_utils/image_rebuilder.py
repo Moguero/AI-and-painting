@@ -5,14 +5,7 @@ import tensorflow as tf
 
 from dataset_utils.image_cropping import crop_tensor
 from dataset_utils.image_utils import decode_image, get_tensor_dims
-
-IMAGE_PATCHES_DIR = Path(
-    r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\patches\1"
-)
-ORIGINAL_IMAGE_PATH = Path(
-    r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\images\1\1.jpg"
-)
-PATCH_SIZE = 256
+from constants import *
 
 
 def rebuild_image(
@@ -82,7 +75,6 @@ def rebuild_predictions(
     return rebuilt_tensor
 
 
-# debug
 # todo : set default value of misclassification_size correctly
 def rebuild_predictions_with_overlap(
     patches: [tf.Tensor],
@@ -98,7 +90,7 @@ def rebuild_predictions_with_overlap(
     :param target_image_path: Path of the image we want to make predictions on.
     :param patch_size: Size of the patches.
     :param patch_overlap: Number of pixels on which neighbors patches intersect each other.
-    :param misclassification_size: Estimated number on pixels on which the classification is wrong due to side effects between neighbors patches.
+    :param misclassification_size: Estimated number of pixels on which the classification is wrong due to side effects between neighbors patches.
     :return: The rebuilt image tensor with dimension : [width, height, 1].
     """
     assert (
@@ -115,10 +107,10 @@ def rebuild_predictions_with_overlap(
     image_width_index, image_height_index, image_channels_index = get_tensor_dims(
         original_image_tensor
     )
-    n_horizontal_patches = original_image_tensor.shape[image_width_index] // (
+    n_horizontal_patches = (original_image_tensor.shape[image_width_index] - patch_overlap) // (
         patch_size - patch_overlap
     )
-    n_vertical_patches = original_image_tensor.shape[image_height_index] // (
+    n_vertical_patches = (original_image_tensor.shape[image_height_index] - patch_overlap) // (
         patch_size - patch_overlap
     )
     assert n_horizontal_patches * n_vertical_patches == len(

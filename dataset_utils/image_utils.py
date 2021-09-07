@@ -5,17 +5,7 @@ from pathlib import Path
 import tensorflow as tf
 
 from dataset_utils.file_utils import timeit
-
-
-DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
-IMAGES_DIR = DATA_DIR_ROOT / "images"
-MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
-PATCHES_DIR = DATA_DIR_ROOT / "patches2"
-
-
-IMAGE_SIZE = (160, 160)
-N_CLASSES = 3
-BATCH_SIZE = 32
+from constants import *
 
 
 def get_image_name_without_extension(image_path: Path) -> str:

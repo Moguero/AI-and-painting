@@ -3,22 +3,11 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
-
-from constants import PALETTE_RGB_NORMALIZED, MAPPING_CLASS_NUMBER, PALETTE_RGB, PALETTE_HEXA
 from dataset_utils.file_utils import timeit
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.image_utils import get_image_masks_paths, get_mask_class
-from pathlib import Path
-
 from dataset_utils.masks_encoder import stack_image_masks
-
-DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
-DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
-MASK_PATH = DATA_DIR_ROOT / "labels_masks/_DSC0043/feuilles_vertes/mask__DSC0043_feuilles_vertes__3466c2cda646448fbe8f4927f918e247.png"
-IMAGE_PATH = DATA_DIR_ROOT / "images/IMG_2304/IMG_2304.jpg"
-# MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
-MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
-OUTPUT_PATH = DATA_DIR_ROOT / "predictions/test.jpg"
+from constants import *
 
 
 def plot_mask_with_color(image_path: Path, mask_path: Path) -> None:

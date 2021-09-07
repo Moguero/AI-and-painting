@@ -5,16 +5,7 @@ import json
 import uuid
 from loguru import logger
 from pathlib import Path
-
-# Example variables
-MASK_URL = "https://api.labelbox.com/masks/feature/ckph5r33g00043a6dklihalmq?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja3BneTBhZDc4OXAwMHk5dzZlcWM2bzNlIiwib3JnYW5pemF0aW9uSWQiOiJja3BneTBhY3U4OW96MHk5dzNrcW43MGxmIiwiaWF0IjoxNjIyNzQwNjczLCJleHAiOjE2MjUzMzI2NzN9.VeR0ot2_MAkY769kcXSz8RWqRguopgO1rlbRIGwZWV0"
-OUTPUT_PATH = Path("C:/Users/thiba/OneDrive/Documents/Césure/test/test.png")
-OUTPUT_DIR_PATH = Path(
-    "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks"
-)
-JSON_PATH = Path(
-    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/labelbox_export_json/export-2021-07-26T14_40_28.059Z.json"
-)
+from constants import *
 
 
 def get_mask_urls(json_path: Path) -> dict:

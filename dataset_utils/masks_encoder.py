@@ -1,9 +1,7 @@
-import ast
-
 from loguru import logger
 from tqdm import tqdm
 
-from dataset_utils.file_utils import load_saved_dict, save_list_to_csv
+from dataset_utils.file_utils import save_list_to_csv
 from dataset_utils.image_utils import (
     get_image_masks_paths,
     get_mask_class,
@@ -14,21 +12,7 @@ from dataset_utils.image_utils import (
 from pathlib import Path
 import tensorflow as tf
 from dataset_utils.image_utils import decode_image
-from constants import MAPPING_CLASS_NUMBER, MASK_TRUE_VALUE, MASK_FALSE_VALUE
-
-
-DATA_DIR_ROOT = Path(
-    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/files"
-)
-IMAGE_PATH = DATA_DIR_ROOT / "images/_DSC0050/_DSC0050.jpg"
-MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
-MASK_PATH = (
-    DATA_DIR_ROOT
-    / "labels_masks/all/1/feuilles-vertes/mask_1_feuilles-vertes__090f44ab03ee43d7aaabe92aa58b06c1.png"
-)
-IMAGES_DIR = DATA_DIR_ROOT / "images"
-IMAGE_PATCH_PATH = DATA_DIR_ROOT / "patches/1/1/image/patch_1.jpg"
-SAVE_STATS_DIR_PATH = DATA_DIR_ROOT / "stats"
+from constants import *
 
 
 def stack_image_patch_masks(

@@ -1,5 +1,4 @@
 import tensorflow as tf
-from pathlib import Path
 
 from loguru import logger
 from tqdm import tqdm
@@ -9,21 +8,7 @@ from dataset_utils.image_utils import decode_image
 from dataset_utils.masks_encoder import one_hot_encode_image_patch_masks
 from deep_learning.patches_generator import extract_patches_with_overlap
 from deep_learning.patches_sorter import get_patches_above_coverage_percent_limit
-
-# DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
-DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
-MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
-PATCHES_DIR = DATA_DIR_ROOT / "patches"
-SAVED_PATCHES_COVERAGE_PERCENT_PATH = DATA_DIR_ROOT / "temp_files\patches_coverage.csv"
-TARGET_IMAGE_PATH = DATA_DIR_ROOT / "images\_DSC0048\_DSC0048.jpg"
-ALL_MASKS_OVERLAP_INDICES_PATH = DATA_DIR_ROOT / "temp_files/all_masks_overlap_indices.csv"
-
-PATCH_SIZE = 256
-BATCH_SIZE = 10
-N_CLASSES = 9
-N_PATCHES_LIMIT = 10
-TEST_PROPORTION = 0.2
-PATCH_COVERAGE_PERCENT_LIMIT = 75
+from constants import *
 
 
 @timeit
@@ -35,6 +20,23 @@ def get_train_and_test_dataset(
     patch_coverage_percent_limit: int,
     patches_dir_path: Path,
 ) -> [tf.Tensor]:
+    """
+
+    :param n_patches_limit:
+    :param n_classes:
+    :param batch_size:
+    :param test_proportion:
+    :param patch_coverage_percent_limit:
+    :param patches_dir_path: Path of the folder with patches of size patch_size.
+    :return: A tuple of :
+        - a training Dataset object of length (n_patches_limit // batch_size) * (1 - test_proportion),
+        with tuples of tensors of size (batch_size, patch_size, patch_size, 3) and
+        (batch_size, patch_size, patch_size, n_classes + 1) respectfully.
+        - a test Dataset object of length (n_patches_limit // batch_size) * test_proportion,
+        with tuples of tensors of size (batch_size, patch_size, patch_size, 3) and
+        (batch_size, patch_size, patch_size, n_classes + 1) respectfully.
+    """
+    # todo : complete the docstring
     assert (
         0 <= test_proportion < 1
     ), f"Test proportion must be between 0 and 1 : {test_proportion} was given."
@@ -78,6 +80,16 @@ def get_train_and_test_dataset(
     return train_dataset, test_dataset
 
 
+# TRAIN_DATASET = get_train_and_test_dataset(
+#     n_patches_limit=N_PATCHES_LIMIT,
+#     n_classes=N_CLASSES,
+#     batch_size=BATCH_SIZE,
+#     test_proportion=TEST_PROPORTION,
+#     patch_coverage_percent_limit=PATCH_COVERAGE_PERCENT_LIMIT,
+#     patches_dir_path=PATCHES_DIR_PATH,
+# )[0]
+
+
 # todo : don't hardcode the batch_size to 1
 def build_predictions_dataset(target_image_path: Path, patch_size: int, patch_overlap: int) -> tf.data.Dataset:
     """
@@ -105,20 +117,20 @@ def get_dataset_generator(dataset: tf.data.Dataset) -> tf.data.Iterator:
     return iterator
 
 
-def get_train_and_test_dataset_iterators():
-    train_dataset, test_dataset = get_train_and_test_dataset(
-        n_patches_limit=N_PATCHES_LIMIT,
-        n_classes=N_CLASSES,
-        batch_size=BATCH_SIZE,
-        test_proportion=TEST_PROPORTION,
-        patch_coverage_percent_limit=PATCH_COVERAGE_PERCENT_LIMIT,
-        saved_patches_coverage_percent_path=SAVED_PATCHES_COVERAGE_PERCENT_PATH,
-        all_masks_overlap_indices_path=ALL_MASKS_OVERLAP_INDICES_PATH
-    )
-    train_generator, test_generator = get_dataset_generator(
-        train_dataset
-    ), get_dataset_generator(test_dataset)
-    return train_generator, test_generator
+# def get_train_and_test_dataset_iterators():
+#     train_dataset, test_dataset = get_train_and_test_dataset(
+#         n_patches_limit=N_PATCHES_LIMIT,
+#         n_classes=N_CLASSES,
+#         batch_size=BATCH_SIZE,
+#         test_proportion=TEST_PROPORTION,
+#         patch_coverage_percent_limit=PATCH_COVERAGE_PERCENT_LIMIT,
+#         saved_patches_coverage_percent_path=SAVED_PATCHES_COVERAGE_PERCENT_PATH,
+#         all_masks_overlap_indices_path=ALL_MASKS_OVERLAP_INDICES_PATH
+#     )
+#     train_generator, test_generator = get_dataset_generator(
+#         train_dataset
+#     ), get_dataset_generator(test_dataset)
+#     return train_generator, test_generator
 
 
 # def get_small_dataset(

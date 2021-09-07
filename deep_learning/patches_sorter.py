@@ -9,21 +9,7 @@ from dataset_utils.file_utils import save_list_to_csv, load_saved_dict, save_dic
 from dataset_utils.files_stats import count_mask_value_occurences_percent_of_2d_tensor
 from dataset_utils.image_utils import get_file_name_with_extension, get_image_patch_paths
 from dataset_utils.masks_encoder import stack_image_patch_masks
-
-
-# DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
-DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
-PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches"
-ONLY_BACKGROUND_PATCHES_PATH = DATA_DIR_ROOT / "temp_files/only_background_patches.csv"
-PATCHES_COVERAGE_PATH = Path(
-    r"C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/files/temp_files/patches_coverage.csv"
-)
-IMAGE_PATCH_PATH = DATA_DIR_ROOT / "patches/_DSC0038/95/image/patch_95.jpg"
-SAVED_PATCHES_COVERAGE_PERCENT_PATH = DATA_DIR_ROOT / "temp_files/patches_coverage.csv"
-ALL_PATCH_MASKS_OVERLAP_INDICES_PATH = DATA_DIR_ROOT / "temp_files/all_patch_masks_overlap_indices.csv"
-SAVE_STATS_DIR_PATH = DATA_DIR_ROOT / "stats"
-PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches2"
-PATCH_SIZE = 256
+from constants import *
 
 
 def get_patch_coverage(image_patch_path: Path) -> float:

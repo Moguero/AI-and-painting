@@ -1,13 +1,7 @@
 import csv
 from pathlib import Path
 import time
-
 from loguru import logger
-
-OUTPUT_PATH = Path(r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\deep_learning\test5.csv")
-TEST_LIST = range(10)
-PATCHES_COVERAGE_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\temp_files\patches_coverage.csv")
-DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
 
 
 def save_list_to_csv(list_to_export: list, output_path: Path) -> None:

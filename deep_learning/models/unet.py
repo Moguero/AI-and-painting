@@ -1,30 +1,20 @@
-from pathlib import Path
-
 import tensorflow as tf
-from loguru import logger
 from tensorflow import keras
 from tensorflow.keras import layers
-
-
-N_CLASSES = 9
-EPOCHS_NUMBER = 10
-BATCH_SIZE = 2   # 32 is a frequently used value
-INPUT_SHAPE = 256
-PADDING_TYPE = "same"
-
+from constants import *
 
 # TODO : choose an input size with height and width multiple of 32 (which engender no cropping with 4 encoder layers)
 
 
-def build_unet(n_classes: int, batch_size: int) -> keras.Model:
+def build_unet(n_classes: int, batch_size: int, encoder_kernel_size: int) -> keras.Model:
     inputs = keras.Input(shape=(None, None, 3), batch_size=batch_size)
 
-    encoder_block_1, skip_features1 = encoder_block(inputs, 32)
-    encoder_block_2, skip_features2 = encoder_block(encoder_block_1, 64)
-    encoder_block_3, skip_features3 = encoder_block(encoder_block_2, 128)
-    encoder_block_4, skip_features4 = encoder_block(encoder_block_3, 256)
+    encoder_block_1, skip_features1 = encoder_block(inputs, 32, encoder_kernel_size)
+    encoder_block_2, skip_features2 = encoder_block(encoder_block_1, 64, encoder_kernel_size)
+    encoder_block_3, skip_features3 = encoder_block(encoder_block_2, 128, encoder_kernel_size)
+    encoder_block_4, skip_features4 = encoder_block(encoder_block_3, 256, encoder_kernel_size)
 
-    conv_block1 = conv_block(encoder_block_4, 512)
+    conv_block1 = conv_block(encoder_block_4, 512, encoder_kernel_size)
 
     decoder_block1 = decoder_block(conv_block1, skip_features4, 256)
     decoder_block2 = decoder_block(decoder_block1, skip_features3, 128)
@@ -37,15 +27,15 @@ def build_unet(n_classes: int, batch_size: int) -> keras.Model:
     return model
 
 
-def build_small_unet(n_classes: int, input_shape: int, batch_size: int) -> keras.Model:
+def build_small_unet(n_classes: int, input_shape: int, batch_size: int, encoder_kernel_size: int) -> keras.Model:
     """One encoder-decoder level less. Divides by a factor 4 the number of total paramaters of the model."""
     inputs = keras.Input(shape=(input_shape, input_shape, 3), batch_size=batch_size)
 
-    encoder_block_1, skip_features1 = encoder_block(inputs, 32)
-    encoder_block_2, skip_features2 = encoder_block(encoder_block_1, 64)
-    encoder_block_3, skip_feature3 = encoder_block(encoder_block_2, 128)
+    encoder_block_1, skip_features1 = encoder_block(inputs, 32, encoder_kernel_size)
+    encoder_block_2, skip_features2 = encoder_block(encoder_block_1, 64, encoder_kernel_size)
+    encoder_block_3, skip_feature3 = encoder_block(encoder_block_2, 128, encoder_kernel_size)
 
-    conv_block1 = conv_block(encoder_block_3, 256)
+    conv_block1 = conv_block(encoder_block_3, 256, encoder_kernel_size)
 
     decoder_block1 = decoder_block(conv_block1, skip_feature3, 128)
     decoder_block2 = decoder_block(decoder_block1, skip_features2, 64)
@@ -57,19 +47,19 @@ def build_small_unet(n_classes: int, input_shape: int, batch_size: int) -> keras
     return model
 
 
-def conv_block(inputs: tf.Tensor, n_filters) -> tf.Tensor:
-    x = layers.Conv2D(filters=n_filters, kernel_size=3, padding=PADDING_TYPE)(inputs)
+def conv_block(inputs: tf.Tensor, n_filters: int, kernel_size: int) -> tf.Tensor:
+    x = layers.Conv2D(filters=n_filters, kernel_size=kernel_size, padding=PADDING_TYPE)(inputs)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
 
-    x = layers.Conv2D(filters=n_filters, kernel_size=3, padding=PADDING_TYPE)(x)
+    x = layers.Conv2D(filters=n_filters, kernel_size=kernel_size, padding=PADDING_TYPE)(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
     return x
 
 
-def encoder_block(inputs: tf.Tensor, n_filters: int) -> (tf.Tensor, tf.Tensor):
-    x = conv_block(inputs, n_filters)
+def encoder_block(inputs: tf.Tensor, n_filters: int, encoder_kernel_size: int) -> (tf.Tensor, tf.Tensor):
+    x = conv_block(inputs, n_filters, encoder_kernel_size)
     p = layers.MaxPooling2D(pool_size=2, strides=2)(x)
     return p, x
 

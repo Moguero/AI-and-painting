@@ -16,29 +16,8 @@ from dataset_utils.image_utils import (
     get_file_name_with_extension,
     get_image_masks_paths, get_image_patch_masks_paths,
 )
-from pathlib import Path
 from dataset_utils.masks_encoder import stack_image_masks
-
-
-# DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
-DATA_DIR_ROOT = Path(
-    "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/files"
-)
-
-IMAGE_PATH = DATA_DIR_ROOT / "images/1/1.png"
-# MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
-MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
-IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
-PATCHES_DIR = DATA_DIR_ROOT / "patches"
-COUNT_ALL_CATEGORICAL_MASK_IRREGULAR_PIXELS_OUTPUT_PATH = (
-    DATA_DIR_ROOT / "temp_files\categorical_mask_irregular_pixels_count.csv"
-)
-ALL_MASKS_OVERLAP_INDICES_OUTPUT_PATH = (
-    DATA_DIR_ROOT / "temp_files/all_masks_overlap_indices.csv"
-)
-ALL_PATCH_MASKS_OVERLAP_INDICES_PATH = DATA_DIR_ROOT / "temp_files/all_patch_masks_overlap_indices.csv"
-INPUT_SHAPE = 256
-N_CLASSES = 9
+from constants import *
 
 
 def count_mask_value_occurences(mask_path: Path) -> {int: float}:

@@ -1,11 +1,13 @@
 from pathlib import Path
+
 from loguru import logger
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
-from constants import PALETTE_HEXA, MAPPING_CLASS_NUMBER
+from constants import PALETTE_HEXA, MAPPING_CLASS_NUMBER, IMAGE_PATH, MASKS_DIR_PATH, OUTPUT_DIR_PATH, \
+    CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE
 from dataset_utils.dataset_builder import build_predictions_dataset
 from dataset_utils.file_utils import timeit
 from dataset_utils.image_rebuilder import (
@@ -15,20 +17,7 @@ from dataset_utils.image_utils import decode_image, get_image_name_without_exten
 from dataset_utils.masks_encoder import stack_image_masks
 from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channels_tensor
 from deep_learning.training.model_runner import load_saved_model
-
-# DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
-DATA_DIR_ROOT = Path(
-    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files"
-)
-IMAGE_PATH = DATA_DIR_ROOT / "images/_DSC0246/_DSC0246.jpg"
-CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_08_12__17_33_34"
-# MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
-MASKS_DIR = DATA_DIR_ROOT / "labels_masks/all"
-OUTPUT_DIR_PATH = DATA_DIR_ROOT / "predictions"
-PATCH_SIZE = 256
-PATCH_OVERLAP = 10
-BATCH_SIZE = 32
-N_CLASSES = 9
+from PIL import Image
 
 
 def make_predictions(
@@ -65,6 +54,7 @@ def make_predictions(
         input_shape=patch_size,
         batch_size=batch_size,
     )
+
     # make predictions on the patches
     # & remove background predictions so it we take the max on the non background classes
     logger.info("\nStart to make predictions...")
@@ -105,9 +95,6 @@ def save_full_plot_predictions(
     n_classes: int,
     batch_size: int,
 ) -> None:
-    # predictions_tensor = make_predictions(
-    #     target_image_path, checkpoint_dir_path, patch_size, n_classes, batch_size
-    # )
     predictions_tensor = make_predictions(
         target_image_path, checkpoint_dir_path, patch_size, patch_overlap, n_classes, batch_size
     )
@@ -146,14 +133,44 @@ def save_full_plot_predictions(
     if not image_sub_dir.exists():
         image_sub_dir.mkdir()
     output_path = (
-        output_dir_path
-        / f"{get_image_name_without_extension(target_image_path)}"
-        / f"{get_image_name_without_extension(target_image_path)}_predictions__model_{checkpoint_dir_path.parts[-1]}.png"
+        image_sub_dir
+        / f"{get_image_name_without_extension(target_image_path)}_predictions__model_{checkpoint_dir_path.parts[-1]}__overlap_{patch_overlap}.png"
     )
     plt.savefig(output_path, bbox_inches="tight", dpi=300)
+    logger.info(f"\nFull predictions plot succesfully saved at : {output_path}")
+    # todo : add unique identification to same image/same model file (like random id) to compare with different values of misclassification_size
+
+
+def save_predictions_plot_only(
+    target_image_path: Path,
+    output_dir_path: Path,
+    checkpoint_dir_path: Path,
+    patch_size: int,
+    patch_overlap: int,
+    n_classes: int,
+    batch_size: int,
+) -> None:
+    predictions_tensor = make_predictions(
+        target_image_path, checkpoint_dir_path, patch_size, patch_overlap, n_classes, batch_size
+    )
+    mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
+        predictions_tensor
+    )
+    image_sub_dir = output_dir_path / f"{get_image_name_without_extension(target_image_path)}" / "predictions_only"
+    if not image_sub_dir.exists():
+        image_sub_dir.mkdir()
+    output_path = (
+        image_sub_dir
+        / f"{get_image_name_without_extension(target_image_path)}_predictions__model_{checkpoint_dir_path.parts[-1]}__overlap_{patch_overlap}.png"
+    )
+    tf.keras.preprocessing.image.save_img(output_path, mapped_predictions_array)
+    logger.info(f"\nFull predictions plot succesfully saved at : {output_path}")
 
 
 # ------
 # DEBUG
 # predictions = make_predictions(IMAGE_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE)
-# save_full_plot_predictions(IMAGE_PATH, MASKS_DIR, OUTPUT_DIR_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE)
+# save_full_plot_predictions(IMAGE_PATH, MASKS_DIR_PATH, OUTPUT_DIR_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE)
+# save_predictions_plot_only(IMAGE_PATH, OUTPUT_DIR_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE)
+
+# todo : create a windows and linux environment.yml file

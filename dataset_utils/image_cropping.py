@@ -1,15 +1,7 @@
-from pathlib import Path
 import tensorflow as tf
 
 from dataset_utils.image_utils import decode_image, get_tensor_dims
-
-IMAGE_PATH = Path(
-    "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/_DSC0030/_DSC0030.jpg"
-)
-OUTPUT_PATH = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/test.jpg")
-
-TARGET_HEIGHT = 2176
-TARGET_WIDTH = 3264
+from constants import *
 
 
 def crop_tensor(
