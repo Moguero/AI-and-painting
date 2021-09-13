@@ -16,10 +16,10 @@ def build_unet(n_classes: int, batch_size: int, encoder_kernel_size: int) -> ker
 
     conv_block1 = conv_block(encoder_block_4, 512, encoder_kernel_size)
 
-    decoder_block1 = decoder_block(conv_block1, skip_features4, 256)
-    decoder_block2 = decoder_block(decoder_block1, skip_features3, 128)
-    decoder_block3 = decoder_block(decoder_block2, skip_features2, 64)
-    decoder_block4 = decoder_block(decoder_block3, skip_features1, 32)
+    decoder_block1 = decoder_block(conv_block1, skip_features4, 256, encoder_kernel_size)
+    decoder_block2 = decoder_block(decoder_block1, skip_features3, 128, encoder_kernel_size)
+    decoder_block3 = decoder_block(decoder_block2, skip_features2, 64, encoder_kernel_size)
+    decoder_block4 = decoder_block(decoder_block3, skip_features1, 32, encoder_kernel_size)
 
     outputs = layers.Conv2D(filters=n_classes, kernel_size=1, padding=PADDING_TYPE, activation='sigmoid')(decoder_block4)
 
@@ -37,9 +37,9 @@ def build_small_unet(n_classes: int, input_shape: int, batch_size: int, encoder_
 
     conv_block1 = conv_block(encoder_block_3, 256, encoder_kernel_size)
 
-    decoder_block1 = decoder_block(conv_block1, skip_feature3, 128)
-    decoder_block2 = decoder_block(decoder_block1, skip_features2, 64)
-    decoder_block3 = decoder_block(decoder_block2, skip_features1, 32)
+    decoder_block1 = decoder_block(conv_block1, skip_feature3, 128, encoder_kernel_size)
+    decoder_block2 = decoder_block(decoder_block1, skip_features2, 64, encoder_kernel_size)
+    decoder_block3 = decoder_block(decoder_block2, skip_features1, 32, encoder_kernel_size)
 
     outputs = layers.Conv2D(filters=n_classes + 1, kernel_size=1, padding=PADDING_TYPE, activation='sigmoid')(decoder_block3)
 
@@ -64,12 +64,12 @@ def encoder_block(inputs: tf.Tensor, n_filters: int, encoder_kernel_size: int) -
     return p, x
 
 
-def decoder_block(inputs: tf.Tensor, skip_features: tf.Tensor, n_filters: int) -> tf.Tensor:
+def decoder_block(inputs: tf.Tensor, skip_features: tf.Tensor, n_filters: int, kernel_size: int) -> tf.Tensor:
     x = layers.Conv2DTranspose(filters=n_filters, kernel_size=2, strides=2, padding=PADDING_TYPE)(inputs)
     crop_shapes = get_crop_shape(x, skip_features)
     cropped_skip_features = layers.Cropping2D(cropping=crop_shapes, data_format="channels_last")(skip_features)
     x = layers.concatenate([x, cropped_skip_features])
-    x = conv_block(x, n_filters)
+    x = conv_block(x, n_filters, kernel_size)
     return x
 
 

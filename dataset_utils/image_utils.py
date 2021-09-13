@@ -200,24 +200,24 @@ def get_image_patch_paths(patches_dir: Path, n_patches_limit: int = None) -> lis
                     if counter > n_patches_limit:
                         break
                 patch_paths_list.append(patch_path)
-    logger.info("\nImage patch paths retrieved succesfully.")
+    logger.info("\nImage patch paths retrieved successfully.")
     return patch_paths_list
 
 
 def get_tensor_dims(tensor: tf.Tensor) -> tuple:
     n_dims = len(list(tensor.shape))
     if n_dims == 2:
-        width_index = 0
-        height_index = 1
+        height_index = 0
+        width_index = 1
         channels_index = None
     elif n_dims == 3:
-        width_index = 0
-        height_index = 1
+        height_index = 0
+        width_index = 1
         channels_index = 2
     elif n_dims == 4:
-        width_index = 1
-        height_index = 2
+        height_index = 1
+        width_index = 2
         channels_index = 3
     else:
         raise ValueError(f"Dimension is {n_dims} : expected 2, 3 or 4.")
-    return width_index, height_index, channels_index
+    return height_index, width_index, channels_index

@@ -170,6 +170,7 @@ def extract_patches_with_overlap(
     if with_four_channels:
         image = image[:, :, :, :3]
 
+    # todo : use get_image_shape
     n_rows = image.shape[1]
     n_columns = image.shape[2]
 

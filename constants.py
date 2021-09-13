@@ -22,6 +22,8 @@ MASK_PATH = (
     / "labels_masks/all/1/feuilles-vertes/mask_1_feuilles-vertes__090f44ab03ee43d7aaabe92aa58b06c1.png"
 )
 OUTPUT_PATH = DATA_DIR_ROOT / "test.png"
+# PREDICTIONS_PATH = DATA_DIR_ROOT / "predictions/_DSC0246/predictions_only/_DSC0246_predictions__model_2021_08_19__16_15_07__overlap_40.png"
+PREDICTIONS_PATH = DATA_DIR_ROOT / "predictions/test.png"
 
 # Palette & mapping related variables
 
@@ -88,7 +90,8 @@ N_PATCHES_LIMIT = 100
 TEST_PROPORTION = 0.2
 PATCH_OVERLAP = 40  # 20 not enough, 40 great
 PATCH_COVERAGE_PERCENT_LIMIT = 75
-KERNEL_SIZE = 3
+ENCODER_KERNEL_SIZE = 3
+LINEARIZER_KERNEL_SIZE = 3
 N_CPUS = 4
 # N_CPUS = 16
 TARGET_HEIGHT = 2176
@@ -101,3 +104,4 @@ LOSS_FUNCTION = keras.losses.categorical_crossentropy
 # METRICS = ["accuracy", keras.metrics.MeanIoU]
 # METRICS = [keras.metrics.MeanIoU(N_CLASSES)]
 METRICS = [keras.metrics.categorical_accuracy, keras.metrics.MeanIoU(N_CLASSES)]
+DOWNSCALE_FACTORS = (2, 2, 1)

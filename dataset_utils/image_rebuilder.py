@@ -104,23 +104,23 @@ def rebuild_predictions_with_overlap(
 
     # counting the number of patches in which the image has been cut
     original_image_tensor = decode_image(target_image_path)
-    image_width_index, image_height_index, image_channels_index = get_tensor_dims(
+    image_height_index, image_width_index, image_channels_index = get_tensor_dims(
         original_image_tensor
-    )
-    n_horizontal_patches = (original_image_tensor.shape[image_width_index] - patch_overlap) // (
-        patch_size - patch_overlap
     )
     n_vertical_patches = (original_image_tensor.shape[image_height_index] - patch_overlap) // (
         patch_size - patch_overlap
     )
-    assert n_horizontal_patches * n_vertical_patches == len(
+    n_horizontal_patches = (original_image_tensor.shape[image_width_index] - patch_overlap) // (
+        patch_size - patch_overlap
+    )
+    assert n_vertical_patches * n_horizontal_patches == len(
         patches
-    ), f"The number of patches is not the same : original image should have {n_vertical_patches*n_horizontal_patches} while we have {len(patches)} "
+    ), f"The number of patches is not the same : original image should have {n_horizontal_patches*n_vertical_patches} while we have {len(patches)} "
 
     logger.info("\nRebuilding predictions patches...")
-    for row_number in range(n_horizontal_patches):
-        for column_number in range(n_vertical_patches):
-            patch_number = row_number * n_vertical_patches + column_number
+    for row_number in range(n_vertical_patches):
+        for column_number in range(n_horizontal_patches):
+            patch_number = row_number * n_horizontal_patches + column_number
             patch = patches[patch_number]
 
             # cropping the patch by taking into account the overlap with which it was built
@@ -145,17 +145,17 @@ def rebuild_predictions_with_overlap(
         else:
             rebuilt_tensor = tf.concat([rebuilt_tensor, line_rebuilt_tensor], axis=0)
     # todo : unhardcode the axis parameter in tf.concat
-    rebuilt_width_index, rebuilt_height_index, rebuilt_channels_index = get_tensor_dims(
+    rebuilt_height_index, rebuilt_width_index, rebuilt_channels_index = get_tensor_dims(
         rebuilt_tensor
     )
 
     # checking that the final size is consistent
-    assert rebuilt_tensor.shape[rebuilt_width_index] == int(
-        n_horizontal_patches * patch_size - (n_horizontal_patches - 1) * patch_overlap - 2 * (patch_overlap / 2)
-    ), f"Number of rows is not consistent : got {rebuilt_tensor.shape[rebuilt_width_index]}, expected {int(n_horizontal_patches * patch_size - 2 * (patch_overlap / 2))}"
     assert rebuilt_tensor.shape[rebuilt_height_index] == int(
         n_vertical_patches * patch_size - (n_vertical_patches - 1) * patch_overlap - 2 * (patch_overlap / 2)
-    ), f"Number of columns is not consistent : got {rebuilt_tensor.shape[rebuilt_height_index]}, expected {int(n_vertical_patches * patch_size - 2 * (patch_overlap / 2))}"
+    ), f"Number of rows is not consistent : got {rebuilt_tensor.shape[rebuilt_height_index]}, expected {int(n_vertical_patches * patch_size - 2 * (patch_overlap / 2))}"
+    assert rebuilt_tensor.shape[rebuilt_width_index] == int(
+        n_horizontal_patches * patch_size - (n_horizontal_patches - 1) * patch_overlap - 2 * (patch_overlap / 2)
+    ), f"Number of columns is not consistent : got {rebuilt_tensor.shape[rebuilt_width_index]}, expected {int(n_horizontal_patches * patch_size - 2 * (patch_overlap / 2))}"
 
     logger.info(
         f"\nFull image predictions has been successfully built with size {rebuilt_tensor.shape}."

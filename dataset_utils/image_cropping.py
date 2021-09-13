@@ -7,11 +7,11 @@ from constants import *
 def crop_tensor(
     tensor: tf.Tensor, target_height: int, target_width: int
 ) -> tf.Tensor:
-    width_index, height_index, channels_index = get_tensor_dims(tensor)
+    height_index, width_index, channels_index = get_tensor_dims(tensor)
 
     # center the crop
-    height_difference = tensor.get_shape()[width_index] - target_height
-    width_difference = tensor.get_shape()[height_index] - target_width
+    height_difference = tensor.get_shape()[height_index] - target_height
+    width_difference = tensor.get_shape()[width_index] - target_width
     assert height_difference >= 0
     if height_difference % 2 != 0:
         height_offset = height_difference // 2

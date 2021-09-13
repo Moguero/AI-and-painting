@@ -3,7 +3,7 @@ from loguru import logger
 from tensorflow import keras
 
 from constants import N_CLASSES, INPUT_SHAPE, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, CHECKPOINT_ROOT_DIR_PATH, \
-    N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, KERNEL_SIZE
+    N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE
 from dataset_utils.file_utils import timeit, get_formatted_time
 from deep_learning.models.unet import build_small_unet
 from dataset_utils.dataset_builder import get_train_and_test_dataset
@@ -68,10 +68,10 @@ def train_model(
 
 
 def load_saved_model(
-    checkpoint_dir_path: Path, n_classes: int, input_shape: int, batch_size: int
+    checkpoint_dir_path: Path, n_classes: int, input_shape: int, batch_size: int, encoder_kernel_size: int
 ):
     logger.info("\nLoading the model...")
-    model = build_small_unet(n_classes, input_shape, batch_size)
+    model = build_small_unet(n_classes, input_shape, batch_size, encoder_kernel_size)
     filepath = tf.train.latest_checkpoint(checkpoint_dir=checkpoint_dir_path)
     model.load_weights(filepath=filepath)
     # the warnings logs due to load_weights are here because we don't train (compile/fit) after : they disappear if we do
