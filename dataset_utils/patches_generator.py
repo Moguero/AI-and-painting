@@ -148,7 +148,7 @@ def save_all_images_and_labels_patches(
 
 
 def extract_patches_with_overlap(
-    image_path: Path,
+    image_tensor: tf.Tensor,
     patch_size: int,
     patch_overlap: int,
     with_four_channels: bool = False,
@@ -158,14 +158,13 @@ def extract_patches_with_overlap(
     Padding is by default implemented as "VALID", meaning that only patches which are fully
     contained in the input image are included.
 
-    :param image_path: Path of the image we want to cut into patches.
+    :param image_tensor: Path of the image we want to cut into patches.
     :param patch_size: Size of the patch.
     :param patch_overlap: Number of pixels on which neighbors patches intersect each other.
     :param with_four_channels: Set it to True if the image is a PNG. Default to False for JPEG.
     :return: A list of patches of the original image.
     """
-    image = decode_image(image_path)
-    image = tf.expand_dims(image, 0)
+    image = tf.expand_dims(image_tensor, 0)
 
     if with_four_channels:
         image = image[:, :, :, :3]
