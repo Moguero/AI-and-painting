@@ -4,6 +4,7 @@ import tensorflow as tf
 from loguru import logger
 from tqdm import tqdm
 
+from constants import IMAGES_DIR_PATH, MASKS_DIR_PATH, PATCHES_DIR_PATH, PATCH_SIZE
 from dataset_utils.image_utils import (
     decode_image,
     get_image_name_without_extension,
@@ -11,7 +12,6 @@ from dataset_utils.image_utils import (
     get_image_masks_paths,
 )
 from dataset_utils.masks_encoder import save_tensor_to_jpg
-from constants import *
 
 
 def extract_image_patches(
@@ -131,16 +131,21 @@ def save_image_and_labels_patches(
 def save_all_images_and_labels_patches(
     images_dir: Path,
     masks_dir: Path,
-    images_patches_dir_path: Path,
+    image_patches_dir_path: Path,
     patch_size: int,
     padding: str = "VALID",
 ):
     logger.info("\nStarting to save images and labels patches...")
     start_time = time.time()
+
+    image_patches_subdir_path = image_patches_dir_path / f"{patch_size}x{patch_size}"
+    if not image_patches_subdir_path.exists():
+        image_patches_subdir_path.mkdir()
+
     image_dir_paths = get_images_paths(images_dir)
     for image_path in tqdm(image_dir_paths):
         save_image_and_labels_patches(
-            image_path, masks_dir, images_patches_dir_path, patch_size, padding
+            image_path, masks_dir, image_patches_dir_path, patch_size, padding
         )
     logger.info(
         f"\nImages and labels patches saving finished in {(time.time() - start_time)/60:.1f} minutes.\n"
@@ -194,6 +199,7 @@ def extract_patches_with_overlap(
         row_idx += patch_size - patch_overlap
     return patches
 
+
 # ------
 # DEBUG
-# save_all_images_and_labels_patches(IMAGES_DIR, MASKS_DIR, IMAGES_PATCHES_DIR_PATH, PATCH_SIZE)
+# save_all_images_and_labels_patches(IMAGES_DIR_PATH, MASKS_DIR_PATH, PATCHES_DIR_PATH, PATCH_SIZE)

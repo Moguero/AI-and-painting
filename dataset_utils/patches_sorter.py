@@ -9,7 +9,6 @@ from dataset_utils.file_utils import save_list_to_csv, load_saved_dict, save_dic
 from dataset_utils.files_stats import count_mask_value_occurences_percent_of_2d_tensor
 from dataset_utils.image_utils import get_file_name_with_extension, get_image_patch_paths
 from dataset_utils.masks_encoder import stack_image_patch_masks
-from constants import *
 
 
 def get_patch_coverage(image_patch_path: Path) -> float:

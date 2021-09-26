@@ -3,9 +3,10 @@ from loguru import logger
 
 import tensorflow as tf
 
+from constants import PATCHES_DIR_PATH, IMAGE_PATH, PATCH_SIZE, PATCH_OVERLAP
 from dataset_utils.image_cropping import crop_tensor
 from dataset_utils.image_utils import decode_image, get_tensor_dims
-from constants import *
+from deep_learning.preprocessing.downscaling import downscale_image
 
 
 def rebuild_image(
@@ -81,11 +82,13 @@ def rebuild_predictions_with_overlap(
     target_image_path: Path,
     patch_size: int,
     patch_overlap: int,
+    downscale_factors: tuple,
     misclassification_size: int = 5,
 ) -> tf.Tensor:
     """
     Restructure the patches that were generated with the extract_patches_with_overlap() function.
 
+    :param downscale_factors:
     :param patches: List with size n_patches of tensor with size (patch_size, patch_size, 1)
     :param target_image_path: Path of the image we want to make predictions on.
     :param patch_size: Size of the patches.
@@ -103,7 +106,8 @@ def rebuild_predictions_with_overlap(
     )
 
     # counting the number of patches in which the image has been cut
-    original_image_tensor = decode_image(target_image_path)
+    downscale_image_array = downscale_image(target_image_path, downscale_factors)
+    original_image_tensor = tf.constant(downscale_image_array, dtype=tf.int32)
     image_height_index, image_width_index, image_channels_index = get_tensor_dims(
         original_image_tensor
     )
@@ -166,5 +170,5 @@ def rebuild_predictions_with_overlap(
 
 # -------
 # DEBUG
-# rebuild_image(IMAGE_PATCHES_DIR, ORIGINAL_IMAGE_PATH, PATCH_SIZE)
+# rebuild_image(PATCHES_DIR_PATH, IMAGE_PATH, PATCH_SIZE)
 # a = rebuild_overlapping_patches_test(patches, IMAGE_PATH, PATCH_SIZE, PATCH_OVERLAP)

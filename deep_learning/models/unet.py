@@ -1,7 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-from constants import *
 
 # TODO : choose an input size with height and width multiple of 32 (which engender no cropping with 4 encoder layers)
 

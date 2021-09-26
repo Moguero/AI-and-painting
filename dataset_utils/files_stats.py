@@ -17,7 +17,6 @@ from dataset_utils.image_utils import (
     get_image_masks_paths, get_image_patch_masks_paths,
 )
 from dataset_utils.masks_encoder import stack_image_masks
-from constants import *
 
 
 def count_mask_value_occurences(mask_path: Path) -> {int: float}:

@@ -1,4 +1,5 @@
 import tensorflow as tf
+from pathlib import Path
 
 from loguru import logger
 from tqdm import tqdm
@@ -6,9 +7,8 @@ from tqdm import tqdm
 from dataset_utils.file_utils import timeit
 from dataset_utils.image_utils import decode_image
 from dataset_utils.masks_encoder import one_hot_encode_image_patch_masks
-from deep_learning.patches_generator import extract_patches_with_overlap
-from deep_learning.patches_sorter import get_patches_above_coverage_percent_limit
-from constants import *
+from dataset_utils.patches_generator import extract_patches_with_overlap
+from dataset_utils.patches_sorter import get_patches_above_coverage_percent_limit
 
 
 @timeit
@@ -91,20 +91,20 @@ def get_train_and_test_dataset(
 
 
 # todo : don't hardcode the batch_size to 1
-def build_predictions_dataset(target_image_path: Path, patch_size: int, patch_overlap: int) -> tf.data.Dataset:
+def build_predictions_dataset(target_image_tensor: tf.Tensor, patch_size: int, patch_overlap: int) -> tf.data.Dataset:
     """
     Build a dataset of patches to make predictions on each one of them.
 
-    :param target_image_path: Image to make predictions on.
+    :param target_image_tensor: Image to make predictions on.
     :param patch_size: Size of the patch.
     :param patch_overlap: Number of pixels on which neighbors patches intersect each other.
     :return: A Dataset object with tensors of size (1, patch_size, patch_size, 3). Its length corresponds of the number of patches generated.
     """
     logger.info("\nSlice the image into patches...")
     image_patches_tensors: list = extract_patches_with_overlap(
-        image_path=target_image_path,
+        image_tensor=target_image_tensor,
         patch_size=patch_size,
-        patch_overlap=patch_overlap
+        patch_overlap=patch_overlap,
     )
     prediction_dataset = tf.data.Dataset.from_tensor_slices(image_patches_tensors)
     prediction_dataset = prediction_dataset.batch(batch_size=1, drop_remainder=True)
@@ -177,5 +177,5 @@ def get_dataset_generator(dataset: tf.data.Dataset) -> tf.data.Iterator:
 
 # get_dataset(IMAGE_PATHS, CATEGORICAL_MASKS_DIR, N_CLASSES, BATCH_SIZE)
 # train, test = get_small_dataset_2(N_PATCHES, N_CLASSES, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, SAVED_PATCHES_COVERAGE_PERCENT_PATH)
-
+#
 # get_dataset(N_PATCHES_LIMIT, N_CLASSES, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, PATCHES_DIR_PATH)

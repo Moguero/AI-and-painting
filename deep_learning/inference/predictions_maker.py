@@ -6,16 +6,17 @@ import matplotlib
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
-from constants import PALETTE_HEXA, MAPPING_CLASS_NUMBER, IMAGE_PATH, MASKS_DIR_PATH, OUTPUT_DIR_PATH, \
-    CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE
+from constants import PALETTE_HEXA, MAPPING_CLASS_NUMBER, IMAGE_PATH, MASKS_DIR_PATH, PREDICTIONS_DIR_PATH, \
+    CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE, DOWNSCALE_FACTORS
 from dataset_utils.dataset_builder import build_predictions_dataset
-from dataset_utils.file_utils import timeit
+from dataset_utils.file_utils import timeit, get_formatted_time
 from dataset_utils.image_rebuilder import (
     rebuild_predictions_with_overlap,
 )
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.masks_encoder import stack_image_masks
 from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channels_tensor
+from deep_learning.preprocessing.downscaling import downscale_image
 from deep_learning.training.model_runner import load_saved_model
 
 
@@ -26,11 +27,14 @@ def make_predictions(
     patch_overlap: int,
     n_classes: int,
     batch_size: int,
-    encoder_kernel_size
+    encoder_kernel_size: int,
+    downscale_factors: tuple,
 ):
     """
     Make predictions on the target image specified with its path.
 
+    :param downscale_factors: Factors on which we must downscale the image.
+    :param encoder_kernel_size: Size of the kernel encoder.
     :param target_image_path: Image to make predictions on.
     :param checkpoint_dir_path: Path of the already trained model.
     :param patch_size: Size of the patches on which the model was trained. This is also the size of the predictions patches.
@@ -41,14 +45,14 @@ def make_predictions(
     :return: A 2D categorical tensor of size (width, height), width and height being the cropped size of the target image tensor.
     """
     # downscale the image if necessary
-    ...
-    # todo : downscale the image
-
+    # todo : automate the downscale_factors
+    downscale_image_array = downscale_image(target_image_path, downscale_factors)
+    downscale_image_tensor = tf.constant(downscale_image_array, dtype=tf.int32)
 
     # cut the image into patches of size patch_size
     # & format the image patches to feed the model.predict function
     predictions_dataset = build_predictions_dataset(
-        target_image_path, patch_size, patch_overlap
+        downscale_image_tensor, patch_size, patch_overlap
     )
 
     # build the model
@@ -83,7 +87,7 @@ def make_predictions(
 
     # rebuild the image with the predictions patches
     full_predictions_tensor = rebuild_predictions_with_overlap(
-        classes, target_image_path, patch_size, patch_overlap
+        classes, target_image_path, patch_size, patch_overlap, downscale_factors
     )
 
     full_predictions_tensor = tf.squeeze(full_predictions_tensor)
@@ -100,10 +104,11 @@ def save_full_plot_predictions(
     patch_overlap: int,
     n_classes: int,
     batch_size: int,
-    encoder_kernel_size: int
+    encoder_kernel_size: int,
+    downscale_factors: tuple,
 ) -> None:
     predictions_tensor = make_predictions(
-        target_image_path, checkpoint_dir_path, patch_size, patch_overlap, n_classes, batch_size, encoder_kernel_size
+        target_image_path, checkpoint_dir_path, patch_size, patch_overlap, n_classes, batch_size, encoder_kernel_size, downscale_factors
     )
     image = decode_image(target_image_path).numpy()
     categorical_tensor = stack_image_masks(target_image_path, masks_dir)
@@ -141,11 +146,10 @@ def save_full_plot_predictions(
         image_sub_dir.mkdir()
     output_path = (
         image_sub_dir
-        / f"{get_image_name_without_extension(target_image_path)}_predictions__model_{checkpoint_dir_path.parts[-1]}__overlap_{patch_overlap}.png"
+        / f"{get_image_name_without_extension(target_image_path)}_{get_formatted_time()}__model_{checkpoint_dir_path.parts[-1]}__overlap_{patch_overlap}.png"
     )
     plt.savefig(output_path, bbox_inches="tight", dpi=300)
     logger.info(f"\nFull predictions plot successfully saved at : {output_path}")
-    # todo : add unique identification to same image/same model file (like random id) to compare with different values of misclassification_size
 
 
 def save_predictions_plot_only(
@@ -156,10 +160,11 @@ def save_predictions_plot_only(
     patch_overlap: int,
     n_classes: int,
     batch_size: int,
-    encoder_kernel_size: int
+    encoder_kernel_size: int,
+    downscale_factors: tuple,
 ) -> None:
     predictions_tensor = make_predictions(
-        target_image_path, checkpoint_dir_path, patch_size, patch_overlap, n_classes, batch_size, encoder_kernel_size
+        target_image_path, checkpoint_dir_path, patch_size, patch_overlap, n_classes, batch_size, encoder_kernel_size, downscale_factors
     )
     mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
         predictions_tensor
@@ -169,7 +174,7 @@ def save_predictions_plot_only(
         image_sub_dir.mkdir()
     output_path = (
         image_sub_dir
-        / f"{get_image_name_without_extension(target_image_path)}_predictions__model_{checkpoint_dir_path.parts[-1]}__overlap_{patch_overlap}.png"
+        / f"{get_image_name_without_extension(target_image_path)}_{get_formatted_time()}__model_{checkpoint_dir_path.parts[-1]}__overlap_{patch_overlap}.png"
     )
     tf.keras.preprocessing.image.save_img(output_path, mapped_predictions_array)
     logger.info(f"\nFull predictions plot successfully saved at : {output_path}")
@@ -177,8 +182,8 @@ def save_predictions_plot_only(
 
 # ------
 # DEBUG
-# predictions = make_predictions(IMAGE_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE)
-# save_full_plot_predictions(IMAGE_PATH, MASKS_DIR_PATH, OUTPUT_DIR_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE)
-# save_predictions_plot_only(IMAGE_PATH, OUTPUT_DIR_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE)
+# make_predictions(IMAGE_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE, DOWNSCALE_FACTORS)
+# save_full_plot_predictions(IMAGE_PATH, MASKS_DIR_PATH, OUTPUT_DIR_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE, DOWNSCALE_FACTORS)
+# save_predictions_plot_only(IMAGE_PATH, OUTPUT_DIR_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE, DOWNSCALE_FACTORS)
 
-# todo : create a windows and linux environment_win.yml file
+# save with config

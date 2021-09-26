@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 from loguru import logger
 
-from constants import PREDICTIONS_PATH, LINEARIZER_KERNEL_SIZE, OUTPUT_DIR_PATH
+from constants import PREDICTIONS_PATH, LINEARIZER_KERNEL_SIZE, PREDICTIONS_DIR_PATH
 from dataset_utils.file_utils import timeit
 from dataset_utils.image_utils import decode_image, get_tensor_dims, get_image_name_without_extension
 
@@ -69,11 +69,10 @@ def get_dominant_rgb_value(sample: tf.Tensor, linearizer_kernel_size: int) -> tu
 
 
 def save_smoothed_predictions(predictions_path: Path, linearizer_kernel_size: int, output_dir_path: Path) -> None:
-    pass
     predictions_array = smooth_predictions(predictions_path, linearizer_kernel_size)
     # todo : select parent
     # image_sub_dir = output_dir_path / f"{get_image_name_without_extension(target_image_path)}" / "predictions_only"
-    predictions_image_name = predictions_path.parts[-1]
+    # predictions_image_name = predictions_path.parts[-1]
     # if not image_sub_dir.exists():
     #     image_sub_dir.mkdir()
     # output_path = (

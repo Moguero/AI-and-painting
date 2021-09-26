@@ -1,6 +1,5 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from constants import *
 
 
 def plot_augmented_images(

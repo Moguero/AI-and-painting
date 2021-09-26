@@ -7,7 +7,6 @@ from dataset_utils.file_utils import timeit
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.image_utils import get_image_masks_paths, get_mask_class
 from dataset_utils.masks_encoder import stack_image_masks
-from constants import *
 
 
 def plot_mask_with_color(image_path: Path, mask_path: Path) -> None:

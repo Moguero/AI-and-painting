@@ -1,7 +1,8 @@
 from loguru import logger
 from tqdm import tqdm
 
-from dataset_utils.file_utils import save_list_to_csv
+from constants import MAPPING_CLASS_NUMBER, MASK_TRUE_VALUE, MASK_FALSE_VALUE
+from dataset_utils.file_utils import save_list_to_csv, load_saved_list
 from dataset_utils.image_utils import (
     get_image_masks_paths,
     get_mask_class,
@@ -12,7 +13,6 @@ from dataset_utils.image_utils import (
 from pathlib import Path
 import tensorflow as tf
 from dataset_utils.image_utils import decode_image
-from constants import *
 
 
 def stack_image_patch_masks(
@@ -375,7 +375,7 @@ def f():
 
 
 # debug
-def g():
+def g(SAVE_STATS_DIR_PATH=None):
     problematic_patches = list()
     for image_dir_path in tqdm(SAVE_STATS_DIR_PATH.iterdir(), desc="Iterating through images..."):
         for patch_dir_path in image_dir_path.iterdir():

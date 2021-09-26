@@ -5,7 +5,6 @@ import json
 import uuid
 from loguru import logger
 from pathlib import Path
-from constants import *
 
 
 def get_mask_urls(json_path: Path) -> dict:

@@ -1,7 +1,7 @@
 import tensorflow as tf
 
+from constants import OUTPUT_PATH, TARGET_HEIGHT, TARGET_WIDTH
 from dataset_utils.image_utils import decode_image, get_tensor_dims
-from constants import *
 
 
 def crop_tensor(
@@ -41,4 +41,5 @@ def save_cropped_image(
 
 # -------
 # DEBUG
-# crop_image(IMAGE_PATH, OUTPUT_PATH, TARGET_HEIGHT, TARGET_WIDTH)
+# tensor = ...
+# crop_tensor(..., OUTPUT_PATH, TARGET_HEIGHT, TARGET_WIDTH)

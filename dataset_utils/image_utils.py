@@ -5,7 +5,6 @@ from pathlib import Path
 import tensorflow as tf
 
 from dataset_utils.file_utils import timeit
-from constants import *
 
 
 def get_image_name_without_extension(image_path: Path) -> str:
@@ -221,3 +220,12 @@ def get_tensor_dims(tensor: tf.Tensor) -> tuple:
     else:
         raise ValueError(f"Dimension is {n_dims} : expected 2, 3 or 4.")
     return height_index, width_index, channels_index
+
+def turn_hexadecimal_color_into_nomalized_rgb_list(hexadecimal_color: str) -> [int]:
+    hexadecimal_color = hexadecimal_color.lstrip("#")
+    return tuple(int(hexadecimal_color[i:i+2], 16) / 255 for i in (0, 2, 4))
+
+
+def turn_hexadecimal_color_into_rgb_list(hexadecimal_color: str) -> [int]:
+    hexadecimal_color = hexadecimal_color.lstrip("#")
+    return tuple(int(hexadecimal_color[i:i+2], 16) for i in (0, 2, 4))
