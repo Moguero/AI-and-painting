@@ -4,6 +4,7 @@ from tensorflow.keras import layers
 from pathlib import Path
 
 # TODO : choose an input size with height and width multiple of 32 (which engender no cropping with 4 encoder layers)
+from constants import PADDING_TYPE
 
 
 def build_unet(n_classes: int, batch_size: int, encoder_kernel_size: int) -> keras.Model:
