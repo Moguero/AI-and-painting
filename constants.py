@@ -11,6 +11,7 @@ DATA_DIR_ROOT = Path(
 )
 # DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
 IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
+# IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
 PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches"
 MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
 # MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
