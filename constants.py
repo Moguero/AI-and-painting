@@ -6,15 +6,15 @@ from tensorflow import keras
 from dataset_utils.image_utils import turn_hexadecimal_color_into_nomalized_rgb_list, \
     turn_hexadecimal_color_into_rgb_list
 
-DATA_DIR_ROOT = Path(
-    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files"
-)
-# DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+# DATA_DIR_ROOT = Path(
+#     r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files"
+# )
+DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
 IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
 # IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
 PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches"
-MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
-# MASKS_DIR = DATA_DIR_ROOT / "labels_masks"
+# MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
+MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
 PREDICTIONS_DIR_PATH = DATA_DIR_ROOT / "predictions"
 CHECKPOINT_ROOT_DIR_PATH = DATA_DIR_ROOT / "checkpoints"
 CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_08_19__16_15_07"

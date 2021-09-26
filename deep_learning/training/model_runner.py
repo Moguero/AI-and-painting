@@ -2,33 +2,48 @@ import tensorflow as tf
 from loguru import logger
 from tensorflow import keras
 
-from constants import N_CLASSES, INPUT_SHAPE, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, CHECKPOINT_ROOT_DIR_PATH, \
-    N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE
+from constants import (
+    N_CLASSES,
+    INPUT_SHAPE,
+    PATCH_SIZE,
+    OPTIMIZER,
+    LOSS_FUNCTION,
+    METRICS,
+    CHECKPOINT_ROOT_DIR_PATH,
+    N_PATCHES_LIMIT,
+    BATCH_SIZE,
+    TEST_PROPORTION,
+    PATCH_COVERAGE_PERCENT_LIMIT,
+    N_EPOCHS,
+    PATCHES_DIR_PATH,
+    ENCODER_KERNEL_SIZE,
+)
 from dataset_utils.file_utils import timeit, get_formatted_time
 from deep_learning.models.unet import build_small_unet
 from dataset_utils.dataset_builder import get_train_and_test_dataset
 from pathlib import Path
 
 
-
 @timeit
 def train_model(
-        n_classes: int,
-        input_shape: int,
-        patch_size: int,
-        optimizer,
-        loss_function: str,
-        metrics: [str],
-        checkpoint_root_dir_path: Path,
-        n_patches_limit: int,
-        batch_size: int,
-        test_proportion: float,
-        patch_coverage_percent_limit: int,
-        epochs: int,
-        patches_dir_path: Path,
-        endoder_kernel_size: int
+    n_classes: int,
+    input_shape: int,
+    patch_size: int,
+    optimizer,
+    loss_function: str,
+    metrics: [str],
+    checkpoint_root_dir_path: Path,
+    n_patches_limit: int,
+    batch_size: int,
+    test_proportion: float,
+    patch_coverage_percent_limit: int,
+    epochs: int,
+    patches_dir_path: Path,
+    endoder_kernel_size: int,
 ):
-    assert input_shape == patch_size, f"Input shape must be the same as the patch size, but patch size {PATCH_SIZE} and input shape {INPUT_SHAPE} were given."
+    assert (
+        input_shape == patch_size
+    ), f"Input shape must be the same as the patch size, but patch size {PATCH_SIZE} and input shape {INPUT_SHAPE} were given."
     # Define the model
     logger.info("\nStart to build model...")
     model = build_small_unet(n_classes, input_shape, batch_size, endoder_kernel_size)
@@ -68,7 +83,11 @@ def train_model(
 
 
 def load_saved_model(
-    checkpoint_dir_path: Path, n_classes: int, input_shape: int, batch_size: int, encoder_kernel_size: int
+    checkpoint_dir_path: Path,
+    n_classes: int,
+    input_shape: int,
+    batch_size: int,
+    encoder_kernel_size: int,
 ):
     logger.info("\nLoading the model...")
     model = build_small_unet(n_classes, input_shape, batch_size, encoder_kernel_size)

@@ -145,7 +145,7 @@ def save_all_images_and_labels_patches(
     image_dir_paths = get_images_paths(images_dir)
     for image_path in tqdm(image_dir_paths):
         save_image_and_labels_patches(
-            image_path, masks_dir, image_patches_dir_path, patch_size, padding
+            image_path, masks_dir, image_patches_subdir_path, patch_size, padding
         )
     logger.info(
         f"\nImages and labels patches saving finished in {(time.time() - start_time)/60:.1f} minutes.\n"
