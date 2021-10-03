@@ -67,10 +67,11 @@ def get_patches_above_coverage_percent_limit(
 ) -> [Path]:
     patches_under_coverage_percent_limit_list = list()
     image_patch_paths = get_image_patch_paths(patches_dir, n_patches_limit)
-    for image_patch_path in tqdm(image_patch_paths, desc="Iterating over patches..."):
+    for image_patch_path in tqdm(image_patch_paths, desc="Selecting patches above the coverage percent limit..."):
         coverage_percent = get_patch_coverage(image_patch_path)
         if int(float(coverage_percent)) > coverage_percent_limit:
             patches_under_coverage_percent_limit_list.append(image_patch_path)
+    logger.info(f"\n{len(patches_under_coverage_percent_limit_list)}/{len(image_patch_paths)} patches above coverage percent limit selected.")
     return patches_under_coverage_percent_limit_list
 
 

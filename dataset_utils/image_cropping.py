@@ -1,6 +1,7 @@
 import tensorflow as tf
+from pathlib import Path
 
-from constants import OUTPUT_PATH, TARGET_HEIGHT, TARGET_WIDTH
+from constants import TARGET_HEIGHT, TARGET_WIDTH
 from dataset_utils.image_utils import decode_image, get_tensor_dims
 
 

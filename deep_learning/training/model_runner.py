@@ -20,7 +20,10 @@ from constants import (
 )
 from dataset_utils.file_utils import timeit, get_formatted_time
 from deep_learning.models.unet import build_small_unet
-from dataset_utils.dataset_builder import get_train_and_test_dataset
+from dataset_utils.dataset_builder import (
+    dataset_generator,
+    get_image_patches_paths,
+)
 from pathlib import Path
 
 
@@ -29,7 +32,7 @@ def train_model(
     n_classes: int,
     input_shape: int,
     patch_size: int,
-    optimizer,
+    optimizer: keras.optimizers,
     loss_function: str,
     metrics: [str],
     checkpoint_root_dir_path: Path,
@@ -39,14 +42,33 @@ def train_model(
     patch_coverage_percent_limit: int,
     epochs: int,
     patches_dir_path: Path,
-    endoder_kernel_size: int,
+    encoder_kernel_size: int,
 ):
+    """
+    Build the model, compile it, create a dataset iterator, train and model and save the trained model in callbacks.
+
+    :param n_classes: Number of classes used for the model
+    :param input_shape: Standard shape of the input images used for the training.
+    :param patch_size: Size of the patches (should be equal to input_shape).
+    :param optimizer:
+    :param loss_function:
+    :param metrics:
+    :param checkpoint_root_dir_path: Path of the directory where the checkpoints are stored.
+    :param n_patches_limit: Maximum number of patches used for the training.
+    :param batch_size: Size of the batch.
+    :param test_proportion: Float, used to set the proportion of the test dataset.
+    :param patch_coverage_percent_limit: Int, minimum coverage percent of a patch labels on this patch.
+    :param epochs: Number of epochs.
+    :param patches_dir_path: Path of the main patches directory.
+    :param encoder_kernel_size: Tuple of 2 integers, size of the encoder kernel.
+    :return:
+    """
     assert (
         input_shape == patch_size
-    ), f"Input shape must be the same as the patch size, but patch size {PATCH_SIZE} and input shape {INPUT_SHAPE} were given."
+    ), f"Input shape must be the same as the patch size, but patch size {patch_size} and input shape {input_shape} were given."
     # Define the model
     logger.info("\nStart to build model...")
-    model = build_small_unet(n_classes, input_shape, batch_size, endoder_kernel_size)
+    model = build_small_unet(n_classes, input_shape, batch_size, encoder_kernel_size)
     logger.info("\nModel built successfully.")
 
     # Compile the model
@@ -60,26 +82,52 @@ def train_model(
         )
     ]
 
+    # todo : make a report of the classes used for the training
     # Init dataset
-    train_dataset, test_dataset = get_train_and_test_dataset(
-        n_patches_limit=n_patches_limit,
+    # train_dataset, test_dataset = get_train_and_test_dataset(
+    #     n_patches_limit=n_patches_limit,
+    #     n_classes=n_classes,
+    #     batch_size=batch_size,
+    #     test_proportion=test_proportion,
+    #     patch_coverage_percent_limit=patch_coverage_percent_limit,
+    #     patches_dir_path=patches_dir_path,
+    # )
+
+    image_patches_paths = get_image_patches_paths(
+        patches_dir_path,
+        n_patches_limit,
+        batch_size,
+        patch_coverage_percent_limit,
+        test_proportion,
+    )
+
+    train_dataset_iterator = dataset_generator(
+        image_patches_paths=image_patches_paths,
         n_classes=n_classes,
         batch_size=batch_size,
         test_proportion=test_proportion,
-        patch_coverage_percent_limit=patch_coverage_percent_limit,
-        patches_dir_path=patches_dir_path,
+        stream="train",
     )
 
-    # todo : use model.fit but with a generator instead of a Dataset ?
+    # todo : data augmentation with DataImageGenerator
     # Fit the model
     logger.info("\nStart model training...")
-    history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks)
+    # history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks)
+    # Warning : the steps_per_epoch param must be not null in order to end the infinite loop of the generator !
+    history = model.fit(
+        train_dataset_iterator,
+        epochs=epochs,
+        callbacks=callbacks,
+        steps_per_epoch=int(len(image_patches_paths) * (1 - test_proportion))
+        // batch_size,
+    )
     logger.info("\nEnd of model training.")
 
     # Evaluate the model
-    loss, accuracy = model.evaluate(test_dataset, verbose=1)
+    # loss, accuracy = model.evaluate(test_dataset, verbose=1)
 
-    return model, history, loss, accuracy
+    return model, history
+    # return model, history, loss, accuracy
 
 
 def load_saved_model(
@@ -98,4 +146,5 @@ def load_saved_model(
     return model
 
 
+# model, history = train_model(N_CLASSES, INPUT_SHAPE, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, CHECKPOINT_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE)
 # train_model(N_CLASSES, INPUT_SHAPE, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, CHECKPOINT_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE)

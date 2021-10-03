@@ -12,21 +12,21 @@ from dataset_utils.image_utils import turn_hexadecimal_color_into_nomalized_rgb_
 DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
 IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
 # IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
-PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches"
+PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches/256x256"
 # MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
 MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
 PREDICTIONS_DIR_PATH = DATA_DIR_ROOT / "predictions"
 CHECKPOINT_ROOT_DIR_PATH = DATA_DIR_ROOT / "checkpoints"
-CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_08_19__16_15_07"
-OUTPUT_PATH = DATA_DIR_ROOT / "test.png"
-IMAGE_PATCH_PATH = DATA_DIR_ROOT / "patches/1/1/image/patch_1.jpg"
+CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_09_26__13_33_42"
+# OUTPUT_PATH = DATA_DIR_ROOT / "test.png"
+# IMAGE_PATCH_PATH = DATA_DIR_ROOT / "patches/1/1/image/patch_1.jpg"
 IMAGE_PATH = DATA_DIR_ROOT / "images/_DSC0246/_DSC0246.jpg"
 MASK_PATH = (
     DATA_DIR_ROOT
     / "labels_masks/all/1/feuilles-vertes/mask_1_feuilles-vertes__090f44ab03ee43d7aaabe92aa58b06c1.png"
 )
 # PREDICTIONS_PATH = PREDICTIONS_DIR_PATH / "_DSC0246/predictions_only/_DSC0246_predictions__model_2021_08_19__16_15_07__overlap_40.png"
-PREDICTIONS_PATH = PREDICTIONS_DIR_PATH / "test.png"
+# PREDICTIONS_PATH = PREDICTIONS_DIR_PATH / "test.png"
 
 # Palette & mapping related variables
 
@@ -70,6 +70,7 @@ MASK_URL = "https://api.labelbox.com/masks/feature/ckph5r33g00043a6dklihalmq?tok
 JSON_PATH = Path(
     "C:/Users/thiba/OneDrive - CentraleSupelec/Mission_JCS_IA_peinture/labelbox_export_json/export-2021-07-26T14_40_28.059Z.json"
 )
+
 # Values in a binary LabelBox mask
 MASK_TRUE_VALUE = 255
 MASK_FALSE_VALUE = 0
@@ -78,13 +79,13 @@ MASK_FALSE_VALUE = 0
 
 PATCH_SIZE = 256
 INPUT_SHAPE = 256
-BATCH_SIZE = 32 # 32 is a frequently used value
+BATCH_SIZE = 16  # 32 is a frequently used value
 N_CLASSES = 9
-N_EPOCHS = 10
+N_EPOCHS = 3
 N_PATCHES_LIMIT = 100
 TEST_PROPORTION = 0.2
 PATCH_OVERLAP = 40  # 20 not enough, 40 great
-PATCH_COVERAGE_PERCENT_LIMIT = 75
+PATCH_COVERAGE_PERCENT_LIMIT = 90
 ENCODER_KERNEL_SIZE = 3
 LINEARIZER_KERNEL_SIZE = 3
 N_CPUS = 4

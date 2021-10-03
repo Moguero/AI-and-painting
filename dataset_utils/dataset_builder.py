@@ -19,14 +19,14 @@ def get_train_and_test_dataset(
     test_proportion: float,
     patch_coverage_percent_limit: int,
     patches_dir_path: Path,
-) -> [tf.Tensor]:
+) -> (tf.data.Dataset, tf.data.Dataset):
     """
 
-    :param n_patches_limit:
-    :param n_classes:
-    :param batch_size:
-    :param test_proportion:
-    :param patch_coverage_percent_limit:
+    :param n_patches_limit: Maximum number of patches used for the training.
+    :param n_classes: Total number of classes, background included.
+    :param batch_size: Size of the batch.
+    :param test_proportion: Float, used to set the proportion of the test dataset.
+    :param patch_coverage_percent_limit: Int, minimum coverage percent of a patch labels on this patch.
     :param patches_dir_path: Path of the folder with patches of size patch_size.
     :return: A tuple of :
         - a training Dataset object of length (n_patches_limit // batch_size) * (1 - test_proportion),
@@ -36,21 +36,24 @@ def get_train_and_test_dataset(
         with tuples of tensors of size (batch_size, patch_size, patch_size, 3) and
         (batch_size, patch_size, patch_size, n_classes + 1) respectfully.
     """
-    # todo : complete the docstring
     assert (
         0 <= test_proportion < 1
     ), f"Test proportion must be between 0 and 1 : {test_proportion} was given."
     logger.info("\nStart to build dataset...")
-    assert (n_patches_limit // batch_size) * (1 - test_proportion) >= 1, f"Size of training dataset is 0. Increase the n_patches_limit parameter or decrease the batch_size."
+    assert (n_patches_limit // batch_size) * (
+        1 - test_proportion
+    ) >= 1, f"Size of training dataset is 0. Increase the n_patches_limit parameter or decrease the batch_size."
 
     # Get the paths of the valid patches for training
     image_patches_paths = get_patches_above_coverage_percent_limit(
         coverage_percent_limit=patch_coverage_percent_limit,
         patches_dir=patches_dir_path,
-        n_patches_limit=n_patches_limit
+        n_patches_limit=n_patches_limit,
     )
     if n_patches_limit < len(image_patches_paths):
-        logger.info(f"\nLimit of patches number set to {n_patches_limit} : only taking {n_patches_limit}/{len(image_patches_paths)} patches.")
+        logger.info(
+            f"\nLimit of patches number set to {n_patches_limit} : only taking {n_patches_limit}/{len(image_patches_paths)} patches."
+        )
         image_patches_paths = image_patches_paths[:n_patches_limit]
 
     # Create image patches tensors and their associated one-hot-encoded masks tensors
@@ -60,8 +63,7 @@ def get_train_and_test_dataset(
     ]
     mask_tensors = [
         one_hot_encode_image_patch_masks(
-            image_patch_path=Path(image_patch_path),
-            n_classes=n_classes
+            image_patch_path=Path(image_patch_path), n_classes=n_classes
         )
         for image_patch_path in tqdm(image_patches_paths, desc="Loading mask tensors")
     ]
@@ -80,18 +82,10 @@ def get_train_and_test_dataset(
     return train_dataset, test_dataset
 
 
-# TRAIN_DATASET = get_train_and_test_dataset(
-#     n_patches_limit=N_PATCHES_LIMIT,
-#     n_classes=N_CLASSES,
-#     batch_size=BATCH_SIZE,
-#     test_proportion=TEST_PROPORTION,
-#     patch_coverage_percent_limit=PATCH_COVERAGE_PERCENT_LIMIT,
-#     patches_dir_path=PATCHES_DIR_PATH,
-# )[0]
-
-
 # todo : don't hardcode the batch_size to 1
-def build_predictions_dataset(target_image_tensor: tf.Tensor, patch_size: int, patch_overlap: int) -> tf.data.Dataset:
+def build_predictions_dataset(
+    target_image_tensor: tf.Tensor, patch_size: int, patch_overlap: int
+) -> tf.data.Dataset:
     """
     Build a dataset of patches to make predictions on each one of them.
 
@@ -112,70 +106,126 @@ def build_predictions_dataset(target_image_tensor: tf.Tensor, patch_size: int, p
     return prediction_dataset
 
 
-def get_dataset_generator(dataset: tf.data.Dataset) -> tf.data.Iterator:
+def get_dataset_iterator(dataset: tf.data.Dataset) -> tf.data.Iterator:
     iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
     return iterator
 
 
-# def get_train_and_test_dataset_iterators():
-#     train_dataset, test_dataset = get_train_and_test_dataset(
-#         n_patches_limit=N_PATCHES_LIMIT,
-#         n_classes=N_CLASSES,
-#         batch_size=BATCH_SIZE,
-#         test_proportion=TEST_PROPORTION,
-#         patch_coverage_percent_limit=PATCH_COVERAGE_PERCENT_LIMIT,
-#         saved_patches_coverage_percent_path=SAVED_PATCHES_COVERAGE_PERCENT_PATH,
-#         all_masks_overlap_indices_path=ALL_MASKS_OVERLAP_INDICES_PATH
-#     )
-#     train_generator, test_generator = get_dataset_generator(
-#         train_dataset
-#     ), get_dataset_generator(test_dataset)
-#     return train_generator, test_generator
+def get_image_patches_paths(
+    patches_dir_path: Path,
+    n_patches_limit: int,
+    batch_size: int,
+    patch_coverage_percent_limit: int,
+    test_proportion: float,
+) -> [Path]:
+    """
+    Get images patches paths on which the model will train on.
+    Also filter the valid patches above the coverage percent limit.
+
+    :param patches_dir_path: Path of the patches root folder.
+    :param n_patches_limit: Maximum number of patches used for the training.
+    :param batch_size: Size of the batches.
+    :param patch_coverage_percent_limit: Int, minimum coverage percent of a patch labels on this patch.
+    :param test_proportion: Float, used to set the proportion of the test dataset.
+    :return: A list of paths of images to train on.
+    """
+    assert (
+        0 <= test_proportion < 1
+    ), f"Test proportion must be between 0 and 1 : {test_proportion} was given."
+    logger.info("\nStart to build dataset...")
+    assert (n_patches_limit // batch_size) * (
+        1 - test_proportion
+    ) >= 1, f"Size of training dataset is 0. Increase the n_patches_limit parameter or decrease the batch_size."
+
+    # Get the paths of the valid patches for training
+    logger.info("\nGet the paths of the valid patches for training...")
+    image_patches_paths = get_patches_above_coverage_percent_limit(
+        coverage_percent_limit=patch_coverage_percent_limit,
+        patches_dir=patches_dir_path,
+        n_patches_limit=n_patches_limit,
+    )
+    if n_patches_limit < len(image_patches_paths):
+        logger.info(
+            f"\nLimit of patches number set to {n_patches_limit} : only taking {n_patches_limit}/{len(image_patches_paths)} patches."
+        )
+        image_patches_paths = image_patches_paths[:n_patches_limit]
+
+    return image_patches_paths
 
 
-# def get_small_dataset(
-#     patches_dir: Path,
-#     n_patches: int,
-#     n_classes: int,
-#     batch_size: int,
-#     test_proportion: float,
-# ) -> [tf.Tensor]:
-#     assert 0 <= test_proportion < 1, f"Test proportion must be between 0 and 1 : {test_proportion} was given."
-#
-#     image_patches_paths = [
-#         image_path
-#         for image_subdir in patches_dir.iterdir()
-#         for patch_subdir in image_subdir.iterdir()
-#         for image_path in (patch_subdir / "image").iterdir()
-#     ]
-#     image_patches_paths = image_patches_paths[:n_patches]
-#     image_tensors = [
-#         decode_image(image_path)
-#         for image_path in tqdm(image_patches_paths, desc="Loading image tensors")
-#     ]
-#     mask_tensors = [
-#         one_hot_encode_image_patch_masks(
-#             image_patch_path=image_patch_path,
-#             n_classes=n_classes,
-#         )
-#         for image_patch_path in tqdm(image_patches_paths, desc="Loading mask tensors")
-#     ]
-#     # dataset = tf.data.Dataset.from_tensor_slices((image_tensors, mask_tensors))
-#     train_limit_idx = int(n_patches * (1 - test_proportion))
-#     X_train = tf.stack(image_tensors[: train_limit_idx], axis=0)
-#     y_train = tf.stack(mask_tensors[: train_limit_idx], axis=0)
-#     X_test = tf.stack(image_tensors[train_limit_idx:], axis=0)
-#     y_test = tf.stack(mask_tensors[train_limit_idx:], axis=0)
-#
-#     # X_train = tf.split(X_train, num_or_size_splits=len(X_train) // batch_size, axis=0)
-#     # y_train = tf.split(y_train, num_or_size_splits=len(y_train) // batch_size, axis=0)
-#     # X_test = tf.split(X_test, num_or_size_splits=len(X_test) // batch_size, axis=0)
-#     # y_test = tf.split(y_test, num_or_size_splits=len(y_test) // batch_size, axis=0)
-#
-#     return X_train, X_test, y_train, y_test
+def dataset_generator(
+    image_patches_paths: [Path],
+    n_classes: int,
+    batch_size: int,
+    test_proportion: float,
+    stream: str,
+) -> None:
+    """
+    Create a dataset generator that will be used to feed model.fit() (for stream == "train")
+    and model.evaluate() (for stream == "test"). See stream parameter below.
 
+    :param image_patches_paths: Paths of the images (already filtered) to train on.
+    :param n_classes: Number of classes, background included.
+    :param batch_size: Size of the batches.
+    :param test_proportion: Float, used to set the proportion of the test dataset.
+    Splits the paths list in 2 : images paths used for training, the other ones for validation.
+    :param stream: Str, equals to "train" or "test" :
+        - stream == "train" : create infinite generator yielding batches (of size batch_size)
+        of image/labels tensors tuple. Acts like "drop_remainder == True".
+        - stream == "test" :
+    """
+    # Create image patches iterators and their associated one-hot-encoded masks tensors
+    # & split the dataset according to its stream
+    assert (
+        stream == "train" or stream == "test"
+    ), f"\nStream must be set 'train' or 'test' : set to {stream} here."
 
-# get_dataset(IMAGE_PATHS, CATEGORICAL_MASKS_DIR, N_CLASSES, BATCH_SIZE)
-# train, test = get_small_dataset_2(N_PATCHES, N_CLASSES, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, SAVED_PATCHES_COVERAGE_PERCENT_PATH)
-#
-# get_dataset(N_PATCHES_LIMIT, N_CLASSES, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, PATCHES_DIR_PATH)
+    train_limit_idx = int(len(image_patches_paths) * (1 - test_proportion))
+
+    # Case of training dataset
+    logger.info(
+        f"\n{train_limit_idx}/{len(image_patches_paths)} patches taken for training."
+        f"\n{(train_limit_idx // batch_size) * batch_size}/{train_limit_idx} patches will be kept and {train_limit_idx % batch_size}/{train_limit_idx} will be dropped.",
+    )
+    if stream == "train":
+        while True:
+            n_batches = train_limit_idx // batch_size
+            for n_batch in range(n_batches):
+                image_tensors = list()
+                labels_tensors = list()
+                for image_patch_path in tqdm(
+                    image_patches_paths[
+                        n_batch * batch_size: (n_batch + 1) * batch_size
+                    ],
+                    desc="Loading image tensors",
+                ):
+                    image_tensor, labels_tensor = decode_image(
+                        Path(image_patch_path)
+                    ), one_hot_encode_image_patch_masks(
+                        image_patch_path=Path(image_patch_path), n_classes=n_classes
+                    )
+                    image_tensors.append(image_tensor)
+                    labels_tensors.append(labels_tensor)
+                yield tf.stack(image_tensors), tf.stack(labels_tensors)
+
+    # Case of test dataset
+    else:
+        while True:
+            n_batches = (len(image_patches_paths) - train_limit_idx) // batch_size  # to be checked later...
+            for n_batch in range(n_batches):
+                image_tensors = list()
+                labels_tensors = list()
+                for image_patch_path in tqdm(
+                        image_patches_paths[
+                        train_limit_idx + n_batch * batch_size:  train_limit_idx + (n_batch + 1) * batch_size
+                        ],
+                        desc="Loading image tensors",
+                ):
+                    image_tensor, labels_tensor = decode_image(
+                        Path(image_patch_path)
+                    ), one_hot_encode_image_patch_masks(
+                        image_patch_path=Path(image_patch_path), n_classes=n_classes
+                    )
+                    image_tensors.append(image_tensor)
+                    labels_tensors.append(labels_tensor)
+                yield tf.stack(image_tensors), tf.stack(labels_tensors)

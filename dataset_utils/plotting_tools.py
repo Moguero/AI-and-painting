@@ -3,10 +3,13 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
+
+from constants import MAPPING_CLASS_NUMBER, PALETTE_RGB_NORMALIZED, PALETTE_RGB, PALETTE_HEXA
 from dataset_utils.file_utils import timeit
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.image_utils import get_image_masks_paths, get_mask_class
 from dataset_utils.masks_encoder import stack_image_masks
+from pathlib import Path
 
 
 def plot_mask_with_color(image_path: Path, mask_path: Path) -> None:
