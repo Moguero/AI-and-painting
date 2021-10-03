@@ -47,7 +47,7 @@ def train_model(
     """
     Build the model, compile it, create a dataset iterator, train and model and save the trained model in callbacks.
 
-    :param n_classes: Number of classes used for the model
+    :param n_classes: Number of classes used for the model, background not included
     :param input_shape: Standard shape of the input images used for the training.
     :param patch_size: Size of the patches (should be equal to input_shape).
     :param optimizer:
@@ -118,8 +118,7 @@ def train_model(
         train_dataset_iterator,
         epochs=epochs,
         callbacks=callbacks,
-        steps_per_epoch=int(len(image_patches_paths) * (1 - test_proportion))
-        // batch_size,
+        steps_per_epoch=int(len(image_patches_paths) * (1 - test_proportion)) // batch_size,
     )
     logger.info("\nEnd of model training.")
 

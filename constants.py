@@ -1,6 +1,7 @@
 from tensorflow.keras.optimizers import Adam
 from pathlib import Path
 from tensorflow import keras
+import tensorflow as tf
 
 # Paths variables
 from dataset_utils.image_utils import turn_hexadecimal_color_into_nomalized_rgb_list, \
@@ -17,7 +18,7 @@ PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches/256x256"
 MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
 PREDICTIONS_DIR_PATH = DATA_DIR_ROOT / "predictions"
 CHECKPOINT_ROOT_DIR_PATH = DATA_DIR_ROOT / "checkpoints"
-CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_09_26__13_33_42"
+CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_03__18_03_13"
 # OUTPUT_PATH = DATA_DIR_ROOT / "test.png"
 # IMAGE_PATCH_PATH = DATA_DIR_ROOT / "patches/1/1/image/patch_1.jpg"
 IMAGE_PATH = DATA_DIR_ROOT / "images/_DSC0246/_DSC0246.jpg"
@@ -79,10 +80,10 @@ MASK_FALSE_VALUE = 0
 
 PATCH_SIZE = 256
 INPUT_SHAPE = 256
-BATCH_SIZE = 16  # 32 is a frequently used value
+BATCH_SIZE = 32  # 32 is a frequently used value
 N_CLASSES = 9
-N_EPOCHS = 3
-N_PATCHES_LIMIT = 100
+N_EPOCHS = 10
+N_PATCHES_LIMIT = 10000
 TEST_PROPORTION = 0.2
 PATCH_OVERLAP = 40  # 20 not enough, 40 great
 PATCH_COVERAGE_PERCENT_LIMIT = 90
@@ -94,7 +95,7 @@ TARGET_HEIGHT = 2176
 TARGET_WIDTH = 3264
 PADDING_TYPE = "same"
 # OPTIMIZER = "rmsprop"
-OPTIMIZER = Adam(lr=1e-4)
+OPTIMIZER = Adam(lr=1e-4)  # maybe put tf.Variable instead of the float to shut the warnings
 # LOSS_FUNCTION = "categorical_crossentropy"
 LOSS_FUNCTION = keras.losses.categorical_crossentropy
 # METRICS = ["accuracy", keras.metrics.MeanIoU]

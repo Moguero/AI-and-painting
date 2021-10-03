@@ -23,7 +23,7 @@ def get_train_and_test_dataset(
     """
 
     :param n_patches_limit: Maximum number of patches used for the training.
-    :param n_classes: Total number of classes, background included.
+    :param n_classes: Total number of classes, background not included.
     :param batch_size: Size of the batch.
     :param test_proportion: Float, used to set the proportion of the test dataset.
     :param patch_coverage_percent_limit: Int, minimum coverage percent of a patch labels on this patch.
@@ -165,7 +165,7 @@ def dataset_generator(
     and model.evaluate() (for stream == "test"). See stream parameter below.
 
     :param image_patches_paths: Paths of the images (already filtered) to train on.
-    :param n_classes: Number of classes, background included.
+    :param n_classes: Number of classes, background not included.
     :param batch_size: Size of the batches.
     :param test_proportion: Float, used to set the proportion of the test dataset.
     Splits the paths list in 2 : images paths used for training, the other ones for validation.
@@ -193,12 +193,7 @@ def dataset_generator(
             for n_batch in range(n_batches):
                 image_tensors = list()
                 labels_tensors = list()
-                for image_patch_path in tqdm(
-                    image_patches_paths[
-                        n_batch * batch_size: (n_batch + 1) * batch_size
-                    ],
-                    desc="Loading image tensors",
-                ):
+                for image_patch_path in image_patches_paths[n_batch * batch_size: (n_batch + 1) * batch_size]:
                     image_tensor, labels_tensor = decode_image(
                         Path(image_patch_path)
                     ), one_hot_encode_image_patch_masks(
@@ -215,12 +210,7 @@ def dataset_generator(
             for n_batch in range(n_batches):
                 image_tensors = list()
                 labels_tensors = list()
-                for image_patch_path in tqdm(
-                        image_patches_paths[
-                        train_limit_idx + n_batch * batch_size:  train_limit_idx + (n_batch + 1) * batch_size
-                        ],
-                        desc="Loading image tensors",
-                ):
+                for image_patch_path in image_patches_paths[train_limit_idx + n_batch * batch_size:  train_limit_idx + (n_batch + 1) * batch_size]:
                     image_tensor, labels_tensor = decode_image(
                         Path(image_patch_path)
                     ), one_hot_encode_image_patch_masks(
