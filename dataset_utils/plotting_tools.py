@@ -174,3 +174,6 @@ def plot_training_history(history: keras.callbacks.History) -> None:
     plt.legend(['train'], loc='upper left')
     plt.grid(True)
     plt.show()
+
+
+# todo : superposer les masques de sorties avec l'image d'entrée non-downsamplée (toujours de haute résolution), mais croppée légèrement

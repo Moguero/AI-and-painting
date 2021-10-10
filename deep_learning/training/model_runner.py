@@ -17,6 +17,7 @@ from constants import (
     N_EPOCHS,
     PATCHES_DIR_PATH,
     ENCODER_KERNEL_SIZE,
+    DATA_AUGMENTATION,
 )
 from dataset_utils.file_utils import timeit, get_formatted_time
 from deep_learning.models.unet import build_small_unet
@@ -43,25 +44,26 @@ def train_model(
     epochs: int,
     patches_dir_path: Path,
     encoder_kernel_size: int,
+    data_augmentation: bool,
 ):
     """
-    Build the model, compile it, create a dataset iterator, train and model and save the trained model in callbacks.
+    Build the model, compile it, create a dataset iterator, train the model and save the trained model in callbacks.
 
-    :param n_classes: Number of classes used for the model, background not included
+    :param n_classes: Number of classes used for the model, background not included.
     :param input_shape: Standard shape of the input images used for the training.
     :param patch_size: Size of the patches (should be equal to input_shape).
-    :param optimizer:
-    :param loss_function:
-    :param metrics:
+    :param optimizer: Keras optimizer used for compilation.
+    :param loss_function: Loss function used for compilation.
+    :param metrics: List of metrics used for compilation.
     :param checkpoint_root_dir_path: Path of the directory where the checkpoints are stored.
     :param n_patches_limit: Maximum number of patches used for the training.
-    :param batch_size: Size of the batch.
+    :param batch_size: Size of the batches.
     :param test_proportion: Float, used to set the proportion of the test dataset.
     :param patch_coverage_percent_limit: Int, minimum coverage percent of a patch labels on this patch.
-    :param epochs: Number of epochs.
+    :param epochs: Number of epochs for the training.
     :param patches_dir_path: Path of the main patches directory.
-    :param encoder_kernel_size: Tuple of 2 integers, size of the encoder kernel.
-    :return:
+    :param encoder_kernel_size: Tuple of 2 integers, size of the encoder kernel (usually set to 3x3).
+    :return: The trained model and its metrics history.
     """
     assert (
         input_shape == patch_size
@@ -82,40 +84,28 @@ def train_model(
         )
     ]
 
-    # todo : make a report of the classes used for the training
-    # Init dataset
-    # train_dataset, test_dataset = get_train_and_test_dataset(
-    #     n_patches_limit=n_patches_limit,
-    #     n_classes=n_classes,
-    #     batch_size=batch_size,
-    #     test_proportion=test_proportion,
-    #     patch_coverage_percent_limit=patch_coverage_percent_limit,
-    #     patches_dir_path=patches_dir_path,
-    # )
-
     image_patches_paths = get_image_patches_paths(
-        patches_dir_path,
-        n_patches_limit,
-        batch_size,
-        patch_coverage_percent_limit,
-        test_proportion,
-    )
-
-    train_dataset_iterator = dataset_generator(
-        image_patches_paths=image_patches_paths,
-        n_classes=n_classes,
+        patches_dir_path=patches_dir_path,
+        n_patches_limit=n_patches_limit,
         batch_size=batch_size,
+        patch_coverage_percent_limit=patch_coverage_percent_limit,
         test_proportion=test_proportion,
-        stream="train",
     )
 
-    # todo : data augmentation with DataImageGenerator
+    # todo : make a report of the classes used for the training
     # Fit the model
     logger.info("\nStart model training...")
     # history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks)
     # Warning : the steps_per_epoch param must be not null in order to end the infinite loop of the generator !
     history = model.fit(
-        train_dataset_iterator,
+        dataset_generator(
+            image_patches_paths=image_patches_paths,
+            n_classes=n_classes,
+            batch_size=batch_size,
+            test_proportion=test_proportion,
+            stream="train",
+            data_augmentation=data_augmentation,
+        ),
         epochs=epochs,
         callbacks=callbacks,
         steps_per_epoch=int(len(image_patches_paths) * (1 - test_proportion)) // batch_size,
@@ -145,5 +135,9 @@ def load_saved_model(
     return model
 
 
-# model, history = train_model(N_CLASSES, INPUT_SHAPE, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, CHECKPOINT_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE)
-# train_model(N_CLASSES, INPUT_SHAPE, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, CHECKPOINT_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE)
+# --------
+#DEBUG
+
+# model, history = train_model(N_CLASSES, INPUT_SHAPE, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, CHECKPOINT_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION)
+# train_model(N_CLASSES, INPUT_SHAPE, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, CHECKPOINT_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION)
+# train_model(N_CLASSES, INPUT_SHAPE, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, CHECKPOINT_ROOT_DIR_PATH, 200, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, 3, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION)

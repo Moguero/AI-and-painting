@@ -7,18 +7,20 @@ import tensorflow as tf
 from dataset_utils.image_utils import turn_hexadecimal_color_into_nomalized_rgb_list, \
     turn_hexadecimal_color_into_rgb_list
 
-# DATA_DIR_ROOT = Path(
-#     r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files"
-# )
-DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+local_machine = True
+
+if local_machine:
+    DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
+    MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
+else:
+    DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+    MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
+
 IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
-# IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
 PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches/256x256"
-# MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
-MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
 PREDICTIONS_DIR_PATH = DATA_DIR_ROOT / "predictions"
 CHECKPOINT_ROOT_DIR_PATH = DATA_DIR_ROOT / "checkpoints"
-CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_03__18_03_13"
+CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_03__18_31_03"
 # OUTPUT_PATH = DATA_DIR_ROOT / "test.png"
 # IMAGE_PATCH_PATH = DATA_DIR_ROOT / "patches/1/1/image/patch_1.jpg"
 IMAGE_PATH = DATA_DIR_ROOT / "images/_DSC0246/_DSC0246.jpg"
@@ -102,3 +104,4 @@ LOSS_FUNCTION = keras.losses.categorical_crossentropy
 # METRICS = [keras.metrics.MeanIoU(N_CLASSES)]
 METRICS = [keras.metrics.categorical_accuracy, keras.metrics.MeanIoU(N_CLASSES)]
 DOWNSCALE_FACTORS = (6, 6, 1)
+DATA_AUGMENTATION = True
