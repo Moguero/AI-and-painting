@@ -59,7 +59,6 @@ def save_all_patches_coverage(patches_dir_path: Path, output_path: Path, all_mas
 #     return patches_under_coverage_percent_limit_list
 
 
-@timeit
 def get_patches_above_coverage_percent_limit(
     coverage_percent_limit: int,
     patches_dir: Path,

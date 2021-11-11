@@ -15,12 +15,12 @@ def get_file_name_with_extension(file_path: Path) -> str:
     return file_path.parts[-1]
 
 
-def get_image_masks_paths(image_path: Path, masks_dir: Path) -> [Path]:
+def get_image_masks_paths(image_path: Path, masks_dir_path: Path) -> [Path]:
     """Get the paths of the images masks.
 
     Remark: If the masks sub directory associated to the images does not exist,
     an AssertionError will be thrown."""
-    image_masks_sub_dir = masks_dir / get_image_name_without_extension(image_path)
+    image_masks_sub_dir = masks_dir_path / get_image_name_without_extension(image_path)
     assert (
         image_masks_sub_dir.exists()
     ), f"Image masks sub directory {image_masks_sub_dir} does not exist"
@@ -53,7 +53,11 @@ def get_mask_class(mask_path: Path) -> str:
 
 # todo : implement a try/except to decode only jpg or png (not based on image_type but metadata format of the images)
 def decode_image(file_path: Path) -> tf.Tensor:
-    """Turns a png or jpeg images into its tensor version."""
+    """
+    Turns a png or jpeg images into its tensor 3D (for jpeg) or 4D (for png) version.
+
+    :param filepath: The path of the file to decode.
+    """
     value = tf.io.read_file(str(file_path))
     image_type = get_image_type(file_path)
     channels = get_image_channels_number(file_path)
@@ -220,6 +224,7 @@ def get_tensor_dims(tensor: tf.Tensor) -> tuple:
     else:
         raise ValueError(f"Dimension is {n_dims} : expected 2, 3 or 4.")
     return height_index, width_index, channels_index
+
 
 def turn_hexadecimal_color_into_nomalized_rgb_list(hexadecimal_color: str) -> [int]:
     hexadecimal_color = hexadecimal_color.lstrip("#")
