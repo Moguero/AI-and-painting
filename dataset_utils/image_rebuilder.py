@@ -4,7 +4,7 @@ from loguru import logger
 import tensorflow as tf
 
 from constants import PATCHES_DIR_PATH, IMAGE_PATH, PATCH_SIZE, PATCH_OVERLAP
-from dataset_utils.image_cropping import crop_tensor
+from dataset_utils.image_cropping import crop_tensor, crop_patch_tensor
 from dataset_utils.image_utils import decode_image, get_tensor_dims
 from deep_learning.preprocessing.downscaling import downscale_image
 
@@ -78,18 +78,17 @@ def rebuild_predictions(
 
 # todo : set default value of misclassification_size correctly
 def rebuild_predictions_with_overlap(
-    patches: [tf.Tensor],
-    target_image_path: Path,
+    patches_list: [tf.Tensor],
+    downscale_image_tensor: tf.Tensor,
     patch_size: int,
     patch_overlap: int,
-    downscale_factors: tuple,
     misclassification_size: int = 5,
 ) -> tf.Tensor:
     """
     Restructure the patches that were generated with the extract_patches_with_overlap() function.
 
     :param downscale_factors:
-    :param patches: List with size n_patches of tensor with size (patch_size, patch_size, 1)
+    :param patches_list: List with size n_patches of tensor with size (patch_size, patch_size)
     :param target_image_path: Path of the image we want to make predictions on.
     :param patch_size: Size of the patches.
     :param patch_overlap: Number of pixels on which neighbors patches intersect each other.
@@ -105,52 +104,48 @@ def rebuild_predictions_with_overlap(
         f"Current patch overlap : {patch_overlap}"
     )
 
-    # counting the number of patches in which the image has been cut
-    downscale_image_array = downscale_image(target_image_path, downscale_factors)
-    original_image_tensor = tf.constant(downscale_image_array, dtype=tf.int32)
+    # Turns the patches in the list to a size of (patch_size, patch_size, 1)
+    patches_list = [
+        tf.expand_dims(
+            input=patch_classes,
+            axis=2
+        )
+        for patch_classes in patches_list
+    ]
+
+    # counting the number of patches by which the image has been cut
     image_height_index, image_width_index, image_channels_index = get_tensor_dims(
-        original_image_tensor
+        downscale_image_tensor
     )
-    n_vertical_patches = (original_image_tensor.shape[image_height_index] - patch_overlap) // (
+    n_vertical_patches = (downscale_image_tensor.shape[image_height_index] - patch_overlap) // (
         patch_size - patch_overlap
     )
-    n_horizontal_patches = (original_image_tensor.shape[image_width_index] - patch_overlap) // (
+    n_horizontal_patches = (downscale_image_tensor.shape[image_width_index] - patch_overlap) // (
         patch_size - patch_overlap
     )
     assert n_vertical_patches * n_horizontal_patches == len(
-        patches
-    ), f"The number of patches is not the same : original image should have {n_horizontal_patches*n_vertical_patches} while we have {len(patches)} "
+        patches_list
+    ), f"The number of patches is not the same : original image should have {n_horizontal_patches*n_vertical_patches} while we have {len(patches_list)} "
 
     logger.info("\nRebuilding predictions patches...")
     for row_number in range(n_vertical_patches):
         for column_number in range(n_horizontal_patches):
             patch_number = row_number * n_horizontal_patches + column_number
-            patch = patches[patch_number]
+            patch_tensor = patches_list[patch_number]
 
             # cropping the patch by taking into account the overlap with which it was built
-            (
-                patch_width_index,
-                patch_height_index,
-                patch_channels_index,
-            ) = get_tensor_dims(patch)
-            target_width = int(patch.shape[patch_width_index] - 2 * (patch_overlap / 2))
-            target_height = int(
-                patch.shape[patch_height_index] - 2 * (patch_overlap / 2)
-            )
-            patch = crop_tensor(
-                patch, target_height=target_height, target_width=target_width
-            )
+            patch_tensor = crop_patch_tensor(patch_tensor, patch_overlap)
             if column_number == 0:
-                line_rebuilt_tensor = patch
+                line_rebuilt_tensor = patch_tensor
             else:
-                line_rebuilt_tensor = tf.concat([line_rebuilt_tensor, patch], axis=1)
+                line_rebuilt_tensor = tf.concat([line_rebuilt_tensor, patch_tensor], axis=1)
         if row_number == 0:
             rebuilt_tensor = line_rebuilt_tensor
         else:
             rebuilt_tensor = tf.concat([rebuilt_tensor, line_rebuilt_tensor], axis=0)
     # todo : unhardcode the axis parameter in tf.concat
     rebuilt_height_index, rebuilt_width_index, rebuilt_channels_index = get_tensor_dims(
-        rebuilt_tensor
+        tensor=rebuilt_tensor
     )
 
     # checking that the final size is consistent
@@ -163,7 +158,7 @@ def rebuild_predictions_with_overlap(
 
     logger.info(
         f"\nFull image predictions has been successfully built with size {rebuilt_tensor.shape}."
-        f"\nOriginal image size : {original_image_tensor.shape}"
+        f"\nOriginal image size : {downscale_image_tensor.shape}"
     )
     return rebuilt_tensor
 
