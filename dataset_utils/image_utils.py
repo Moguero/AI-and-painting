@@ -3,6 +3,7 @@ import shutil
 from loguru import logger
 from pathlib import Path
 import tensorflow as tf
+import random
 
 from dataset_utils.file_utils import timeit
 
@@ -32,18 +33,17 @@ def get_image_masks_paths(image_path: Path, masks_dir_path: Path) -> [Path]:
 
 
 def get_image_patch_masks_paths(image_patch_path: Path):
-    """Get the paths of the image patch masks.
-
-    Remark: If the masks sub directory associated to the image does not exist,
-    an AssertionError will be thrown."""
-    image_masks_sub_dir = image_patch_path.parents[1] / "labels"
+    """
+    Get the paths of the image patch masks.
+    """
+    image_patch_masks_sub_dir = image_patch_path.parents[1] / "labels"
     assert (
-        image_masks_sub_dir.exists()
-    ), f"Image masks sub directory {image_masks_sub_dir} does not exist"
+        image_patch_masks_sub_dir.exists()
+    ), f"Image patch masks sub directory {image_patch_masks_sub_dir} does not exist"
     return [
-        image_masks_sub_dir / class_mask_sub_dir / mask_name
-        for class_mask_sub_dir in image_masks_sub_dir.iterdir()
-        for mask_name in (image_masks_sub_dir / class_mask_sub_dir).iterdir()
+        image_patch_masks_sub_dir / class_mask_sub_dir / mask_name
+        for class_mask_sub_dir in image_patch_masks_sub_dir.iterdir()
+        for mask_name in (image_patch_masks_sub_dir / class_mask_sub_dir).iterdir()
     ]
 
 
@@ -121,7 +121,9 @@ def get_files_paths(files_dir: Path) -> [Path]:
     return file_paths
 
 
-def copy_images_with_masks(images_source_dir: Path, masks_dir: Path, image_target_dir_path: Path):
+def copy_images_with_masks(
+    images_source_dir: Path, masks_dir: Path, image_target_dir_path: Path
+):
     """
     Copy/paste images that have a mask in the labels mask directory.
 
@@ -138,7 +140,9 @@ def copy_images_with_masks(images_source_dir: Path, masks_dir: Path, image_targe
 
 
 def get_names_of_images_with_masks(masks_dir: Path) -> [Path]:
-    image_names = [mask_image_dir.parts[-1] for mask_image_dir in list(masks_dir.iterdir())]
+    image_names = [
+        mask_image_dir.parts[-1] for mask_image_dir in list(masks_dir.iterdir())
+    ]
     return image_names
 
 
@@ -147,10 +151,16 @@ def get_dir_paths(dir_path: Path) -> [Path]:
 
 
 def get_images_paths(images_dir: Path) -> [Path]:
-    return [image_path for image_dir_path in images_dir.iterdir() for image_path in image_dir_path.iterdir()]
+    return [
+        image_path
+        for image_dir_path in images_dir.iterdir()
+        for image_path in image_dir_path.iterdir()
+    ]
 
 
-def group_images_and_all_masks_together(dataset_dir: Path, images_dir: Path, masks_dir: Path, categorical_masks_dir: Path) -> None:
+def group_images_and_all_masks_together(
+    dataset_dir: Path, images_dir: Path, masks_dir: Path, categorical_masks_dir: Path
+) -> None:
     # Initital checks
     # test_same_folders_of_images_and_masks(images_dir, masks_dir)
     # test_same_folders_of_images_and_categorical_masks(images_dir, categorical_masks_dir)
@@ -164,15 +174,19 @@ def group_images_and_all_masks_together(dataset_dir: Path, images_dir: Path, mas
             logger.info(f"\nSub folder {dataset_subdir} was created.")
 
         # Copy all the images to dataset_dir
-        for image_path in image_dir_path.iterdir():   # loop of size 1
+        for image_path in image_dir_path.iterdir():  # loop of size 1
             image_name_with_extension = get_file_name_with_extension(image_path)
             output_path = dataset_subdir / image_name_with_extension
             shutil.copyfile(str(image_path), str(output_path))
 
         # Copy all the categorical masks to dataset_dir
         categorical_mask_dir_path = categorical_masks_dir / image_dir_name
-        for categorical_mask_path in categorical_mask_dir_path.iterdir():  # loop of size 1
-            output_path = dataset_subdir / get_file_name_with_extension(categorical_mask_path)
+        for (
+            categorical_mask_path
+        ) in categorical_mask_dir_path.iterdir():  # loop of size 1
+            output_path = dataset_subdir / get_file_name_with_extension(
+                categorical_mask_path
+            )
             shutil.copyfile(str(categorical_mask_path), str(output_path))
 
         # Copy all the binary masks to dataset_dir
@@ -183,26 +197,26 @@ def group_images_and_all_masks_together(dataset_dir: Path, images_dir: Path, mas
                 shutil.copyfile(str(mask_path), str(output_path))
 
 
-@timeit
-def get_image_patch_paths(patches_dir: Path, n_patches_limit: int = None) -> list:
+def get_image_patches_paths_with_limit(patches_dir: Path, n_patches_limit: int) -> [Path]:
+    """
+    Randomly take n_patches_limit patches in the patches_dir folder.
+    """
+    assert (
+        type(n_patches_limit) == int
+    ), f"n_patches_limit argument should be of type int : got {type(n_patches_limit)} instead."
+
     logger.info("\nRetrieving image patch paths...")
     patch_paths_list = list()
-    if n_patches_limit is not None:
-        counter = 0
-    for image_dir_path in patches_dir.iterdir():
-        if n_patches_limit is not None:
-            if counter > n_patches_limit:
-                break
-        for patch_dir in image_dir_path.iterdir():
-            if n_patches_limit is not None:
-                if counter > n_patches_limit:
-                    break
-            for patch_path in (patch_dir / "image").iterdir():
-                if n_patches_limit is not None:
-                    counter += 1
-                    if counter > n_patches_limit:
-                        break
+    counter = 0
+    image_patches_subdirs = list(patches_dir.iterdir())
+    while counter < n_patches_limit:
+        # select a random patch among all the patches
+        image_patches_subdir = random.choice(image_patches_subdirs)
+        patch_dir = random.choice(list(image_patches_subdir.iterdir()))
+        for patch_path in (patch_dir / "image").iterdir():  # loop of size 1
+            if patch_path not in patch_paths_list:
                 patch_paths_list.append(patch_path)
+                counter += 1
     logger.info("\nImage patch paths retrieved successfully.")
     return patch_paths_list
 
@@ -228,9 +242,9 @@ def get_tensor_dims(tensor: tf.Tensor) -> tuple:
 
 def turn_hexadecimal_color_into_nomalized_rgb_list(hexadecimal_color: str) -> [int]:
     hexadecimal_color = hexadecimal_color.lstrip("#")
-    return tuple(int(hexadecimal_color[i:i+2], 16) / 255 for i in (0, 2, 4))
+    return tuple(int(hexadecimal_color[i : i + 2], 16) / 255 for i in (0, 2, 4))
 
 
 def turn_hexadecimal_color_into_rgb_list(hexadecimal_color: str) -> [int]:
     hexadecimal_color = hexadecimal_color.lstrip("#")
-    return tuple(int(hexadecimal_color[i:i+2], 16) for i in (0, 2, 4))
+    return tuple(int(hexadecimal_color[i : i + 2], 16) for i in (0, 2, 4))

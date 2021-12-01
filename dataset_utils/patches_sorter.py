@@ -5,9 +5,17 @@ from pathlib import Path
 from loguru import logger
 from tqdm import tqdm
 
-from dataset_utils.file_utils import save_list_to_csv, load_saved_dict, save_dict_to_csv, timeit
+from dataset_utils.file_utils import (
+    save_list_to_csv,
+    load_saved_dict,
+    save_dict_to_csv,
+    timeit,
+)
 from dataset_utils.files_stats import count_mask_value_occurences_percent_of_2d_tensor
-from dataset_utils.image_utils import get_file_name_with_extension, get_image_patch_paths
+from dataset_utils.image_utils import (
+    get_file_name_with_extension,
+    get_image_patches_paths_with_limit,
+)
 from dataset_utils.masks_encoder import stack_image_patch_masks
 
 
@@ -28,12 +36,18 @@ def create_generator_patches_coverage(
     for image_dir_path in patches_dir_path.iterdir():
         for patch_dir_path in image_dir_path.iterdir():
             for image_patch_path in (patch_dir_path / "image").iterdir():
-                yield image_patch_path, get_patch_coverage(image_patch_path, all_masks_overlap_indices_path)
+                yield image_patch_path, get_patch_coverage(
+                    image_patch_path, all_masks_overlap_indices_path
+                )
 
 
-def save_all_patches_coverage(patches_dir_path: Path, output_path: Path, all_masks_overlap_indices_path: Path) -> dict:
+def save_all_patches_coverage(
+    patches_dir_path: Path, output_path: Path, all_masks_overlap_indices_path: Path
+) -> dict:
     patches_coverage_dict = dict()
-    generator = create_generator_patches_coverage(patches_dir_path, all_masks_overlap_indices_path)
+    generator = create_generator_patches_coverage(
+        patches_dir_path, all_masks_overlap_indices_path
+    )
     while True:
         try:
             image_patch_path, patch_coverage = next(generator)
@@ -47,30 +61,23 @@ def save_all_patches_coverage(patches_dir_path: Path, output_path: Path, all_mas
     return patches_coverage_dict
 
 
-# @timeit
-# def get_patches_above_coverage_percent_limit(
-#     coverage_percent_limit: int, saved_patches_coverage_percent_path: Path
-# ) -> [Path]:
-#     patches_under_coverage_percent_limit_list = list()
-#     patches_coverage_dict = load_saved_dict(saved_patches_coverage_percent_path)
-#     for patch_path, coverage_percent in patches_coverage_dict.items():
-#         if int(float(coverage_percent)) > coverage_percent_limit:
-#             patches_under_coverage_percent_limit_list.append(patch_path)
-#     return patches_under_coverage_percent_limit_list
-
-
 def get_patches_above_coverage_percent_limit(
-    coverage_percent_limit: int,
-    patches_dir: Path,
-    n_patches_limit: int
+    coverage_percent_limit: int, patches_dir: Path, n_patches_limit: int
 ) -> [Path]:
     patches_under_coverage_percent_limit_list = list()
-    image_patch_paths = get_image_patch_paths(patches_dir, n_patches_limit)
-    for image_patch_path in tqdm(image_patch_paths, desc="Selecting patches above the coverage percent limit..."):
-        coverage_percent = get_patch_coverage(image_patch_path)
+    image_patch_paths = get_image_patches_paths_with_limit(
+        patches_dir=patches_dir, n_patches_limit=n_patches_limit
+    )
+    for image_patch_path in tqdm(
+        image_patch_paths, desc="Selecting patches above the coverage percent limit..."
+    ):
+        coverage_percent = get_patch_coverage(image_patch_path=image_patch_path)
         if int(float(coverage_percent)) > coverage_percent_limit:
             patches_under_coverage_percent_limit_list.append(image_patch_path)
-    logger.info(f"\n{len(patches_under_coverage_percent_limit_list)}/{len(image_patch_paths)} patches above coverage percent limit selected.")
+
+    logger.info(
+        f"\n{len(patches_under_coverage_percent_limit_list)}/{len(image_patch_paths)} patches above coverage percent limit selected."
+    )
     return patches_under_coverage_percent_limit_list
 
 
@@ -87,11 +94,15 @@ def is_patch_only_background(image_patch_path: Path, patch_size: int) -> bool:
         return False
 
 
-def get_only_background_patches_dir_paths(image_dir_path: Path, patch_size: int, all_masks_overlap_indices_path: Path) -> [Path]:
+def get_only_background_patches_dir_paths(
+    image_dir_path: Path, patch_size: int, all_masks_overlap_indices_path: Path
+) -> [Path]:
     only_background_patches_dir_paths = list()
     for image_patch_dir_path in image_dir_path.iterdir():
         for image_patch_path in (image_patch_dir_path / "image").iterdir():
-            if is_patch_only_background(image_patch_path, patch_size, all_masks_overlap_indices_path):
+            if is_patch_only_background(
+                image_patch_path, patch_size, all_masks_overlap_indices_path
+            ):
                 only_background_patches_dir_paths.append(image_patch_dir_path)
     return only_background_patches_dir_paths
 
@@ -107,7 +118,10 @@ def create_generator_all_only_background_patches(
 
 
 def save_all_only_background_patches_dir_paths(
-    patches_dir_path: Path, patch_size: int, output_path: Path, all_masks_overlap_indices_path: Path
+    patches_dir_path: Path,
+    patch_size: int,
+    output_path: Path,
+    all_masks_overlap_indices_path: Path,
 ) -> [Path]:
     all_only_background_patches_dir_paths = list()
     generator = create_generator_all_only_background_patches(
@@ -116,9 +130,7 @@ def save_all_only_background_patches_dir_paths(
     while True:
         try:
             image_dir_path, only_background_patches_dir_paths = next(generator)
-            all_only_background_patches_dir_paths += (
-                only_background_patches_dir_paths
-            )
+            all_only_background_patches_dir_paths += only_background_patches_dir_paths
             logger.info(
                 f"\nImage {get_file_name_with_extension(image_dir_path)} has {len(only_background_patches_dir_paths)} patches with background only."
             )
@@ -132,10 +144,12 @@ def save_all_only_background_patches_dir_paths(
 
 
 def get_all_only_background_patches_dir_paths(
-    saved_only_background_patches_dir_paths_path: Path
+    saved_only_background_patches_dir_paths_path: Path,
 ) -> [Path]:
     all_only_background_patches_dir_paths = list()
-    only_background_patches_dir_paths_list = load_saved_dict(saved_only_background_patches_dir_paths_path)
+    only_background_patches_dir_paths_list = load_saved_dict(
+        saved_only_background_patches_dir_paths_path
+    )
     for only_background_patches_dir_path in only_background_patches_dir_paths_list:
         all_only_background_patches_dir_paths.append(only_background_patches_dir_path)
     return all_only_background_patches_dir_paths
