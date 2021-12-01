@@ -34,6 +34,7 @@ from dataset_utils.dataset_builder import (
     get_image_patches_paths,
     train_dataset_generator,
     test_dataset_generator,
+    get_test_dataset,
 )
 from pathlib import Path
 
@@ -179,7 +180,7 @@ def train_model(
     # history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks)
     # Warning : the steps_per_epoch param must be not null in order to end the infinite loop of the generator !
     history = model.fit(
-        train_dataset_generator(
+        x=train_dataset_generator(
             image_patches_paths=image_patches_paths_list,
             n_classes=n_classes,
             batch_size=batch_size,
@@ -206,8 +207,23 @@ def train_model(
     #     callbacks=callbacks,
     # )
 
-    # return model, history, loss, metrics
-    return model, history
+    image_tensors_list, labels_tensors_list = get_test_dataset(
+        image_patches_paths=image_patches_paths_list,
+        n_classes=n_classes,
+        batch_size=batch_size,
+        test_proportion=test_proportion,
+    )
+
+    metrics_values = model.evaluate(
+        x=image_tensors_list,
+        y=labels_tensors_list,
+        callbacks=callbacks,
+    )
+
+    # todo : save history and metrics_values
+
+    return model, history, metrics_values
+    # return model, history
 
 
 def load_saved_model(
@@ -229,7 +245,7 @@ def load_saved_model(
 # --------
 # DEBUG
 
-# model, history, loss, accuracy = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
+# model, history, loss = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
 # model, history = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
 # train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATHH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
 # train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, 100, 16, TEST_PROPORTION, 70, 3, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
