@@ -31,8 +31,9 @@ from dataset_utils.files_stats import (
 from dataset_utils.plotting_tools import save_patch_composition_mean_plot
 from deep_learning.models.unet import build_small_unet
 from dataset_utils.dataset_builder import (
-    dataset_generator,
     get_image_patches_paths,
+    train_dataset_generator,
+    test_dataset_generator,
 )
 from pathlib import Path
 
@@ -95,13 +96,35 @@ def train_model(
         encoder_kernel_size=encoder_kernel_size,
     )
 
+    # TEST to define new metrics
+    # class UpdatedMeanIoU(tf.keras.metrics.MeanIoU):
+    #     def __init__(self,
+    #                  y_true=None,
+    #                  y_pred=None,
+    #                  num_classes=None,
+    #                  name=None,
+    #                  dtype=None):
+    #         super(UpdatedMeanIoU, self).__init__(num_classes=num_classes, name=name, dtype=dtype)
+    #
+    #     def update_state(self, y_true, y_pred, sample_weight=None):
+    #         y_pred = tf.math.argmax(y_pred, axis=-1)
+    #         return super().update_state(y_true, y_pred, sample_weight)
+    #
+    # class MyMeanIOU(tf.keras.metrics.MeanIoU):
+    #     def update_state(self, y_true, y_pred, sample_weight=None):
+    #         return super().update_state(tf.argmax(y_true, axis=-1), tf.argmax(y_pred, axis=-1), sample_weight)
+
+    # metrics = [keras.metrics.categorical_accuracy, MyMeanIOU(n_classes)]
+
     # Compile the model
     model.compile(optimizer=optimizer, loss=loss_function, metrics=metrics)
 
     # Init the callbacks
     # todo : init paths function
     report_dir_path = report_root_dir_path / f"report_{get_formatted_time()}"
-    checkpoint_path = report_dir_path / "2_model_report" / f"checkpoint_{get_formatted_time()}" / "cp.ckpt"
+    checkpoint_path = (
+        report_dir_path / "2_model_report" / "model_checkpoint" / "cp.ckpt"
+    )
     callbacks = [
         keras.callbacks.ModelCheckpoint(
             filepath=checkpoint_path, verbose=1, save_weights_only=True
@@ -141,7 +164,7 @@ def train_model(
     }
 
     # Save a run report
-    # todo : put it in the end of the run script
+    # todo : put it in the end of the run script to have the history, loss and metrics saved
     make_run_report(
         report_dir_path=report_dir_path,
         model=model,
@@ -151,34 +174,40 @@ def train_model(
         note=note,
     )
 
-    breakpoint()
-
     # Fit the model
     logger.info("\nStart model training...")
     # history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks)
     # Warning : the steps_per_epoch param must be not null in order to end the infinite loop of the generator !
     history = model.fit(
-        dataset_generator(
+        train_dataset_generator(
             image_patches_paths=image_patches_paths_list,
             n_classes=n_classes,
             batch_size=batch_size,
             test_proportion=test_proportion,
-            stream="train",
             data_augmentation=data_augmentation,
         ),
         epochs=epochs,
         callbacks=callbacks,
         steps_per_epoch=int(len(image_patches_paths_list) * (1 - test_proportion))
         // batch_size,
-        verbose=2,
+        verbose=1,
     )
     logger.info("\nEnd of model training.")
 
     # Evaluate the model
-    # loss, accuracy = model.evaluate(test_dataset, verbose=1)
+    # todo : debug this call of model.evaluate()
+    # loss, metrics = model.evaluate(
+    #     test_dataset_generator(
+    #         image_patches_paths=image_patches_paths_list,
+    #         n_classes=n_classes,
+    #         batch_size=batch_size,
+    #         test_proportion=test_proportion,
+    #     ),
+    #     callbacks=callbacks,
+    # )
 
+    # return model, history, loss, metrics
     return model, history
-    # return model, history, loss, accuracy
 
 
 def load_saved_model(
@@ -200,6 +229,7 @@ def load_saved_model(
 # --------
 # DEBUG
 
+# model, history, loss, accuracy = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
 # model, history = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
 # train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATHH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
 # train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, 100, 16, TEST_PROPORTION, 70, 3, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)

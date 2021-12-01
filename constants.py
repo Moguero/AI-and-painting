@@ -7,7 +7,7 @@ import tensorflow as tf
 from dataset_utils.image_utils import turn_hexadecimal_color_into_nomalized_rgb_list, \
     turn_hexadecimal_color_into_rgb_list
 
-local_machine = True
+local_machine = False
 
 if local_machine:
     DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
@@ -82,8 +82,8 @@ MASK_FALSE_VALUE = 0
 # Model parameters & hyperparameters
 
 PATCH_SIZE = 256
-INPUT_SHAPE = 256
-BATCH_SIZE = 32  # 32 is a frequently used value
+# BATCH_SIZE = 32  # 32 is a frequently used value
+BATCH_SIZE = 8
 N_CLASSES = 9
 N_EPOCHS = 10
 N_PATCHES_LIMIT = 100
