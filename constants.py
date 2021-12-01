@@ -14,16 +14,16 @@ if local_machine:
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
     CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_10__18_16_44"
 else:  # aws instance
-    DATA_DIR_ROOT = Path(r"/home/ec2-user/data")
+    DATA_DIR_ROOT = Path(r"/home/data")
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
     CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_03__18_31_03"
 
 IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
 PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches/256x256"
 PREDICTIONS_DIR_PATH = DATA_DIR_ROOT / "predictions"
-CHECKPOINT_ROOT_DIR_PATH = DATA_DIR_ROOT / "checkpoints"
+REPORTS_ROOT_DIR_PATH = DATA_DIR_ROOT / "reports"
 # OUTPUT_PATH = DATA_DIR_ROOT / "test.png"
-# IMAGE_PATCH_PATH = DATA_DIR_ROOT / "patches/1/1/image/patch_1.jpg"
+IMAGE_PATCH_PATH = DATA_DIR_ROOT / "patches/256x256/1/1/image/1_patch_1.jpg"
 IMAGE_PATH = DATA_DIR_ROOT / "images/_DSC0246/_DSC0246.jpg"
 MASK_PATH = (
     DATA_DIR_ROOT

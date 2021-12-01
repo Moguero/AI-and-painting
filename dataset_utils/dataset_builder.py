@@ -144,11 +144,6 @@ def get_image_patches_paths(
         patches_dir=patches_dir_path,
         n_patches_limit=n_patches_limit,
     )
-    if n_patches_limit < len(image_patches_paths):
-        logger.info(
-            f"\nLimit of patches number set to {n_patches_limit} : only taking {n_patches_limit}/{len(image_patches_paths)} patches."
-        )
-        image_patches_paths = image_patches_paths[:n_patches_limit]
 
     return image_patches_paths
 

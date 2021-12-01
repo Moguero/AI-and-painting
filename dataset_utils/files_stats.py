@@ -3,21 +3,34 @@ from collections import Counter
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 import os
 
 from loguru import logger
 from tqdm import tqdm
 
-from constants import MASK_FALSE_VALUE, MASK_TRUE_VALUE
+from constants import (
+    MASK_FALSE_VALUE,
+    MASK_TRUE_VALUE,
+    IMAGE_PATCH_PATH,
+    N_CLASSES,
+    MASKS_DIR_PATH,
+    MAPPING_CLASS_NUMBER,
+)
 from dataset_utils.file_utils import save_dict_to_csv, load_saved_dict, save_list_to_csv
 from dataset_utils.image_utils import (
     decode_image,
     get_images_paths,
     get_file_name_with_extension,
-    get_image_masks_paths, get_image_patch_masks_paths,
+    get_image_masks_paths,
+    get_image_patch_masks_paths,
 )
-from dataset_utils.masks_encoder import stack_image_masks
+from dataset_utils.masks_encoder import (
+    stack_image_masks,
+    one_hot_encode_image_patch_masks,
+    stack_image_patch_masks,
+)
 
 
 def count_mask_value_occurences(mask_path: Path) -> {int: float}:
@@ -124,10 +137,15 @@ def count_mask_value_occurences_of_categorical_mask(
 
 # todo : delete cause moved
 def count_categorical_mask_irregular_pixels(
-    image_path: Path, masks_dir: Path, n_classes, all_patch_masks_overlap_indices_path: Path
+    image_path: Path,
+    masks_dir: Path,
+    n_classes,
+    all_patch_masks_overlap_indices_path: Path,
 ) -> {int: int}:
     mask_value_occurences_of_categorical_mask_dict = (
-        count_mask_value_occurences_of_categorical_mask(image_path, masks_dir, all_patch_masks_overlap_indices_path)
+        count_mask_value_occurences_of_categorical_mask(
+            image_path, masks_dir, all_patch_masks_overlap_indices_path
+        )
     )
     irregular_pixels_dict = {
         key: value
@@ -138,7 +156,11 @@ def count_categorical_mask_irregular_pixels(
 
 
 def save_count_all_categorical_mask_irregular_pixels(
-    images_dir_path: Path, masks_dir: Path, n_classes: int, output_path: Path, all_patch_masks_overlap_indices_path: Path
+    images_dir_path: Path,
+    masks_dir: Path,
+    n_classes: int,
+    output_path: Path,
+    all_patch_masks_overlap_indices_path: Path,
 ) -> None:
     dict_to_save = {
         image_path: count_categorical_mask_irregular_pixels(
@@ -178,14 +200,15 @@ def save_all_masks_overlap_indices(
     for image_dir_path in tqdm(
         images_dir_path.iterdir(), desc="Getting overlap indices...", colour="yellow"
     ):
-        for image_path in image_dir_path.iterdir(): # loop of size 1
+        for image_path in image_dir_path.iterdir():  # loop of size 1
             image_masks_paths = get_image_masks_paths(image_path, masks_dir)
             if len(image_masks_paths) != 1:
                 shape = decode_image(image_masks_paths[0])[:, :, 0].shape
                 stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
                 for mask_path in image_masks_paths:
                     stacked_tensor = tf.math.add(
-                        stacked_tensor, tf.cast(decode_image(mask_path)[:, :, 0], tf.int32)
+                        stacked_tensor,
+                        tf.cast(decode_image(mask_path)[:, :, 0], tf.int32),
                     )
                 stacked_values = list(
                     tf.unique_with_counts(tf.reshape(stacked_tensor, [-1])).y.numpy()
@@ -220,20 +243,25 @@ def save_all_patch_masks_overlap_indices(
     logger.info("\nStarting to get all patch masks overlap indices...")
     masks_overlap_indices_list = list()
     for image_dir_path in tqdm(
-        image_patches_dir_path.iterdir(), desc="Getting overlap indices...", colour="yellow"
+        image_patches_dir_path.iterdir(),
+        desc="Getting overlap indices...",
+        colour="yellow",
     ):
         for patch_dir_path in image_dir_path.iterdir():
-            for patch_path in (patch_dir_path / "image").iterdir(): # loop of size 1
+            for patch_path in (patch_dir_path / "image").iterdir():  # loop of size 1
                 image_masks_paths = get_image_patch_masks_paths(patch_path)
                 if len(image_masks_paths) != 1:
                     shape = decode_image(image_masks_paths[0])[:, :, 0].shape
                     stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
                     for mask_path in image_masks_paths:
                         stacked_tensor = tf.math.add(
-                            stacked_tensor, tf.cast(decode_image(mask_path)[:, :, 0], tf.int32)
+                            stacked_tensor,
+                            tf.cast(decode_image(mask_path)[:, :, 0], tf.int32),
                         )
                     stacked_values = list(
-                        tf.unique_with_counts(tf.reshape(stacked_tensor, [-1])).y.numpy()
+                        tf.unique_with_counts(
+                            tf.reshape(stacked_tensor, [-1])
+                        ).y.numpy()
                     )
                     values_with_count_dict = count_mask_value_occurences_of_2d_tensor(
                         stacked_tensor
@@ -245,22 +273,27 @@ def save_all_patch_masks_overlap_indices(
                                 [
                                     value
                                     for key, value in values_with_count_dict.items()
-                                    if key != MASK_FALSE_VALUE and key != MASK_TRUE_VALUE
+                                    if key != MASK_FALSE_VALUE
+                                    and key != MASK_TRUE_VALUE
                                 ]
                             ),
                             "problematic_indices": [
                                 item
                                 for indices_list in [
-                                    tf.where(tf.equal(stacked_tensor, value)).numpy().tolist()
+                                    tf.where(tf.equal(stacked_tensor, value))
+                                    .numpy()
+                                    .tolist()
                                     for value in set(stacked_values)
-                                                 - {MASK_FALSE_VALUE, MASK_TRUE_VALUE}
+                                    - {MASK_FALSE_VALUE, MASK_TRUE_VALUE}
                                 ]
                                 for item in indices_list
                             ],
                         }
                     )
     save_list_to_csv(masks_overlap_indices_list, output_path)
-    logger.info(f"\nAll patch masks overlap indices saved successfully at {output_path}.")
+    logger.info(
+        f"\nAll patch masks overlap indices saved successfully at {output_path}."
+    )
 
 
 def count_all_irregular_pixels(
@@ -275,3 +308,50 @@ def count_all_irregular_pixels(
             if key == "n_overlap_indices"
         ]
     )
+
+
+def get_patch_labels_composition(
+    patch_path: Path,
+    n_classes: int,
+) -> {int: float}:
+    # initialize patch composition
+    patch_composition = {class_number: 0.0 for class_number in range(n_classes + 1)}
+
+    labels_tensor = stack_image_patch_masks(image_patch_path=patch_path)
+    unique_with_count_tensor = tf.unique_with_counts(tf.reshape(labels_tensor, [-1]))
+
+    values_array = unique_with_count_tensor.y.numpy()
+    count_array = unique_with_count_tensor.count.numpy()
+    patch_class_proportions = dict(
+        zip(
+            values_array,
+            count_array / (labels_tensor.shape[0] * labels_tensor.shape[1]),
+        )
+    )
+    for class_number in patch_class_proportions.keys():
+        patch_composition[class_number] = patch_class_proportions[class_number]
+
+    return patch_composition
+
+
+def get_patches_labels_composition(
+        image_patches_paths_list: [Path],
+        n_classes: int,
+        mapping_class_number: {str: int}
+) -> pd.DataFrame:
+    """
+    For each patch of the list, returns the proportion of each class.
+    """
+    patch_composition_list = list()
+    for patch_path in image_patches_paths_list:
+        patch_composition = get_patch_labels_composition(
+            patch_path=patch_path,
+            n_classes=n_classes,
+        )
+        patch_composition_list.append([proportion for proportion in patch_composition.values()])
+    patch_composition_dataframe = pd.DataFrame(patch_composition_list, columns=mapping_class_number.keys())
+    return patch_composition_dataframe
+
+
+# labels_patches_composition = get_patch_labels_composition(IMAGE_PATCH_PATH, N_CLASSES)
+# patch_composition_dataframe = get_patches_labels_composition([IMAGE_PATCH_PATH], N_CLASSES, MAPPING_CLASS_NUMBER)

@@ -176,4 +176,26 @@ def plot_training_history(history: keras.callbacks.History) -> None:
     plt.show()
 
 
+def save_patch_composition_mean_plot(
+        patch_composition_stats_dict: {str: float},
+        output_path: Path,
+        palette_hexa: {int: str},
+):
+    fig, ax = plt.subplots()
+
+    classes = list(patch_composition_stats_dict.keys())
+    means = [int(percent * 100) for percent in list(patch_composition_stats_dict.values())]
+    colors = [color for color in palette_hexa.values()]
+
+    bars = ax.barh(classes, means, color=colors)
+    for bar in bars:
+        width = bar.get_width()
+        ax.text(width * 0.95, bar.get_y() + bar.get_height() / 2, '%d' % int(width), ha='right', va='center')
+
+    ax.set_xlabel('Class proportion (%)')
+    ax.set_title('Patches composition')
+
+    plt.savefig(output_path, bbox_inches="tight", dpi=300)
+
+
 # todo : superposer les masques de sorties avec l'image d'entrée non-downsamplée (toujours de haute résolution), mais croppée légèrement
