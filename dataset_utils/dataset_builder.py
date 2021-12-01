@@ -263,6 +263,60 @@ def test_dataset_generator(
             yield tf.stack(image_tensors_list), tf.stack(labels_tensors_list)
 
 
+def get_test_dataset(
+    image_patches_paths: [Path],
+    n_classes: int,
+    batch_size: int,
+    test_proportion: float,
+) -> ([tf.Tensor], [tf.Tensor]):
+    """
+    Create a dataset generator that will be used to feed model.evaluate()
+    . This generator yields batches (acts like "drop_remainder == True") of augmented images.
+
+    Warning : this function builds a generator which is only meant to be used with "model.evaluate()" function.
+    Appropriate behaviour is not expected in a different context.
+
+    :param image_patches_paths: Paths of the images (already filtered) to train on.
+    :param n_classes: Number of classes, background not included.
+    :param test_proportion: Float, used to set the proportion of the validation images dataset.
+    :return: Yield 2 tensors of size (batch_size, patch_size, patch_size, 3) and (batch_size, patch_size, patch_size, n_classes + 1),
+            corresponding to image tensors and their corresponding one-hot-encoded masks tensors
+    """
+    train_limit_idx = int(len(image_patches_paths) * (1 - test_proportion))
+    n_batches = (len(image_patches_paths) - train_limit_idx) // batch_size
+
+    logger.info(
+        f"\n{len(image_patches_paths) - train_limit_idx}/{len(image_patches_paths)} patches taken for evaluation (test proportion of {test_proportion})"
+        f"\n{((len(image_patches_paths) - train_limit_idx) // batch_size) * batch_size}/{len(image_patches_paths) - train_limit_idx} patches will be kept and {(len(image_patches_paths) - train_limit_idx) % batch_size}/{len(image_patches_paths) - train_limit_idx} will be dropped (drop remainder).",
+    )
+
+    image_tensors_list = list()
+    labels_tensors_list = list()
+
+    for n_batch in range(n_batches):
+        # list of length batch_size, containing image tensors of shape (256, 256, 3)
+        image_tensors_batch_list = list()
+        # list of length batch_size, containing corresponding labels tensors of shape (256, 256, 10)
+        labels_tensors_batch_list = list()
+
+        for image_patch_path in image_patches_paths[
+            train_limit_idx
+            + n_batch * batch_size : train_limit_idx
+            + (n_batch + 1) * batch_size
+        ]:
+            image_tensor, labels_tensor = decode_image(
+                file_path=image_patch_path
+            ), one_hot_encode_image_patch_masks(
+                image_patch_path=image_patch_path, n_classes=n_classes
+            )
+            image_tensors_batch_list.append(image_tensor)
+            labels_tensors_batch_list.append(labels_tensor)
+
+        image_tensors_list.append(tf.stack(image_tensors_batch_list))
+        labels_tensors_list.append(tf.stack(labels_tensors_batch_list))
+    return image_tensors_list, labels_tensors_list
+
+
 def augment_batch(
     image_tensors: [tf.Tensor],
     labels_tensors: [tf.Tensor],
