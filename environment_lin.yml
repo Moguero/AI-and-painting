@@ -4,7 +4,7 @@ channels:
 dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=4.5=1_gnu
-  - _tflow_select=2.3.0=mkl
+  - _tflow_select=2.1.0=gpu
   - absl-py=0.13.0=py38h06a4308_0
   - aiohttp=3.7.4=py38h27cfd23_1
   - astor=0.8.1=py38h06a4308_0
@@ -20,15 +20,18 @@ dependencies:
   - brotli=1.0.9=he6710b0_2
   - brotlipy=0.7.0=py38h27cfd23_1003
   - c-ares=1.17.1=h27cfd23_0
-  - ca-certificates=2021.7.5=h06a4308_1
+  - ca-certificates=2021.9.30=h06a4308_1
   - cachetools=4.2.2=pyhd3eb1b0_0
-  - certifi=2021.5.30=py38h06a4308_0
+  - certifi=2021.10.8=py38h06a4308_0
   - cffi=1.14.6=py38h400218f_0
   - chardet=3.0.4=py38h06a4308_1003
   - click=8.0.1=pyhd3eb1b0_0
   - cloudpickle=2.0.0=pyhd3eb1b0_0
   - coverage=5.5=py38h27cfd23_2
   - cryptography=3.4.7=py38hd23ed53_0
+  - cudatoolkit=10.1.243=h6bb024c_0
+  - cudnn=7.6.5=cuda10.1_0
+  - cupti=10.1.168=0
   - cycler=0.10.0=py38_0
   - cython=0.29.24=py38h295c915_0
   - cytoolz=0.11.0=py38h7b6447c_0
@@ -140,9 +143,10 @@ dependencies:
   - sqlite=3.36.0=hc218d9a_0
   - tensorboard=2.4.0=pyhc547734_0
   - tensorboard-plugin-wit=1.6.0=py_0
-  - tensorflow=2.4.1=mkl_py38hb2083e0_0
-  - tensorflow-base=2.4.1=mkl_py38h43e0292_0
+  - tensorflow=2.4.1=gpu_py38h8a7d6ce_0
+  - tensorflow-base=2.4.1=gpu_py38h29c2da4_0
   - tensorflow-estimator=2.5.0=pyh7b7c402_0
+  - tensorflow-gpu=2.4.1=h30adc30_0
   - termcolor=1.1.0=py38h06a4308_1
   - tifffile=2020.10.1=py38hdd07704_2
   - tk=8.6.10=hbc83047_0
