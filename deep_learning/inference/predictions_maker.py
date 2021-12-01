@@ -83,7 +83,7 @@ def make_predictions(
     model = load_saved_model(
         checkpoint_dir_path=checkpoint_dir_path,
         n_classes=n_classes,
-        input_shape=patch_size,
+        patch_size=patch_size,
         batch_size=batch_size,
         encoder_kernel_size=encoder_kernel_size,
     )
@@ -227,7 +227,6 @@ def save_predictions_plot_only(
     logger.info(f"\nFull predictions plot successfully saved at : {output_path}")
 
 
-# todo : confusion matrix
 def get_confusion_matrix(
     image_path: Path,
     predictions_tensor: tf.Tensor,
@@ -350,11 +349,11 @@ def save_confusion_matrix(
 # plot_confusion_matrix(
 #     labels_tensor=labels_tensor, predictions_tensor=predictions_tensor
 # )
-save_confusion_matrix(
-    labels_tensor=labels_tensor,
-    predictions_tensor=predictions_tensor,
-    output_path=Path(""),
-)
+# save_confusion_matrix(
+#     labels_tensor=labels_tensor,
+#     predictions_tensor=predictions_tensor,
+#     output_path=Path(""),
+# )
 
 # todo : save each run with config
 # todo : save confusion matrix at each run
