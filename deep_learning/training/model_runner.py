@@ -23,7 +23,6 @@ from constants import (
 )
 from dataset_utils.file_utils import timeit, get_formatted_time
 
-# from dataset_utils.files_stats import get_patches_composition
 from dataset_utils.files_stats import (
     get_patch_labels_composition,
     get_patches_labels_composition,
@@ -35,10 +34,11 @@ from dataset_utils.dataset_builder import (
     train_dataset_generator,
     test_dataset_generator,
     get_test_dataset,
+    # validation_dataset_generator,
 )
 from pathlib import Path
 
-from deep_learning.training.reporting import make_run_report
+from deep_learning.training.reporting import build_training_run_report, init_report_paths
 
 
 @timeit
@@ -51,6 +51,7 @@ def train_model(
     report_root_dir_path: Path,
     n_patches_limit: int,
     batch_size: int,
+    validation_proportion: float,
     test_proportion: float,
     patch_coverage_percent_limit: int,
     epochs: int,
@@ -73,6 +74,7 @@ def train_model(
     :param report_root_dir_path: Path of the directory where the reports are stored.
     :param n_patches_limit: Maximum number of patches used for the training.
     :param batch_size: Size of the batches.
+    :param validation_proportion: Float, used to set the proportion of the validation dataset.
     :param test_proportion: Float, used to set the proportion of the test dataset.
     :param patch_coverage_percent_limit: Int, minimum coverage percent of a patch labels on this patch.
     :param epochs: Number of epochs for the training.
@@ -84,10 +86,17 @@ def train_model(
     :param add_note: If set to True, add a note to the report in order to describe the run shortly.
     :return: The trained model and its metrics history.
     """
+
+    # Add custom note to the report
     if add_note:
         note = input("Add a note in the report to describe the run more specifically :")
     else:
         note = ""
+
+    # Init report paths
+    report_paths_dict = init_report_paths(
+        report_root_dir_path=report_root_dir_path
+    )
 
     # Define the model
     model = build_small_unet(
@@ -121,18 +130,13 @@ def train_model(
     model.compile(optimizer=optimizer, loss=loss_function, metrics=metrics)
 
     # Init the callbacks
-    # todo : init paths function
-    report_dir_path = report_root_dir_path / f"report_{get_formatted_time()}"
-    checkpoint_path = (
-        report_dir_path / "2_model_report" / "model_checkpoint" / "cp.ckpt"
-    )
     callbacks = [
         keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_path, verbose=1, save_weights_only=True
+            filepath=report_paths_dict["checkpoint_path"], verbose=1, save_weights_only=True
         )
     ]
 
-    # Building dataset
+    # Build training/validation dataset
     image_patches_paths_list = get_image_patches_paths(
         patches_dir_path=patches_dir_path,
         n_patches_limit=n_patches_limit,
@@ -149,6 +153,8 @@ def train_model(
     ).describe()
 
     # Summarize the hyperparameters config used for the training
+    # todo : set parameters in this_model_config dict in build_training_run_report function : then delete this model_config from the training function
+    # todo : check live repo to see the function to init path + use of json configs
     model_config = {
         "n_classes": n_classes,
         "patch_size": patch_size,
@@ -166,8 +172,8 @@ def train_model(
 
     # Save a run report
     # todo : put it in the end of the run script to have the history, loss and metrics saved
-    make_run_report(
-        report_dir_path=report_dir_path,
+    build_training_run_report(
+        report_dir_path=report_paths_dict["report_dir_path"],
         model=model,
         model_config=model_config,
         patches_composition_stats=patches_composition_stats,
@@ -184,9 +190,18 @@ def train_model(
             image_patches_paths=image_patches_paths_list,
             n_classes=n_classes,
             batch_size=batch_size,
+            validation_proportion=validation_proportion,
             test_proportion=test_proportion,
             data_augmentation=data_augmentation,
         ),
+        # validation_data=validation_dataset_generator(
+        #     image_patches_paths=image_patches_paths_list,
+        #     n_classes=n_classes,
+        #     batch_size=batch_size,
+        #     validation_proportion=validation_proportion,
+        #     test_proportion=test_proportion,
+        #     data_augmentation=data_augmentation,
+        # ),
         epochs=epochs,
         callbacks=callbacks,
         steps_per_epoch=int(len(image_patches_paths_list) * (1 - test_proportion))
@@ -207,23 +222,23 @@ def train_model(
     #     callbacks=callbacks,
     # )
 
-    image_tensors_list, labels_tensors_list = get_test_dataset(
-        image_patches_paths=image_patches_paths_list,
-        n_classes=n_classes,
-        batch_size=batch_size,
-        test_proportion=test_proportion,
-    )
-
-    metrics_values = model.evaluate(
-        x=image_tensors_list,
-        y=labels_tensors_list,
-        callbacks=callbacks,
-    )
+    # image_tensors_list, labels_tensors_list = get_test_dataset(
+    #     image_patches_paths=image_patches_paths_list,
+    #     n_classes=n_classes,
+    #     batch_size=batch_size,
+    #     test_proportion=test_proportion,
+    # )
+    #
+    # metrics_values = model.evaluate(
+    #     x=image_tensors_list,
+    #     y=labels_tensors_list,
+    #     callbacks=callbacks,
+    # )
 
     # todo : save history and metrics_values
 
-    return model, history, metrics_values
-    # return model, history
+    # return model, history, metrics_values
+    return model, history
 
 
 def load_saved_model(
@@ -245,7 +260,7 @@ def load_saved_model(
 # --------
 # DEBUG
 
-# model, history, loss = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
-# model, history = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
-# train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATHH, N_PATCHES_LIMIT, BATCH_SIZE, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
-# train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, 100, 16, TEST_PROPORTION, 70, 3, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
+# model, history = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, VALIDATION_PROPORTION, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
+# model, history, metrics = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, VALIDATION_PROPORTION, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
+# train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATHH, N_PATCHES_LIMIT, BATCH_SIZE, VALIDATION_PROPORTION, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
+# train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, 100, 16, VALIDATION_PROPORTION, TEST_PROPORTION, 70, 3, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)

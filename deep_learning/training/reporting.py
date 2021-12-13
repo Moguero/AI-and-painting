@@ -3,17 +3,18 @@ from pathlib import Path
 import pandas as pd
 from tensorflow import keras
 
+from dataset_utils.file_utils import get_formatted_time
 from dataset_utils.plotting_tools import save_patch_composition_mean_plot
 
 
-def make_run_report(
+def build_training_run_report(
     report_dir_path: Path,
     model: keras.Model,
     model_config: dict,
     patches_composition_stats: pd.DataFrame,
     palette_hexa: {int: str},
     note: str,
-):
+) -> None:
     report_subdirs_paths_dict = {
         "data_report": report_dir_path / "1_data_report",
         "model_report": report_dir_path / "2_model_report",
@@ -67,6 +68,7 @@ def make_run_report(
         model.summary(print_fn=lambda x: file.write(x + "\n"))
 
     # Export the model config (hyperparameters)
+
     model_config_filename = (
         report_subdirs_paths_dict["model_report"] / "model_config.txt"
     )
@@ -82,3 +84,22 @@ def make_run_report(
 
     # image_name of the predictions
     return
+
+
+def init_report_paths(
+        report_root_dir_path: Path
+) -> {str: Path}:
+    report_paths_dict = dict()
+    _report_dir_path = report_root_dir_path / f"report_{get_formatted_time()}"
+    _data_report = _report_dir_path / "1_data_report"
+    _model_report = _report_dir_path / "2_model_report"
+    _predictions_report = _report_dir_path / "3_predictions_report"
+    _checkpoint_path = _model_report / "model_checkpoint"
+
+    report_paths_dict["report_dir_path"] = _report_dir_path
+    report_paths_dict["data_report"] = _data_report
+    report_paths_dict["model_report"] = _model_report
+    report_paths_dict["predictions_report"] = _predictions_report
+    report_paths_dict["checkpoint_path"] = _checkpoint_path
+
+    return report_paths_dict

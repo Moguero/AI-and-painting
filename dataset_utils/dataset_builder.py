@@ -153,6 +153,7 @@ def train_dataset_generator(
     image_patches_paths: [Path],
     n_classes: int,
     batch_size: int,
+    validation_proportion: float,
     test_proportion: float,
     data_augmentation: bool = False,
 ) -> Generator[Tuple[tf.Tensor, tf.Tensor], None, None]:
@@ -166,22 +167,25 @@ def train_dataset_generator(
     :param image_patches_paths: Paths of the images (already filtered) to train on.
     :param n_classes: Number of classes, background not included.
     :param batch_size: Size of the batches.
+    :param validation_proportion: Float, used to set the proportion of the validation images dataset.
     :param test_proportion: Float, used to set the proportion of the training images dataset.
     :param data_augmentation: Boolean, apply data augmentation to the each batch of the training dataset if True.
     :return: Yield 2 tensors of size (batch_size, patch_size, patch_size, 3) and (batch_size, patch_size, patch_size, n_classes + 1),
             corresponding to image tensors and their corresponding one-hot-encoded masks tensors
     """
-    train_limit_idx = int(len(image_patches_paths) * (1 - test_proportion))
+    validation_limit_idx = int(len(image_patches_paths) * (1 - test_proportion))
+    train_limit_idx = int(validation_limit_idx * (1 - validation_proportion))
 
     # todo : data augmentation with ImageDataGenerator : will create a generator,
     #  that can be used to reload the augmented images in a tensor that will be yielded by this generator
     #  pass an augmentation_object parameter to this function (cf tuto)
     # https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image/ImageDataGenerator
     # idée : data augmentation on each batch
-    # Case of training dataset
     logger.info(
-        f"\n{train_limit_idx}/{len(image_patches_paths)} patches taken for training (test proportion of {test_proportion})"
-        f"\n{(train_limit_idx // batch_size) * batch_size}/{train_limit_idx} patches will be kept and {train_limit_idx % batch_size}/{train_limit_idx} will be dropped (drop remainder).",
+        f"\n{validation_limit_idx}/{len(image_patches_paths)} patches taken for training and validation : validation proportion of {validation_proportion} and test proportion of {test_proportion}"
+        f"\n - {train_limit_idx}/{len(image_patches_paths)} patches for training (validation proportion of {validation_proportion} and test proportion of {test_proportion})"
+        f"\n - {validation_limit_idx - train_limit_idx}/{len(image_patches_paths)} patches for validation"
+        f"\n{(train_limit_idx // batch_size) * batch_size}/{train_limit_idx} training patches will be kept and {train_limit_idx % batch_size}/{train_limit_idx} will be dropped (drop remainder).",
     )
 
     while True:
@@ -194,6 +198,68 @@ def train_dataset_generator(
 
             for image_patch_path in image_patches_paths[
                 n_batch * batch_size : (n_batch + 1) * batch_size
+            ]:
+                image_tensor, labels_tensor = decode_image(
+                    file_path=image_patch_path
+                ), one_hot_encode_image_patch_masks(
+                    image_patch_path=image_patch_path, n_classes=n_classes
+                )
+                image_tensors_list.append(image_tensor)
+                labels_tensors_list.append(labels_tensor)
+
+            if data_augmentation:
+                augmented_image_tensors, augmented_labels_tensors = augment_batch(
+                    image_tensors=image_tensors_list,
+                    labels_tensors=labels_tensors_list,
+                    batch_size=batch_size,
+                )
+            else:
+                augmented_image_tensors, augmented_labels_tensors = tf.stack(
+                    image_tensors_list
+                ), tf.stack(labels_tensors_list)
+
+            yield augmented_image_tensors, augmented_labels_tensors
+
+
+def validation_dataset_generator(
+    image_patches_paths: [Path],
+    n_classes: int,
+    batch_size: int,
+    validation_proportion: float,
+    test_proportion: float,
+    data_augmentation: bool = False,
+) -> Generator[Tuple[tf.Tensor, tf.Tensor], None, None]:
+    """
+    Create a dataset generator that will be used to feed model.fit().
+    This generator yields batches (acts like "drop_remainder == True") of augmented images.
+
+    Warning : this function builds a generator which is only meant to be used with "model.fit()" function.
+    Appropriate behaviour is not expected in a different context.
+
+    :param image_patches_paths: Paths of the images (already filtered) to train on.
+    :param n_classes: Number of classes, background not included.
+    :param batch_size: Size of the batches.
+    :param validation_proportion: Float, used to set the proportion of the validation images dataset.
+    :param test_proportion: Float, used to set the proportion of the training images dataset.
+    :param data_augmentation: Boolean, apply data augmentation to the each batch of the training dataset if True.
+    :return: Yield 2 tensors of size (batch_size, patch_size, patch_size, 3) and (batch_size, patch_size, patch_size, n_classes + 1),
+            corresponding to image tensors and their corresponding one-hot-encoded masks tensors
+    """
+    validation_limit_idx = int(len(image_patches_paths) * (1 - test_proportion))
+    train_limit_idx = int(validation_limit_idx * (1 - validation_proportion))
+
+    while True:
+        n_batches = (validation_limit_idx - train_limit_idx) // batch_size
+        for n_batch in range(n_batches):
+            # list of length batch_size, containing image tensors of shape (256, 256, 3)
+            image_tensors_list = list()
+            # list of length batch_size, containing corresponding labels tensors of shape (256, 256, 10)
+            labels_tensors_list = list()
+
+            for image_patch_path in image_patches_paths[
+                train_limit_idx
+                + n_batch * batch_size : train_limit_idx
+                + (n_batch + 1) * batch_size
             ]:
                 image_tensor, labels_tensor = decode_image(
                     file_path=image_patch_path

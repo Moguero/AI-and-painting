@@ -13,12 +13,15 @@ if local_machine:
     DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
     CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_10__18_16_44"
+    IMAGES_DIR_PATH = DATA_DIR_ROOT / "images/sorted_images/kept/all"
 else:  # aws instance
     DATA_DIR_ROOT = Path(r"/home/data")
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
+    CHECKPOINT_ROOT_DIR_PATH = DATA_DIR_ROOT / "checkpoints"
     CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_03__18_31_03"
+    IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
+    TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246/_DSC0246.jpg"
 
-IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
 PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches/256x256"
 PREDICTIONS_DIR_PATH = DATA_DIR_ROOT / "predictions"
 REPORTS_ROOT_DIR_PATH = DATA_DIR_ROOT / "reports"
@@ -87,7 +90,8 @@ BATCH_SIZE = 8
 N_CLASSES = 9
 N_EPOCHS = 10
 N_PATCHES_LIMIT = 100
-TEST_PROPORTION = 0.2
+VALIDATION_PROPORTION = 0.2
+TEST_PROPORTION = 0.1
 PATCH_OVERLAP = 40  # 20 not enough, 40 great
 PATCH_COVERAGE_PERCENT_LIMIT = 75
 ENCODER_KERNEL_SIZE = 3
@@ -106,3 +110,10 @@ LOSS_FUNCTION = keras.losses.categorical_crossentropy
 METRICS = [keras.metrics.categorical_accuracy, keras.metrics.MeanIoU(N_CLASSES)]
 DOWNSCALE_FACTORS = (6, 6, 1)
 DATA_AUGMENTATION = False
+
+# Physical parameters (in mm)
+
+PHYSICAL_PIXEL_SIZE = 5
+# todo : hardcode canvas_height and width directly into the predictions maker for testing
+CANVAS_WIDTH = 4000
+CANVAS_HEIGHT = 3000
