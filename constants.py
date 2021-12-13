@@ -17,7 +17,6 @@ if local_machine:
 else:  # aws instance
     DATA_DIR_ROOT = Path(r"/home/data")
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
-    CHECKPOINT_ROOT_DIR_PATH = DATA_DIR_ROOT / "checkpoints"
     CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_03__18_31_03"
     IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
     TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246/_DSC0246.jpg"

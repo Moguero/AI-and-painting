@@ -172,8 +172,9 @@ def train_model(
 
     # Save a run report
     # todo : put it in the end of the run script to have the history, loss and metrics saved
+    report_dir_path = report_paths_dict["report_dir_path"]
     build_training_run_report(
-        report_dir_path=report_paths_dict["report_dir_path"],
+        report_dir_path=report_dir_path,
         model=model,
         model_config=model_config,
         patches_composition_stats=patches_composition_stats,
@@ -238,7 +239,7 @@ def train_model(
     # todo : save history and metrics_values
 
     # return model, history, metrics_values
-    return model, history
+    return model, history, report_dir_path
 
 
 def load_saved_model(

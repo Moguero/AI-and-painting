@@ -5,7 +5,8 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import scikitplot as skplt
+
+# import scikitplot as skplt
 
 from constants import (
     PALETTE_HEXA,
@@ -35,7 +36,7 @@ from deep_learning.training.model_runner import load_saved_model
 
 
 def make_predictions(
-    target_image_path,
+    target_image_path: Path,
     checkpoint_dir_path: Path,
     patch_size: int,
     patch_overlap: int,
@@ -43,6 +44,9 @@ def make_predictions(
     batch_size: int,
     encoder_kernel_size: int,
     downscale_factors: tuple,
+    # physical_pixel_size: int,
+    # canvas_width: int,
+    # canvas_height: int,
     misclassification_size: int = 5,
 ):
     """
@@ -56,19 +60,34 @@ def make_predictions(
     :param patch_overlap: Number of pixels on which neighbors patches intersect each other.
     :param n_classes: Number of classes to map, background excluded.
     :param batch_size: Batch size that was used for the model which is loaded.
+    :param physical_pixel_size: Size of the minimum square pixel edge that the robot can paint : physical extremum limit.
+    :param canvas_width: Width of the physical canvas.
+    :param canvas_height: Height of the physical canvas.
+    :param misclassification_size: Estimated number of pixels on which the classification is wrong due to side effects between neighbors patches.
 
     :return: A 2D categorical tensor of size (width, height), width and height being the cropped size of the target image tensor.
     """
-    # todo : automate the downscale_factors
 
     assert (
         patch_overlap % 2 == 0
     ), f"Patch overlap argument must be a pair number. The one specified was {patch_overlap}."
 
+    # todo : remove this downscale image + remove downscale_facors argument + replace by a simple image loading into tensor
     # Downscale the image if necessary
     downscale_image_tensor = downscale_image(
         image_path=target_image_path, downscale_factors=downscale_factors
     )
+
+    # todo : generate patches of downsampled images
+    # Check if the image size is correct
+    target_image_height = downscale_image_tensor.shape[0]
+    target_image_width = downscale_image_tensor.shape[1]
+    # assert (
+    #     target_image_height == physical_pixel_size * canvas_height
+    # ), f"Target image height is {target_image_height} : should be {physical_pixel_size * canvas_height}"
+    # assert (
+    #     target_image_width == physical_pixel_size * canvas_width
+    # ), f"Target image height is {target_image_width} : should be {physical_pixel_size * canvas_width}"
 
     # Cut the image into patches of size patch_size
     # & format the image patches to feed the model.predict function
@@ -78,6 +97,7 @@ def make_predictions(
         patch_overlap=patch_overlap,
     )
 
+    # todo : load save model if checkpoint_dir_path specified, train model otherwise
     # Build the model
     # & apply saved weights to the built model
     model = load_saved_model(
@@ -94,8 +114,8 @@ def make_predictions(
     # predicitons : array of shape (n_patches, patch_size, patch_size, n_classes)
     predictions = model.predict(predictions_dataset, verbose=1)
 
-    # remove background predictions so it takes the max on the non background classes
-    # note : the argmax function shift the classes numbers of -1, that is why we add one just after
+    # Remove background predictions so it takes the max on the non background classes
+    # Note : the argmax function shift the classes numbers of -1, that is why we add one just after
     patch_classes_list = list(np.argmax(predictions[:, :, :, 1:], axis=3))
     patch_classes_list = [
         tf.constant(
@@ -190,8 +210,7 @@ def save_full_plot_predictions(
 
 def save_predictions_plot_only(
     target_image_path: Path,
-    predictions_dir_path: Path,
-    checkpoint_dir_path: Path,
+    report_dir_path: Path,
     patch_size: int,
     patch_overlap: int,
     n_classes: int,
@@ -201,7 +220,7 @@ def save_predictions_plot_only(
 ) -> None:
     predictions_tensor = make_predictions(
         target_image_path=target_image_path,
-        checkpoint_dir_path=checkpoint_dir_path,
+        checkpoint_dir_path=report_dir_path / "2_model_report",
         patch_size=patch_size,
         patch_overlap=patch_overlap,
         n_classes=n_classes,
@@ -213,16 +232,17 @@ def save_predictions_plot_only(
         categorical_mask_tensor=predictions_tensor
     )
     predictions_sub_dir = (
-        predictions_dir_path
+        report_dir_path / "3_predictions"
         / f"{get_image_name_without_extension(target_image_path)}"
         / "predictions_only"
     )
     if not predictions_sub_dir.exists():
-        predictions_sub_dir.mkdir()
+        predictions_sub_dir.mkdir(parents=True)
     output_path = (
         predictions_sub_dir
-        / f"{get_image_name_without_extension(target_image_path)}_{get_formatted_time()}__model_{checkpoint_dir_path.parts[-1]}__overlap_{patch_overlap}.png"
+        / f"{get_formatted_time()}__{get_image_name_without_extension(target_image_path)}.png"
     )
+    # todo : make a report on the predictions params also
     tf.keras.preprocessing.image.save_img(output_path, mapped_predictions_array)
     logger.info(f"\nFull predictions plot successfully saved at : {output_path}")
 
@@ -288,35 +308,35 @@ def get_confusion_matrix(
     return confusion_matrix, labels_tensor, predictions_tensor
 
 
-def plot_confusion_matrix(
-    labels_tensor: tf.Tensor,
-    predictions_tensor: tf.Tensor,
-) -> None:
-    skplt.metrics.plot_confusion_matrix(
-        y_true=labels_tensor,
-        y_pred=predictions_tensor,
-        figsize=(10, 10),
-        title="Confusion matrix",
-        x_tick_rotation=45,
-        cmap="Greens",
-    )
-    plt.show()
+# def plot_confusion_matrix(
+#     labels_tensor: tf.Tensor,
+#     predictions_tensor: tf.Tensor,
+# ) -> None:
+#     skplt.metrics.plot_confusion_matrix(
+#         y_true=labels_tensor,
+#         y_pred=predictions_tensor,
+#         figsize=(10, 10),
+#         title="Confusion matrix",
+#         x_tick_rotation=45,
+#         cmap="Greens",
+#     )
+#     plt.show()
 
-
-def save_confusion_matrix(
-    labels_tensor: tf.Tensor,
-    predictions_tensor: tf.Tensor,
-    output_path: Path,
-) -> None:
-    skplt.metrics.plot_confusion_matrix(
-        y_true=labels_tensor,
-        y_pred=predictions_tensor,
-        figsize=(10, 10),
-        title="Confusion matrix",
-        x_tick_rotation=45,
-        cmap="Greens",
-    )
-    plt.savefig(output_path)
+#
+# def save_confusion_matrix(
+#     labels_tensor: tf.Tensor,
+#     predictions_tensor: tf.Tensor,
+#     output_path: Path,
+# ) -> None:
+#     skplt.metrics.plot_confusion_matrix(
+#         y_true=labels_tensor,
+#         y_pred=predictions_tensor,
+#         figsize=(10, 10),
+#         title="Confusion matrix",
+#         x_tick_rotation=45,
+#         cmap="Greens",
+#     )
+#     plt.savefig(output_path)
 
 
 # ------
