@@ -77,9 +77,6 @@ def build_training_run_report(
         for key, value in model_config.items():
             file.write(f"{str(key)}: {str(value)} \n")
 
-    # Export
-
-
     # 3. predictions
 
     # image_name of the predictions
@@ -89,13 +86,13 @@ def build_training_run_report(
 def init_report_paths(
         report_root_dir_path: Path
 ) -> {str: Path}:
-    report_paths_dict = dict()
     _report_dir_path = report_root_dir_path / f"report_{get_formatted_time()}"
     _data_report = _report_dir_path / "1_data_report"
     _model_report = _report_dir_path / "2_model_report"
     _predictions_report = _report_dir_path / "3_predictions_report"
     _checkpoint_path = _model_report / "model_checkpoint"
 
+    report_paths_dict = dict()
     report_paths_dict["report_dir_path"] = _report_dir_path
     report_paths_dict["data_report"] = _data_report
     report_paths_dict["model_report"] = _model_report

@@ -21,7 +21,7 @@ from constants import (
     BATCH_SIZE,
     ENCODER_KERNEL_SIZE,
     DOWNSCALE_FACTORS,
-    IMAGES_DIR_PATH,
+    IMAGES_DIR_PATH, MASK_TRUE_VALUE, MASK_FALSE_VALUE,
 )
 from dataset_utils.dataset_builder import build_predictions_dataset
 from dataset_utils.file_utils import timeit, get_formatted_time
@@ -30,7 +30,7 @@ from dataset_utils.image_rebuilder import (
 )
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.masks_encoder import stack_image_masks
-from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channels_tensor
+from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channels_tensor, turn_2d_tensor_to_3d_tensor
 from deep_learning.preprocessing.downscaling import downscale_image
 from deep_learning.training.model_runner import load_saved_model
 
@@ -48,7 +48,7 @@ def make_predictions(
     # canvas_width: int,
     # canvas_height: int,
     misclassification_size: int = 5,
-):
+) -> tf.Tensor:
     """
     Make predictions on the target image specified with its path.
 
@@ -65,7 +65,7 @@ def make_predictions(
     :param canvas_height: Height of the physical canvas.
     :param misclassification_size: Estimated number of pixels on which the classification is wrong due to side effects between neighbors patches.
 
-    :return: A 2D categorical tensor of size (width, height), width and height being the cropped size of the target image tensor.
+    :return: A 2D categorical tensor of size (width, height), width and height being the cropped size of the target image tensor
     """
 
     assert (
@@ -124,11 +124,11 @@ def make_predictions(
         )
         for patch_classes in patch_classes_list
     ]
-
     # Classes list is of size n_patches of tensor with size (patch_size, patch_size)
+
     logger.info("\nPredictions have been done.")
 
-    # Rebuild the image with the predictions patches
+    # Rebuild the image with the predictions patches : output tensor of size (width, height)
     full_predictions_tensor = rebuild_predictions_with_overlap(
         patches_list=patch_classes_list,
         downscale_image_tensor=downscale_image_tensor,
@@ -136,8 +136,8 @@ def make_predictions(
         patch_overlap=patch_overlap,
         misclassification_size=misclassification_size,
     )
-
     full_predictions_tensor = tf.squeeze(full_predictions_tensor)
+
     return full_predictions_tensor
 
 
@@ -228,23 +228,74 @@ def save_predictions_plot_only(
         encoder_kernel_size=encoder_kernel_size,
         downscale_factors=downscale_factors,
     )
+
     mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
         categorical_mask_tensor=predictions_tensor
     )
-    predictions_sub_dir = (
-        report_dir_path / "3_predictions"
-        / f"{get_image_name_without_extension(target_image_path)}"
+
+    predictions_dir_path = report_dir_path / "3_predictions" / f"{get_image_name_without_extension(target_image_path)}" / get_formatted_time()
+
+    predictions_only_sub_dir = (
+        predictions_dir_path
         / "predictions_only"
     )
-    if not predictions_sub_dir.exists():
-        predictions_sub_dir.mkdir(parents=True)
+    if not predictions_only_sub_dir.exists():
+        predictions_only_sub_dir.mkdir(parents=True)
     output_path = (
-        predictions_sub_dir
-        / f"{get_formatted_time()}__{get_image_name_without_extension(target_image_path)}.png"
+        predictions_only_sub_dir
+        / f"{get_image_name_without_extension(target_image_path)}.png"
     )
-    # todo : make a report on the predictions params also
     tf.keras.preprocessing.image.save_img(output_path, mapped_predictions_array)
+
+    # Separate tensor into a list of n_classes binary tensors of size (width, height)
+    binary_tensors_list = get_binary_tensors_list(predictions_tensor=predictions_tensor)
+    binary_tensors_3d_list = list()
+    for binary_tensor in binary_tensors_list:
+        binary_tensor_3d = turn_2d_tensor_to_3d_tensor(binary_tensor)
+        binary_tensors_3d_list.append(binary_tensor_3d)
+
+    binary_predictions_sub_dir = (
+            predictions_dir_path
+            / "binary_predictions"
+    )
+    if not binary_predictions_sub_dir.exists():
+        binary_predictions_sub_dir.mkdir(parents=True)
+    for idx, tensor_3d in enumerate(binary_tensors_3d_list):
+        output_path = (
+            binary_predictions_sub_dir
+            / f"{get_image_name_without_extension(target_image_path)}__{idx}.png"
+        )
+        tf.keras.preprocessing.image.save_img(output_path, tensor_3d)
+
+    # todo : put it in the reporting.py file
+    predictions_config = {
+        "patch_size": patch_size,
+        "patch_overlap": patch_overlap,
+        "batch_size": batch_size,
+        "encoder_kernel_size": encoder_kernel_size,
+        "downscale_factors": downscale_factors,
+    }
+
+    with open(predictions_dir_path / "predictions_config.txt", "w") as file:
+        # Pass the file handle in as a lambda function to make it callable
+        for key, value in predictions_config.items():
+            file.write(f"{str(key)}: {str(value)} \n")
+
     logger.info(f"\nFull predictions plot successfully saved at : {output_path}")
+
+
+def get_binary_tensors_list(
+    predictions_tensor: tf.Tensor,
+) -> [tf.Tensor]:
+    binary_tensors_list = list()
+    for class_number in MAPPING_CLASS_NUMBER.values():
+        binary_tensor = tf.where(
+            tf.equal(predictions_tensor, class_number),
+            MASK_TRUE_VALUE,
+            MASK_FALSE_VALUE,
+        )
+        binary_tensors_list.append(binary_tensor)
+    return binary_tensors_list
 
 
 def get_confusion_matrix(

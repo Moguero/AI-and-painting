@@ -82,12 +82,11 @@ def plot_image_from_array(array: np.ndarray) -> None:
     plt.show()
 
 
-@timeit
 def map_categorical_mask_to_3_color_channels_tensor(
     categorical_mask_tensor: tf.Tensor,
 ) -> np.ndarray:
     """
-    Turn a 2D tensor into a 3D array by converting its categorical values in its RGB correspondant values.
+    Turn a 2D tensor into a 3D array by converting its categorical values in its RGB correspondent values.
 
     :param categorical_mask_tensor: A 2D categorical tensor of size (width_size, height_size)
     :return: A 3D array of size (width_size, height_size, 3)
@@ -96,6 +95,21 @@ def map_categorical_mask_to_3_color_channels_tensor(
     vectorize_function = np.vectorize(lambda x: PALETTE_RGB[x])
     three_channels_array = np.stack(vectorize_function(categorical_mask_array), axis=2)
     return three_channels_array
+
+
+def turn_2d_tensor_to_3d_tensor(
+    tensor_2d: tf.Tensor,
+) -> np.ndarray:
+    """
+    Turn a 2D tensor into a 3D array by tripling the same mask layer.
+
+    :param tensor_2d: A 2D categorical tensor of size (width_size, height_size)
+    :return: A 3D array of size (width_size, height_size, 3)
+    """
+    array_2d = tensor_2d.numpy()
+    vectorize_function = np.vectorize(lambda x: (x, x, x))
+    array_3d = np.stack(vectorize_function(array_2d), axis=2)
+    return array_3d
 
 
 @timeit
