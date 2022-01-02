@@ -7,19 +7,24 @@ import tensorflow as tf
 from dataset_utils.image_utils import turn_hexadecimal_color_into_nomalized_rgb_list, \
     turn_hexadecimal_color_into_rgb_list
 
-local_machine = False
+local_machine = True
 
 if local_machine:
     DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
     CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_10__18_16_44"
-    IMAGES_DIR_PATH = DATA_DIR_ROOT / "images/sorted_images/kept/all"
+    IMAGES_DIR_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\images\sorted_images\kept\all")
+    TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246.jpg"
+    N_EPOCHS = 2
+    N_PATCHES_LIMIT = 50
 else:  # aws instance
     DATA_DIR_ROOT = Path(r"/home/data")
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
     CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_03__18_31_03"
     IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
     TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246/_DSC0246.jpg"
+    N_EPOCHS = 10
+    N_PATCHES_LIMIT = 100
 
 PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches/256x256"
 PREDICTIONS_DIR_PATH = DATA_DIR_ROOT / "predictions"
@@ -87,8 +92,6 @@ PATCH_SIZE = 256
 # BATCH_SIZE = 32  # 32 is a frequently used value
 BATCH_SIZE = 8
 N_CLASSES = 9
-N_EPOCHS = 10
-N_PATCHES_LIMIT = 100
 VALIDATION_PROPORTION = 0.2
 TEST_PROPORTION = 0.1
 PATCH_OVERLAP = 40  # 20 not enough, 40 great
