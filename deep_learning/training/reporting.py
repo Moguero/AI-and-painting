@@ -116,6 +116,11 @@ def build_predict_run_report(
     batch_size: int,
     encoder_kernel_size: int,
 ) -> None:
+    predictions_report_root_path = (
+        report_dir_path / "3_predictions" / get_formatted_time()
+    )
+    predictions_report_root_path.mkdir(parents=True)
+
     for test_image_path in test_images_paths_list:
         # Make predictions
         predictions_tensor = make_predictions(
@@ -126,10 +131,6 @@ def build_predict_run_report(
             n_classes=n_classes,
             batch_size=batch_size,
             encoder_kernel_size=encoder_kernel_size,
-        )
-
-        predictions_report_root_path = (
-            report_dir_path / "3_predictions" / get_formatted_time()
         )
 
         save_test_images_vs_predictions_plot(
@@ -215,8 +216,12 @@ def save_predictions_only_plot(
     mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
         categorical_mask_tensor=predictions_tensor
     )
+    predictions_only_subdir_path = predictions_report_root_path / "predictions_only"
+    if not predictions_only_subdir_path.exists():
+        predictions_only_subdir_path.mkdir()
+
     output_path = (
-        predictions_report_root_path
+        predictions_only_subdir_path
         / f"predictions_only__{get_image_name_without_extension(target_image_path)}.png"
     )
     tf.keras.preprocessing.image.save_img(output_path, mapped_predictions_array)
@@ -230,12 +235,8 @@ def save_binary_predictions_plot(
 ):
     # Separate predictions tensor into a list of n_classes binary tensors of size (width, height)
     binary_predictions_sub_dir = predictions_report_root_path / "binary_predictions"
-    mapping_number_class = {
-        class_number: class_name
-        for class_name, class_number in MAPPING_CLASS_NUMBER.items()
-    }
     if not binary_predictions_sub_dir.exists():
-        binary_predictions_sub_dir.mkdir(parents=True)
+        binary_predictions_sub_dir.mkdir()
 
     # Create and save binary tensors
     for idx, class_number in enumerate(MAPPING_CLASS_NUMBER.values()):
@@ -246,8 +247,17 @@ def save_binary_predictions_plot(
         )
 
         binary_tensor_3d = turn_2d_tensor_to_3d_tensor(tensor_2d=binary_tensor)
+        mapping_number_class = {
+            class_number: class_name
+            for class_name, class_number in MAPPING_CLASS_NUMBER.items()
+        }
+
+        binary_predictions_class_sub_dir = predictions_report_root_path / "binary_predictions" / get_image_name_without_extension(target_image_path)
+        if not binary_predictions_class_sub_dir.exists():
+            binary_predictions_class_sub_dir.mkdir(parents=True)
         output_path = (
                 binary_predictions_sub_dir
+                / get_image_name_without_extension(target_image_path)
                 / f"{get_image_name_without_extension(target_image_path)}__{mapping_number_class[idx]}.png"
         )
         tf.keras.preprocessing.image.save_img(output_path, binary_tensor_3d)

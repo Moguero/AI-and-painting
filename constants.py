@@ -15,7 +15,7 @@ if local_machine:
     REPORT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17"
     IMAGES_DIR_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\images\sorted_images\kept\all")
     TEST_IMAGES_DIR_PATH = DATA_DIR_ROOT / "test_images"
-    DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images"
+    DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images" / "max"
     TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246.jpg"
     N_EPOCHS = 2
     N_PATCHES_LIMIT = 50
@@ -25,36 +25,36 @@ else:  # aws instance
     REPORT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17"
     IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
     TEST_IMAGES_DIR_PATH = DATA_DIR_ROOT / "test_images"
-    DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images"
+    DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images" / "max"
     TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246/_DSC0246.jpg"
     N_EPOCHS = 10
     N_PATCHES_LIMIT = 100
 
 TEST_IMAGES_NAMES = [
-    "3.jpeg",
+    "3.jpg",
     "4.jpg",
-    "DSC_0097.JPG",
-    "IMG_3083.JPG",
+    "DSC_0097.jpg",
+    "IMG_3083.jpg",
     "IMG_4698_2.jpg",
     "IMG_4724_2.jpg",
     "IMG_4831.jpg",
     "IMG_4939.jpg",
-    "P1000724.JPG",
-    "_DSC0036.JPG",
-    "_DSC0064.JPG",
-    "_DSC0103.JPG",
-    "_DSC0177.JPG",
-    "_DSC0201.JPG",
-    "_DSC0231.JPG",
-    "_DSC0235.JPG",
-    "_DSC0241.JPG",
-    "_DSC0245.JPG",
-    "_DSC0257.JPG",
-    "_DSC0300.JPG",
+    "P1000724.jpg",
+    "_DSC0036.jpg",
+    "_DSC0064.jpg",
+    "_DSC0103.jpg",
+    "_DSC0177.jpg",
+    "_DSC0201.jpg",
+    "_DSC0231.jpg",
+    "_DSC0235.jpg",
+    "_DSC0241.jpg",
+    "_DSC0245.jpg",
+    "_DSC0257.jpg",
+    "_DSC0300.jpg",
 ]
 
 TEST_IMAGES_PATHS_LIST = [TEST_IMAGES_DIR_PATH / image_name for image_name in TEST_IMAGES_NAMES]
-DOWNSCALED_TEST_IMAGES_PATHS_LIST = [DOWNSCALED_TEST_IMAGES_DIR_PATH / image_name for image_name in TEST_IMAGES_NAMES]
+DOWNSCALED_TEST_IMAGES_PATHS_LIST = [DOWNSCALED_TEST_IMAGES_DIR_PATH / ("downscaled_max_" + image_name) for image_name in TEST_IMAGES_NAMES]
 
 PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches/256x256"
 PREDICTIONS_DIR_PATH = DATA_DIR_ROOT / "predictions"

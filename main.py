@@ -21,6 +21,7 @@ from constants import (
     PALETTE_HEXA,
     PATCH_OVERLAP,
     TEST_IMAGES_PATHS_LIST,
+    DOWNSCALED_TEST_IMAGES_PATHS_LIST,
 )
 from deep_learning.training.model_runner import train_model
 from deep_learning.training.reporting import build_predict_run_report
@@ -74,7 +75,7 @@ def main(
 
             # todo : specify the report path in the parser OR create a config.json
             build_predict_run_report(
-                test_images_paths_list=TEST_IMAGES_PATHS_LIST,
+                test_images_paths_list=DOWNSCALED_TEST_IMAGES_PATHS_LIST,
                 report_dir_path=report_dir_path,
                 patch_size=PATCH_SIZE,
                 patch_overlap=PATCH_OVERLAP,
