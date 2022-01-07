@@ -19,7 +19,7 @@ def downscale_image(image_path: Path, downscale_factors: (int, int, int)) -> tf.
     :param downscale_factors: Factors on which we want to downscale the image.
     :return: A tensor of shape ceil(image_tensor.shape / downscale_factors).
     """
-    image_tensor = decode_image(image_path)
+    image_tensor = decode_image(image_path=image_path)
     downscaled_array = downscale_local_mean(
         image=image_tensor, factors=downscale_factors
     ).astype(int)
@@ -87,5 +87,5 @@ def bulk_save_downscaled_images(
 # downscale_image(IMAGE_PATH, DOWNSCALE_FACTORS)
 # plot_downscale_image(IMAGE_PATH, DOWNSCALE_FACTORS)
 
-bulk_save_downscaled_images(TEST_IMAGES_PATHS_LIST, DOWNSCALED_TEST_IMAGES_DIR_PATH / "max", "downscaled_max_", MAX_HEIGHT_PIXELS, MAX_WIDTH_PIXELS)
-bulk_save_downscaled_images(TEST_IMAGES_PATHS_LIST, DOWNSCALED_TEST_IMAGES_DIR_PATH / "min", "downscaled_min_", MIN_HEIGHT_PIXELS, MIN_WIDTH_PIXELS)
+# bulk_save_downscaled_images(TEST_IMAGES_PATHS_LIST, DOWNSCALED_TEST_IMAGES_DIR_PATH / "max", "downscaled_max_", MAX_HEIGHT_PIXELS, MAX_WIDTH_PIXELS)
+# bulk_save_downscaled_images(TEST_IMAGES_PATHS_LIST, DOWNSCALED_TEST_IMAGES_DIR_PATH / "min", "downscaled_min_", MIN_HEIGHT_PIXELS, MIN_WIDTH_PIXELS)
