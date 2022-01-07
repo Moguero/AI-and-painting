@@ -31,9 +31,7 @@ from dataset_utils.image_rebuilder import (
 )
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.masks_encoder import stack_image_masks
-from dataset_utils.plotting_tools import (
-    map_categorical_mask_to_3_color_channels_tensor,
-)
+from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channels_tensor
 from deep_learning.models.unet import build_small_unet
 
 
