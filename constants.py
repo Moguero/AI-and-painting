@@ -5,26 +5,56 @@ import tensorflow as tf
 
 # Paths variables
 from dataset_utils.image_utils import turn_hexadecimal_color_into_nomalized_rgb_list, \
-    turn_hexadecimal_color_into_rgb_list
+    turn_hexadecimal_color_into_rgb_list, decode_image
 
-local_machine = True
+local_machine = False
 
 if local_machine:
     DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
-    CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_10__18_16_44"
+    REPORT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17"
     IMAGES_DIR_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\images\sorted_images\kept\all")
+    TEST_IMAGES_DIR_PATH = DATA_DIR_ROOT / "test_images"
+    DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images"
     TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246.jpg"
     N_EPOCHS = 2
     N_PATCHES_LIMIT = 50
 else:  # aws instance
     DATA_DIR_ROOT = Path(r"/home/data")
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
-    CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / "checkpoints/2021_10_03__18_31_03"
+    REPORT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17"
     IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
+    TEST_IMAGES_DIR_PATH = DATA_DIR_ROOT / "test_images"
+    DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images"
     TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246/_DSC0246.jpg"
     N_EPOCHS = 10
     N_PATCHES_LIMIT = 100
+
+TEST_IMAGES_NAMES = [
+    "3.jpeg",
+    "4.jpg",
+    "DSC_0097.JPG",
+    "IMG_3083.JPG",
+    "IMG_4698_2.jpg",
+    "IMG_4724_2.jpg",
+    "IMG_4831.jpg",
+    "IMG_4939.jpg",
+    "P1000724.JPG",
+    "_DSC0036.JPG",
+    "_DSC0064.JPG",
+    "_DSC0103.JPG",
+    "_DSC0177.JPG",
+    "_DSC0201.JPG",
+    "_DSC0231.JPG",
+    "_DSC0235.JPG",
+    "_DSC0241.JPG",
+    "_DSC0245.JPG",
+    "_DSC0257.JPG",
+    "_DSC0300.JPG",
+]
+
+TEST_IMAGES_PATHS_LIST = [TEST_IMAGES_DIR_PATH / image_name for image_name in TEST_IMAGES_NAMES]
+DOWNSCALED_TEST_IMAGES_PATHS_LIST = [DOWNSCALED_TEST_IMAGES_DIR_PATH / image_name for image_name in TEST_IMAGES_NAMES]
 
 PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches/256x256"
 PREDICTIONS_DIR_PATH = DATA_DIR_ROOT / "predictions"
@@ -119,3 +149,9 @@ PHYSICAL_PIXEL_SIZE = 5
 # todo : hardcode canvas_height and width directly into the predictions maker for testing
 CANVAS_WIDTH = 4000
 CANVAS_HEIGHT = 3000
+
+MAX_WIDTH_PIXELS = 800
+MAX_HEIGHT_PIXELS = 700
+
+MIN_WIDTH_PIXELS = 160
+MIN_HEIGHT_PIXELS = 140

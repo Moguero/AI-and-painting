@@ -117,7 +117,7 @@ def full_plot_image(
     image_path: Path, masks_dir: Path, predictions_tensor: tf.Tensor, all_patch_masks_overlap_indices_path: Path
 ) -> None:
     image = decode_image(image_path).numpy()
-    categorical_tensor = stack_image_masks(image_path, masks_dir, all_patch_masks_overlap_indices_path)
+    categorical_tensor = stack_image_masks(image_path, masks_dir)
     mapped_categorical_array = map_categorical_mask_to_3_color_channels_tensor(
         categorical_tensor
     )
