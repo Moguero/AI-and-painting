@@ -135,8 +135,8 @@ TARGET_WIDTH = 3264
 PADDING_TYPE = "same"
 # OPTIMIZER = "rmsprop"
 OPTIMIZER = Adam(lr=1e-4)  # maybe put tf.Variable instead of the float to shut the warnings
-# LOSS_FUNCTION = "categorical_crossentropy"
-LOSS_FUNCTION = keras.losses.categorical_crossentropy
+LOSS_FUNCTION = "categorical_crossentropy"
+# LOSS_FUNCTION = keras.losses.categorical_crossentropy
 # METRICS = ["accuracy", keras.metrics.MeanIoU]
 # METRICS = [keras.metrics.MeanIoU(N_CLASSES)]
 METRICS = [keras.metrics.categorical_accuracy, keras.metrics.MeanIoU(N_CLASSES)]

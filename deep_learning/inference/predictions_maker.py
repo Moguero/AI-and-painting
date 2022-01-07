@@ -14,14 +14,15 @@ from constants import (
     IMAGE_PATH,
     MASKS_DIR_PATH,
     PREDICTIONS_DIR_PATH,
-    CHECKPOINT_DIR_PATH,
     PATCH_SIZE,
     PATCH_OVERLAP,
     N_CLASSES,
     BATCH_SIZE,
     ENCODER_KERNEL_SIZE,
     DOWNSCALE_FACTORS,
-    IMAGES_DIR_PATH, MASK_TRUE_VALUE, MASK_FALSE_VALUE,
+    IMAGES_DIR_PATH,
+    MASK_TRUE_VALUE,
+    MASK_FALSE_VALUE,
 )
 from dataset_utils.dataset_builder import build_predictions_dataset
 from dataset_utils.file_utils import timeit, get_formatted_time
@@ -30,8 +31,9 @@ from dataset_utils.image_rebuilder import (
 )
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.masks_encoder import stack_image_masks
-from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channels_tensor, turn_2d_tensor_to_3d_tensor
-from deep_learning.preprocessing.downscaling import downscale_image
+from dataset_utils.plotting_tools import (
+    map_categorical_mask_to_3_color_channels_tensor,
+)
 from deep_learning.training.model_runner import load_saved_model
 
 
@@ -43,16 +45,11 @@ def make_predictions(
     n_classes: int,
     batch_size: int,
     encoder_kernel_size: int,
-    downscale_factors: tuple,
-    # physical_pixel_size: int,
-    # canvas_width: int,
-    # canvas_height: int,
     misclassification_size: int = 5,
 ) -> tf.Tensor:
     """
     Make predictions on the target image specified with its path.
 
-    :param downscale_factors: Factors on which we want to downscale the image.
     :param encoder_kernel_size: Size of the kernel encoder.
     :param target_image_path: Image to make predictions on.
     :param checkpoint_dir_path: Path of the already trained model.
@@ -60,9 +57,6 @@ def make_predictions(
     :param patch_overlap: Number of pixels on which neighbors patches intersect each other.
     :param n_classes: Number of classes to map, background excluded.
     :param batch_size: Batch size that was used for the model which is loaded.
-    :param physical_pixel_size: Size of the minimum square pixel edge that the robot can paint : physical extremum limit.
-    :param canvas_width: Width of the physical canvas.
-    :param canvas_height: Height of the physical canvas.
     :param misclassification_size: Estimated number of pixels on which the classification is wrong due to side effects between neighbors patches.
 
     :return: A 2D categorical tensor of size (width, height), width and height being the cropped size of the target image tensor
@@ -72,32 +66,18 @@ def make_predictions(
         patch_overlap % 2 == 0
     ), f"Patch overlap argument must be a pair number. The one specified was {patch_overlap}."
 
-    # todo : remove this downscale image + remove downscale_facors argument + replace by a simple image loading into tensor
-    # Downscale the image if necessary
-    downscale_image_tensor = downscale_image(
-        image_path=target_image_path, downscale_factors=downscale_factors
-    )
+    image_tensor = decode_image(file_path=target_image_path)
 
     # todo : generate patches of downsampled images
-    # Check if the image size is correct
-    target_image_height = downscale_image_tensor.shape[0]
-    target_image_width = downscale_image_tensor.shape[1]
-    # assert (
-    #     target_image_height == physical_pixel_size * canvas_height
-    # ), f"Target image height is {target_image_height} : should be {physical_pixel_size * canvas_height}"
-    # assert (
-    #     target_image_width == physical_pixel_size * canvas_width
-    # ), f"Target image height is {target_image_width} : should be {physical_pixel_size * canvas_width}"
 
     # Cut the image into patches of size patch_size
     # & format the image patches to feed the model.predict function
     predictions_dataset = build_predictions_dataset(
-        target_image_tensor=downscale_image_tensor,
+        target_image_tensor=image_tensor,
         patch_size=patch_size,
         patch_overlap=patch_overlap,
     )
 
-    # todo : load save model if checkpoint_dir_path specified, train model otherwise
     # Build the model
     # & apply saved weights to the built model
     model = load_saved_model(
@@ -109,8 +89,6 @@ def make_predictions(
     )
 
     # Make predictions on the patches
-    logger.info("\nStart to make predictions...")
-
     # predicitons : array of shape (n_patches, patch_size, patch_size, n_classes)
     predictions = model.predict(predictions_dataset, verbose=1)
 
@@ -126,22 +104,25 @@ def make_predictions(
     ]
     # Classes list is of size n_patches of tensor with size (patch_size, patch_size)
 
-    logger.info("\nPredictions have been done.")
+    logger.info(
+        f"\nPredictions on {get_image_name_without_extension(target_image_path)} have been done."
+    )
 
     # Rebuild the image with the predictions patches : output tensor of size (width, height)
-    full_predictions_tensor = rebuild_predictions_with_overlap(
+    final_predictions_tensor = rebuild_predictions_with_overlap(
         patches_list=patch_classes_list,
-        downscale_image_tensor=downscale_image_tensor,
+        downscale_image_tensor=image_tensor,
         patch_size=patch_size,
         patch_overlap=patch_overlap,
         misclassification_size=misclassification_size,
     )
-    full_predictions_tensor = tf.squeeze(full_predictions_tensor)
+    final_predictions_tensor = tf.squeeze(final_predictions_tensor)
 
-    return full_predictions_tensor
+    return final_predictions_tensor
 
 
-def save_full_plot_predictions(
+# todo : put it in the plotting_tools.py instead of reporting.py ?
+def save_labels_vs_predictions_comparison_plot(
     target_image_path: Path,
     masks_dir_path: Path,
     report_dir_path: Path,
@@ -150,7 +131,6 @@ def save_full_plot_predictions(
     n_classes: int,
     batch_size: int,
     encoder_kernel_size: int,
-    downscale_factors: tuple,
 ) -> None:
     """Used for training images, that have labels in the masks_dir folder !!!"""
     # Make predictions
@@ -162,12 +142,13 @@ def save_full_plot_predictions(
         n_classes=n_classes,
         batch_size=batch_size,
         encoder_kernel_size=encoder_kernel_size,
-        downscale_factors=downscale_factors,
     )
 
     # Set-up plotting settings
     image = decode_image(file_path=target_image_path).numpy()
-    categorical_tensor = stack_image_masks(image_path=target_image_path, masks_dir_path=masks_dir_path)
+    categorical_tensor = stack_image_masks(
+        image_path=target_image_path, masks_dir_path=masks_dir_path
+    )
     mapped_categorical_array = map_categorical_mask_to_3_color_channels_tensor(
         categorical_mask_tensor=categorical_tensor
     )
@@ -197,156 +178,26 @@ def save_full_plot_predictions(
     ax3.legend(handles=handles, bbox_to_anchor=(1.4, 1), loc="upper left", prop=fontP)
 
     # Save the plot
-    predictions_dir_path = report_dir_path / "3_predictions" / f"{get_image_name_without_extension(target_image_path)}" / get_formatted_time()
-    labels_and_predictions_sub_dir = (
-            predictions_dir_path
-            / "predictions_only"
+    # todo : save it at the root of the report predictions, (if this function is still needed)
+    predictions_dir_path = (
+        report_dir_path
+        / "3_predictions"
+        / f"{get_image_name_without_extension(target_image_path)}"
+        / get_formatted_time()
     )
+    labels_and_predictions_sub_dir = predictions_dir_path / "predictions_only"
     if not labels_and_predictions_sub_dir.exists():
         labels_and_predictions_sub_dir.mkdir(parents=True)
     output_path = (
-            labels_and_predictions_sub_dir
-            / f"{get_image_name_without_extension(target_image_path)}.png"
+        labels_and_predictions_sub_dir
+        / f"{get_image_name_without_extension(target_image_path)}.png"
     )
     plt.savefig(output_path, bbox_inches="tight", dpi=300)
 
     logger.info(f"\nFull predictions plot successfully saved at : {output_path}")
 
 
-def save_test_images_and_predictions(
-    target_image_path: Path,
-    report_dir_path: Path,
-    patch_size: int,
-    patch_overlap: int,
-    n_classes: int,
-    batch_size: int,
-    encoder_kernel_size: int,
-    downscale_factors: tuple,
-) -> None:
-    # Make predictions
-    predictions_tensor = make_predictions(
-        target_image_path=target_image_path,
-        checkpoint_dir_path=report_dir_path / "2_model_report",
-        patch_size=patch_size,
-        patch_overlap=patch_overlap,
-        n_classes=n_classes,
-        batch_size=batch_size,
-        encoder_kernel_size=encoder_kernel_size,
-        downscale_factors=downscale_factors,
-    )
-
-    # Set-up plotting settings
-    image = decode_image(file_path=target_image_path).numpy()
-    mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
-        categorical_mask_tensor=predictions_tensor
-    )
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.suptitle(get_image_name_without_extension(target_image_path))
-    ax1.set_title("Original image")
-    ax2.set_title("Predictions")
-    ax1.imshow(image)
-    ax2.imshow(mapped_predictions_array)
-    ax1.axis("off")
-    ax2.axis("off")
-
-    # Save the plot
-    images_and_predictions_dir_path = report_dir_path / "images_and_predictions"
-    if not images_and_predictions_dir_path.exists():
-        images_and_predictions_dir_path.mkdir()
-
-    output_path = images_and_predictions_dir_path / f"images_and_predictions_{get_image_name_without_extension(target_image_path)}.png"
-    plt.savefig(output_path, bbox_inches="tight", dpi=300)
-
-    logger.info(f"\nTest images and predictions plot successfully saved at : {output_path}")
-
-
-def save_predictions_plot_only(
-    target_image_path: Path,
-    report_dir_path: Path,
-    patch_size: int,
-    patch_overlap: int,
-    n_classes: int,
-    batch_size: int,
-    encoder_kernel_size: int,
-    downscale_factors: tuple,
-) -> None:
-    # Make predictions
-    predictions_tensor = make_predictions(
-        target_image_path=target_image_path,
-        checkpoint_dir_path=report_dir_path / "2_model_report",
-        patch_size=patch_size,
-        patch_overlap=patch_overlap,
-        n_classes=n_classes,
-        batch_size=batch_size,
-        encoder_kernel_size=encoder_kernel_size,
-        downscale_factors=downscale_factors,
-    )
-
-    # Save predictions
-    mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
-        categorical_mask_tensor=predictions_tensor
-    )
-    predictions_dir_path = report_dir_path / "3_predictions" / f"{get_image_name_without_extension(target_image_path)}" / get_formatted_time()
-    if not predictions_dir_path.exists():
-        predictions_dir_path.mkdir(parents=True)
-    predictions_only_sub_dir = predictions_dir_path / "predictions_only"
-    if not predictions_only_sub_dir.exists():
-        predictions_only_sub_dir.mkdir()
-    output_path = (
-        predictions_only_sub_dir
-        / f"{get_image_name_without_extension(target_image_path)}.png"
-    )
-    tf.keras.preprocessing.image.save_img(output_path, mapped_predictions_array)
-    logger.info(f"\nPredictions only plot successfully saved at : {output_path}")
-
-    # Separate tensor into a list of n_classes binary tensors of size (width, height)
-    binary_tensors_list = get_binary_tensors_list(predictions_tensor=predictions_tensor)
-    binary_tensors_3d_list = list()
-    for binary_tensor in binary_tensors_list:
-        binary_tensor_3d = turn_2d_tensor_to_3d_tensor(binary_tensor)
-        binary_tensors_3d_list.append(binary_tensor_3d)
-
-    binary_predictions_sub_dir = predictions_dir_path / "binary_predictions"
-    mapping_number_class = {class_number: class_name for class_name, class_number in MAPPING_CLASS_NUMBER.items()}
-    if not binary_predictions_sub_dir.exists():
-        binary_predictions_sub_dir.mkdir(parents=True)
-    for idx, tensor_3d in enumerate(binary_tensors_3d_list):
-        output_path = (
-            binary_predictions_sub_dir
-            / f"{get_image_name_without_extension(target_image_path)}__{mapping_number_class[idx]}.png"
-        )
-        tf.keras.preprocessing.image.save_img(output_path, tensor_3d)
-        logger.info(f"\nBinary predictions plot successfully saved at : {output_path}")
-
-    # todo : put it in the reporting.py file
-    predictions_config = {
-        "patch_size": patch_size,
-        "patch_overlap": patch_overlap,
-        "batch_size": batch_size,
-        "encoder_kernel_size": encoder_kernel_size,
-        "downscale_factors": downscale_factors,
-    }
-
-    with open(predictions_dir_path / "predictions_config.txt", "w") as file:
-        # Pass the file handle in as a lambda function to make it callable
-        for key, value in predictions_config.items():
-            file.write(f"{str(key)}: {str(value)} \n")
-
-
-def get_binary_tensors_list(
-    predictions_tensor: tf.Tensor,
-) -> [tf.Tensor]:
-    binary_tensors_list = list()
-    for class_number in MAPPING_CLASS_NUMBER.values():
-        binary_tensor = tf.where(
-            tf.equal(predictions_tensor, class_number),
-            MASK_TRUE_VALUE,
-            MASK_FALSE_VALUE,
-        )
-        binary_tensors_list.append(binary_tensor)
-    return binary_tensors_list
-
-
+# todo : save confusion matrix at each run
 def get_confusion_matrix(
     image_path: Path,
     predictions_tensor: tf.Tensor,
@@ -474,6 +325,3 @@ def get_confusion_matrix(
 #     predictions_tensor=predictions_tensor,
 #     output_path=Path(""),
 # )
-
-# todo : save each run with config
-# todo : save confusion matrix at each run

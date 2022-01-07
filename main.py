@@ -19,13 +19,11 @@ from constants import (
     DATA_AUGMENTATION,
     MAPPING_CLASS_NUMBER,
     PALETTE_HEXA,
-    TEST_IMAGE_PATH,
     PATCH_OVERLAP,
-    DOWNSCALE_FACTORS,
     TEST_IMAGES_PATHS_LIST,
 )
-from deep_learning.inference.predictions_maker import save_predictions_plot_only, save_test_images_and_predictions
 from deep_learning.training.model_runner import train_model
+from deep_learning.training.reporting import build_predict_run_report
 
 
 def main(
@@ -55,28 +53,15 @@ def main(
 
         if predict_bool:
             # todo : specify the image path in the parser OR create a config.json
-            for test_image_path in TEST_IMAGES_PATHS_LIST:
-                save_predictions_plot_only(
-                    target_image_path=test_image_path,
-                    report_dir_path=report_dir_path,
-                    patch_size=PATCH_SIZE,
-                    patch_overlap=PATCH_OVERLAP,
-                    n_classes=N_CLASSES,
-                    batch_size=BATCH_SIZE,
-                    encoder_kernel_size=ENCODER_KERNEL_SIZE,
-                    downscale_factors=DOWNSCALE_FACTORS,
-                )
-
-                save_test_images_and_predictions(
-                    target_image_path=test_image_path,
-                    report_dir_path=report_dir_path,
-                    patch_size=PATCH_SIZE,
-                    patch_overlap=PATCH_OVERLAP,
-                    n_classes=N_CLASSES,
-                    batch_size=BATCH_SIZE,
-                    encoder_kernel_size=ENCODER_KERNEL_SIZE,
-                    downscale_factors=DOWNSCALE_FACTORS,
-                )
+            build_predict_run_report(
+                test_images_paths_list=TEST_IMAGES_PATHS_LIST,
+                report_dir_path=report_dir_path,
+                patch_size=PATCH_SIZE,
+                patch_overlap=PATCH_OVERLAP,
+                n_classes=N_CLASSES,
+                batch_size=BATCH_SIZE,
+                encoder_kernel_size=ENCODER_KERNEL_SIZE,
+            )
     else:  # case no training
         if predict_bool:
             report_dir_path = Path(
@@ -88,28 +73,15 @@ def main(
                 raise ValueError("This report directory path does no exist.")
 
             # todo : specify the report path in the parser OR create a config.json
-            for test_image_path in TEST_IMAGES_PATHS_LIST:
-                save_predictions_plot_only(
-                    target_image_path=test_image_path,
-                    report_dir_path=report_dir_path,
-                    patch_size=PATCH_SIZE,
-                    patch_overlap=PATCH_OVERLAP,
-                    n_classes=N_CLASSES,
-                    batch_size=BATCH_SIZE,
-                    encoder_kernel_size=ENCODER_KERNEL_SIZE,
-                    downscale_factors=DOWNSCALE_FACTORS,
-                )
-
-                save_test_images_and_predictions(
-                    target_image_path=test_image_path,
-                    report_dir_path=report_dir_path,
-                    patch_size=PATCH_SIZE,
-                    patch_overlap=PATCH_OVERLAP,
-                    n_classes=N_CLASSES,
-                    batch_size=BATCH_SIZE,
-                    encoder_kernel_size=ENCODER_KERNEL_SIZE,
-                    downscale_factors=DOWNSCALE_FACTORS,
-                )
+            build_predict_run_report(
+                test_images_paths_list=TEST_IMAGES_PATHS_LIST,
+                report_dir_path=report_dir_path,
+                patch_size=PATCH_SIZE,
+                patch_overlap=PATCH_OVERLAP,
+                n_classes=N_CLASSES,
+                batch_size=BATCH_SIZE,
+                encoder_kernel_size=ENCODER_KERNEL_SIZE,
+            )
 
         else:
             raise ValueError(
