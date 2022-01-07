@@ -31,10 +31,8 @@ from dataset_utils.image_rebuilder import (
 )
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.masks_encoder import stack_image_masks
-from dataset_utils.plotting_tools import (
-    map_categorical_mask_to_3_color_channels_tensor,
-)
-from deep_learning.training.model_runner import load_saved_model
+from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channels_tensor
+from deep_learning.models.unet import build_small_unet
 
 
 def make_predictions(
@@ -257,6 +255,23 @@ def get_confusion_matrix(
     )[1:, 1:]
 
     return confusion_matrix, labels_tensor, predictions_tensor
+
+
+def load_saved_model(
+    checkpoint_dir_path: Path,
+    n_classes: int,
+    patch_size: int,
+    batch_size: int,
+    encoder_kernel_size: int,
+):
+    logger.info("\nLoading the model...")
+    model = build_small_unet(n_classes, patch_size, batch_size, encoder_kernel_size)
+    filepath = tf.train.latest_checkpoint(checkpoint_dir=checkpoint_dir_path)
+    model.load_weights(filepath=filepath)
+    # the warnings logs due to load_weights are here because we don't train (compile/fit) after : they disappear if we do
+    logger.info("\nModel loaded successfully.")
+    return model
+
 
 
 # def plot_confusion_matrix(

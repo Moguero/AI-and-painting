@@ -241,23 +241,6 @@ def train_model(
     # return model, history, metrics_values
     return model, history, report_dir_path
 
-
-def load_saved_model(
-    checkpoint_dir_path: Path,
-    n_classes: int,
-    patch_size: int,
-    batch_size: int,
-    encoder_kernel_size: int,
-):
-    logger.info("\nLoading the model...")
-    model = build_small_unet(n_classes, patch_size, batch_size, encoder_kernel_size)
-    filepath = tf.train.latest_checkpoint(checkpoint_dir=checkpoint_dir_path)
-    model.load_weights(filepath=filepath)
-    # the warnings logs due to load_weights are here because we don't train (compile/fit) after : they disappear if we do
-    logger.info("\nModel loaded successfully.")
-    return model
-
-
 # --------
 # DEBUG
 

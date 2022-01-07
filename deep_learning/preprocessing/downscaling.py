@@ -87,5 +87,5 @@ def bulk_save_downscaled_images(
 # downscale_image(IMAGE_PATH, DOWNSCALE_FACTORS)
 # plot_downscale_image(IMAGE_PATH, DOWNSCALE_FACTORS)
 
-bulk_save_downscaled_images(TEST_IMAGES_PATHS_LIST, DOWNSCALED_TEST_IMAGES_DIR_PATH / "max", "downscaled_max_", MAX_HEIGHT_PIXELS, MAX_WIDTH_PIXELS)
-bulk_save_downscaled_images(TEST_IMAGES_PATHS_LIST, DOWNSCALED_TEST_IMAGES_DIR_PATH / "min", "downscaled_min_", MIN_HEIGHT_PIXELS, MIN_WIDTH_PIXELS)
+# bulk_save_downscaled_images(TEST_IMAGES_PATHS_LIST, DOWNSCALED_TEST_IMAGES_DIR_PATH / "max", "downscaled_max_", MAX_HEIGHT_PIXELS, MAX_WIDTH_PIXELS)
+# bulk_save_downscaled_images(TEST_IMAGES_PATHS_LIST, DOWNSCALED_TEST_IMAGES_DIR_PATH / "min", "downscaled_min_", MIN_HEIGHT_PIXELS, MIN_WIDTH_PIXELS)
