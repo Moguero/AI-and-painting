@@ -19,7 +19,7 @@ def downscale_image(image_path: Path, downscale_factors: (int, int, int)) -> tf.
     :param downscale_factors: Factors on which we want to downscale the image.
     :return: A tensor of shape ceil(image_tensor.shape / downscale_factors).
     """
-    image_tensor = decode_image(image_path)
+    image_tensor = decode_image(image_path=image_path)
     downscaled_array = downscale_local_mean(
         image=image_tensor, factors=downscale_factors
     ).astype(int)
