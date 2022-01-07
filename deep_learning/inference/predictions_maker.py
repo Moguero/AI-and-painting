@@ -141,12 +141,10 @@ def make_predictions(
     return full_predictions_tensor
 
 
-@timeit
 def save_full_plot_predictions(
     target_image_path: Path,
-    masks_dir: Path,
-    output_dir_path: Path,
-    checkpoint_dir_path: Path,
+    masks_dir_path: Path,
+    report_dir_path: Path,
     patch_size: int,
     patch_overlap: int,
     n_classes: int,
@@ -154,23 +152,27 @@ def save_full_plot_predictions(
     encoder_kernel_size: int,
     downscale_factors: tuple,
 ) -> None:
+    """Used for training images, that have labels in the masks_dir folder !!!"""
+    # Make predictions
     predictions_tensor = make_predictions(
-        target_image_path,
-        checkpoint_dir_path,
-        patch_size,
-        patch_overlap,
-        n_classes,
-        batch_size,
-        encoder_kernel_size,
-        downscale_factors,
+        target_image_path=target_image_path,
+        checkpoint_dir_path=report_dir_path / "2_model_report",
+        patch_size=patch_size,
+        patch_overlap=patch_overlap,
+        n_classes=n_classes,
+        batch_size=batch_size,
+        encoder_kernel_size=encoder_kernel_size,
+        downscale_factors=downscale_factors,
     )
-    image = decode_image(target_image_path).numpy()
-    categorical_tensor = stack_image_masks(target_image_path, masks_dir)
+
+    # Set-up plotting settings
+    image = decode_image(file_path=target_image_path).numpy()
+    categorical_tensor = stack_image_masks(image_path=target_image_path, masks_dir_path=masks_dir_path)
     mapped_categorical_array = map_categorical_mask_to_3_color_channels_tensor(
-        categorical_tensor
+        categorical_mask_tensor=categorical_tensor
     )
     mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
-        predictions_tensor
+        categorical_mask_tensor=predictions_tensor
     )
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
     fig.suptitle(get_image_name_without_extension(target_image_path))
@@ -184,7 +186,6 @@ def save_full_plot_predictions(
     ax2.axis("off")
     ax3.axis("off")
     ax4.axis("off")
-
     fontP = matplotlib.font_manager.FontProperties()
     fontP.set_size("x-small")
     handles = [
@@ -195,17 +196,68 @@ def save_full_plot_predictions(
     ]
     ax3.legend(handles=handles, bbox_to_anchor=(1.4, 1), loc="upper left", prop=fontP)
 
-    image_sub_dir = (
-        output_dir_path / f"{get_image_name_without_extension(target_image_path)}"
+    # Save the plot
+    predictions_dir_path = report_dir_path / "3_predictions" / f"{get_image_name_without_extension(target_image_path)}" / get_formatted_time()
+    labels_and_predictions_sub_dir = (
+            predictions_dir_path
+            / "predictions_only"
     )
-    if not image_sub_dir.exists():
-        image_sub_dir.mkdir()
+    if not labels_and_predictions_sub_dir.exists():
+        labels_and_predictions_sub_dir.mkdir(parents=True)
     output_path = (
-        image_sub_dir
-        / f"{get_image_name_without_extension(target_image_path)}_{get_formatted_time()}__model_{checkpoint_dir_path.parts[-1]}__overlap_{patch_overlap}.png"
+            labels_and_predictions_sub_dir
+            / f"{get_image_name_without_extension(target_image_path)}.png"
     )
     plt.savefig(output_path, bbox_inches="tight", dpi=300)
+
     logger.info(f"\nFull predictions plot successfully saved at : {output_path}")
+
+
+def save_test_images_and_predictions(
+    target_image_path: Path,
+    report_dir_path: Path,
+    patch_size: int,
+    patch_overlap: int,
+    n_classes: int,
+    batch_size: int,
+    encoder_kernel_size: int,
+    downscale_factors: tuple,
+) -> None:
+    # Make predictions
+    predictions_tensor = make_predictions(
+        target_image_path=target_image_path,
+        checkpoint_dir_path=report_dir_path / "2_model_report",
+        patch_size=patch_size,
+        patch_overlap=patch_overlap,
+        n_classes=n_classes,
+        batch_size=batch_size,
+        encoder_kernel_size=encoder_kernel_size,
+        downscale_factors=downscale_factors,
+    )
+
+    # Set-up plotting settings
+    image = decode_image(file_path=target_image_path).numpy()
+    mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
+        categorical_mask_tensor=predictions_tensor
+    )
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig.suptitle(get_image_name_without_extension(target_image_path))
+    ax1.set_title("Original image")
+    ax2.set_title("Predictions")
+    ax1.imshow(image)
+    ax2.imshow(mapped_predictions_array)
+    ax1.axis("off")
+    ax2.axis("off")
+
+    # Save the plot
+    images_and_predictions_dir_path = report_dir_path / "images_and_predictions"
+    if not images_and_predictions_dir_path.exists():
+        images_and_predictions_dir_path.mkdir()
+
+    output_path = images_and_predictions_dir_path / f"images_and_predictions_{get_image_name_without_extension(target_image_path)}.png"
+    plt.savefig(output_path, bbox_inches="tight", dpi=300)
+
+    logger.info(f"\nTest images and predictions plot successfully saved at : {output_path}")
 
 
 def save_predictions_plot_only(
@@ -218,6 +270,7 @@ def save_predictions_plot_only(
     encoder_kernel_size: int,
     downscale_factors: tuple,
 ) -> None:
+    # Make predictions
     predictions_tensor = make_predictions(
         target_image_path=target_image_path,
         checkpoint_dir_path=report_dir_path / "2_model_report",
@@ -229,23 +282,22 @@ def save_predictions_plot_only(
         downscale_factors=downscale_factors,
     )
 
+    # Save predictions
     mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
         categorical_mask_tensor=predictions_tensor
     )
-
     predictions_dir_path = report_dir_path / "3_predictions" / f"{get_image_name_without_extension(target_image_path)}" / get_formatted_time()
-
-    predictions_only_sub_dir = (
-        predictions_dir_path
-        / "predictions_only"
-    )
+    if not predictions_dir_path.exists():
+        predictions_dir_path.mkdir(parents=True)
+    predictions_only_sub_dir = predictions_dir_path / "predictions_only"
     if not predictions_only_sub_dir.exists():
-        predictions_only_sub_dir.mkdir(parents=True)
+        predictions_only_sub_dir.mkdir()
     output_path = (
         predictions_only_sub_dir
         / f"{get_image_name_without_extension(target_image_path)}.png"
     )
     tf.keras.preprocessing.image.save_img(output_path, mapped_predictions_array)
+    logger.info(f"\nPredictions only plot successfully saved at : {output_path}")
 
     # Separate tensor into a list of n_classes binary tensors of size (width, height)
     binary_tensors_list = get_binary_tensors_list(predictions_tensor=predictions_tensor)
@@ -254,18 +306,17 @@ def save_predictions_plot_only(
         binary_tensor_3d = turn_2d_tensor_to_3d_tensor(binary_tensor)
         binary_tensors_3d_list.append(binary_tensor_3d)
 
-    binary_predictions_sub_dir = (
-            predictions_dir_path
-            / "binary_predictions"
-    )
+    binary_predictions_sub_dir = predictions_dir_path / "binary_predictions"
+    mapping_number_class = {class_number: class_name for class_name, class_number in MAPPING_CLASS_NUMBER.items()}
     if not binary_predictions_sub_dir.exists():
         binary_predictions_sub_dir.mkdir(parents=True)
     for idx, tensor_3d in enumerate(binary_tensors_3d_list):
         output_path = (
             binary_predictions_sub_dir
-            / f"{get_image_name_without_extension(target_image_path)}__{idx}.png"
+            / f"{get_image_name_without_extension(target_image_path)}__{mapping_number_class[idx]}.png"
         )
         tf.keras.preprocessing.image.save_img(output_path, tensor_3d)
+        logger.info(f"\nBinary predictions plot successfully saved at : {output_path}")
 
     # todo : put it in the reporting.py file
     predictions_config = {
@@ -280,8 +331,6 @@ def save_predictions_plot_only(
         # Pass the file handle in as a lambda function to make it callable
         for key, value in predictions_config.items():
             file.write(f"{str(key)}: {str(value)} \n")
-
-    logger.info(f"\nFull predictions plot successfully saved at : {output_path}")
 
 
 def get_binary_tensors_list(
