@@ -67,11 +67,9 @@ def make_predictions(
 
     image_tensor = decode_image(file_path=target_image_path)
 
-    # todo : generate patches of downsampled images
-
     # Cut the image into patches of size patch_size
     # & format the image patches to feed the model.predict function
-    predictions_dataset = build_predictions_dataset(
+    main_patches_dataset, right_side_patches_dataset = build_predictions_dataset(
         target_image_tensor=image_tensor,
         patch_size=patch_size,
         patch_overlap=patch_overlap,
@@ -87,7 +85,36 @@ def make_predictions(
     )
 
     # Make predictions on the patches
-    # predicitons : array of shape (n_patches, patch_size, patch_size, n_classes)
+    # output : array of shape (n_patches, patch_size, patch_size, n_classes)
+    main_patch_classes_list = patches_predict(
+        predictions_dataset=main_patches_dataset, model=model
+    )
+    right_side_patch_classes_list = patches_predict(
+        predictions_dataset=right_side_patches_dataset, model=model
+    )
+
+    # Rebuild the image with the predictions patches
+    # output tensor of size (intput_width_size - 2 * patch_overlap, input_height_size - 2 * patch_overlap)
+    # todo : check that we reach the size announced on the line above
+    final_predictions_tensor = rebuild_predictions_with_overlap(
+        main_patch_classes_list=main_patch_classes_list,
+        right_side_patch_classes_list=right_side_patch_classes_list,
+        image_tensor=image_tensor,
+        patch_size=patch_size,
+        patch_overlap=patch_overlap,
+        misclassification_size=misclassification_size,
+    )
+
+    logger.info(
+        f"\nPredictions on {get_image_name_without_extension(target_image_path)} have been done."
+    )
+
+    return final_predictions_tensor
+
+
+def patches_predict(
+    predictions_dataset: tf.data.Dataset, model: tf.keras.Model
+) -> [tf.Tensor]:
     predictions = model.predict(predictions_dataset, verbose=1)
 
     # Remove background predictions so it takes the max on the non background classes
@@ -100,23 +127,9 @@ def make_predictions(
         )
         for patch_classes in patch_classes_list
     ]
-    # Classes list is of size n_patches of tensor with size (patch_size, patch_size)
+    # Tensors classes list is of size n_patches of tensor with size (patch_size, patch_size)
 
-    logger.info(
-        f"\nPredictions on {get_image_name_without_extension(target_image_path)} have been done."
-    )
-
-    # Rebuild the image with the predictions patches : output tensor of size (width, height)
-    final_predictions_tensor = rebuild_predictions_with_overlap(
-        patches_list=patch_classes_list,
-        downscaled_image_tensor=image_tensor,
-        patch_size=patch_size,
-        patch_overlap=patch_overlap,
-        misclassification_size=misclassification_size,
-    )
-    final_predictions_tensor = tf.squeeze(final_predictions_tensor)
-
-    return final_predictions_tensor
+    return patch_classes_list
 
 
 def make_predictions_oneshot(
@@ -147,6 +160,7 @@ def make_predictions_oneshot(
     ), f"Patch overlap argument must be a pair number. The one specified was {patch_overlap}."
 
     image_tensor = decode_image(file_path=target_image_path)
+    image_tensor = tf.expand_dims(input=image_tensor, axis=0)
 
     # todo : generate patches of downsampled images
 
@@ -161,6 +175,12 @@ def make_predictions_oneshot(
 
     # Make predictions on the patches
     # predicitons : array of shape (n_patches, patch_size, patch_size, n_classes)
+
+    # todo : fix this because error :
+    #   ValueError: Dimension 1 in both shapes must be equal, but are 488 and 489.
+    #   Shapes are [8,488,752] and [8,489,752]. for '{{node U-Net/concatenate_5/concat}} = ConcatV2[N=2, T=DT_FLOAT, Tidx=DT_INT32]
+    #   (U-Net/conv2d_transpose_5/BiasAdd, U-Net/activation_15/Relu, U-Net/concatenate_5/concat/axis)' with input shapes:
+    #   [8,488,752,32], [8,489,752,32], [] and with computed input tensors: input[2] = <3>.
     predictions = model.predict(image_tensor, verbose=1)
 
     return predictions
@@ -398,3 +418,5 @@ def load_saved_model(
 #     predictions_tensor=predictions_tensor,
 #     output_path=Path(""),
 # )
+
+# todo : generate patches of downsampled images

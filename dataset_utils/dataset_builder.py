@@ -8,7 +8,7 @@ from tqdm import tqdm
 from dataset_utils.file_utils import timeit
 from dataset_utils.image_utils import decode_image
 from dataset_utils.masks_encoder import one_hot_encode_image_patch_masks
-from dataset_utils.patches_generator import extract_patches_with_overlap
+from dataset_utils.patches_generator import extract_patches
 from dataset_utils.patches_sorter import get_patches_above_coverage_percent_limit
 
 
@@ -86,7 +86,7 @@ def get_train_and_test_dataset(
 # todo : don't hardcode the batch_size to 1
 def build_predictions_dataset(
     target_image_tensor: tf.Tensor, patch_size: int, patch_overlap: int
-) -> tf.data.Dataset:
+) -> (tf.data.Dataset, tf.data.Dataset):
     """
     Build a dataset of patches to make predictions on each one of them.
 
@@ -96,15 +96,21 @@ def build_predictions_dataset(
     :return: A Dataset object with tensors of size (1, patch_size, patch_size, 3). Its length corresponds of the number of patches generated.
     """
     logger.info("\nSlice the image into patches...")
-    image_patches_tensors: list = extract_patches_with_overlap(
+    main_patches_tensors_list, right_side_patches_tensors_list = extract_patches(
         image_tensor=target_image_tensor,
         patch_size=patch_size,
         patch_overlap=patch_overlap,
     )
-    prediction_dataset = tf.data.Dataset.from_tensor_slices(image_patches_tensors)
+    prediction_dataset = tf.data.Dataset.from_tensor_slices(main_patches_tensors_list)
     prediction_dataset = prediction_dataset.batch(batch_size=1, drop_remainder=True)
+
+    right_side_prediction_dataset = tf.data.Dataset.from_tensor_slices(right_side_patches_tensors_list)
+    right_side_prediction_dataset = right_side_prediction_dataset.batch(batch_size=1, drop_remainder=True)
+
     logger.info(f"\n{len(prediction_dataset)} patches created successfully.")
-    return prediction_dataset
+    logger.info(f"\n{len(right_side_prediction_dataset)} right side patches created successfully.")
+
+    return prediction_dataset, right_side_prediction_dataset
 
 
 def get_dataset_iterator(dataset: tf.data.Dataset) -> tf.data.Iterator:
