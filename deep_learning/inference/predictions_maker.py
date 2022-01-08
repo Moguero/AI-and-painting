@@ -35,6 +35,7 @@ from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channel
 from deep_learning.models.unet import build_small_unet, build_small_unet_arbitrary_input
 
 
+# todo : delete this one if make_predictions_oneshot works properly
 def make_predictions(
     target_image_path: Path,
     checkpoint_dir_path: Path,
@@ -118,6 +119,53 @@ def make_predictions(
     return final_predictions_tensor
 
 
+def make_predictions_oneshot(
+    target_image_path: Path,
+    checkpoint_dir_path: Path,
+    patch_overlap: int,
+    n_classes: int,
+    batch_size: int,
+    encoder_kernel_size: int,
+) -> tf.Tensor:
+    """
+    Make predictions on the target image specified with its path.
+
+    :param encoder_kernel_size: Size of the kernel encoder.
+    :param target_image_path: Image to make predictions on.
+    :param checkpoint_dir_path: Path of the already trained model.
+    :param patch_size: Size of the patches on which the model was trained. This is also the size of the predictions patches.
+    :param patch_overlap: Number of pixels on which neighbors patches intersect each other.
+    :param n_classes: Number of classes to map, background excluded.
+    :param batch_size: Batch size that was used for the model which is loaded.
+    :param misclassification_size: Estimated number of pixels on which the classification is wrong due to side effects between neighbors patches.
+
+    :return: A 2D categorical tensor of size (width, height), width and height being the cropped size of the target image tensor
+    """
+
+    assert (
+        patch_overlap % 2 == 0
+    ), f"Patch overlap argument must be a pair number. The one specified was {patch_overlap}."
+
+    image_tensor = decode_image(file_path=target_image_path)
+
+    # todo : generate patches of downsampled images
+
+    # Build the model
+    # & apply saved weights to the built model
+    model = load_saved_model(
+        checkpoint_dir_path=checkpoint_dir_path,
+        n_classes=n_classes,
+        batch_size=batch_size,
+        encoder_kernel_size=encoder_kernel_size,
+    )
+
+    # Make predictions on the patches
+    # predicitons : array of shape (n_patches, patch_size, patch_size, n_classes)
+    predictions = model.predict(image_tensor, verbose=1)
+
+    return predictions
+
+
 # todo : put it in the plotting_tools.py instead of reporting.py ?
 def save_labels_vs_predictions_comparison_plot(
     target_image_path: Path,
@@ -131,10 +179,18 @@ def save_labels_vs_predictions_comparison_plot(
 ) -> None:
     """Used for training images, that have labels in the masks_dir folder !!!"""
     # Make predictions
-    predictions_tensor = make_predictions(
+    # predictions_tensor = make_predictions(
+    #     target_image_path=target_image_path,
+    #     checkpoint_dir_path=report_dir_path / "2_model_report",
+    #     patch_size=patch_size,
+    #     patch_overlap=patch_overlap,
+    #     n_classes=n_classes,
+    #     batch_size=batch_size,
+    #     encoder_kernel_size=encoder_kernel_size,
+    # )
+    predictions_tensor = make_predictions_oneshot(
         target_image_path=target_image_path,
         checkpoint_dir_path=report_dir_path / "2_model_report",
-        patch_size=patch_size,
         patch_overlap=patch_overlap,
         n_classes=n_classes,
         batch_size=batch_size,

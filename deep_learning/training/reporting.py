@@ -14,7 +14,7 @@ from dataset_utils.plotting_tools import (
     save_patch_composition_mean_plot,
     map_categorical_mask_to_3_color_channels_tensor, turn_2d_tensor_to_3d_tensor,
 )
-from deep_learning.inference.predictions_maker import make_predictions
+from deep_learning.inference.predictions_maker import make_predictions, make_predictions_oneshot
 
 
 def build_training_run_report(
@@ -123,10 +123,9 @@ def build_predict_run_report(
 
     for test_image_path in test_images_paths_list:
         # Make predictions
-        predictions_tensor = make_predictions(
+        predictions_tensor = make_predictions_oneshot(
             target_image_path=test_image_path,
             checkpoint_dir_path=report_dir_path / "2_model_report",
-            patch_size=patch_size,
             patch_overlap=patch_overlap,
             n_classes=n_classes,
             batch_size=batch_size,
