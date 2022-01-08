@@ -25,14 +25,14 @@ from constants import (
     MASK_FALSE_VALUE,
 )
 from dataset_utils.dataset_builder import build_predictions_dataset
-from dataset_utils.file_utils import timeit, get_formatted_time
+from dataset_utils.file_utils import get_formatted_time
 from dataset_utils.image_rebuilder import (
     rebuild_predictions_with_overlap,
 )
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.masks_encoder import stack_image_masks
 from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channels_tensor
-from deep_learning.models.unet import build_small_unet
+from deep_learning.models.unet import build_small_unet, build_small_unet_arbitrary_input
 
 
 def make_predictions(
@@ -81,7 +81,6 @@ def make_predictions(
     model = load_saved_model(
         checkpoint_dir_path=checkpoint_dir_path,
         n_classes=n_classes,
-        patch_size=patch_size,
         batch_size=batch_size,
         encoder_kernel_size=encoder_kernel_size,
     )
@@ -109,7 +108,7 @@ def make_predictions(
     # Rebuild the image with the predictions patches : output tensor of size (width, height)
     final_predictions_tensor = rebuild_predictions_with_overlap(
         patches_list=patch_classes_list,
-        downscale_image_tensor=image_tensor,
+        downscaled_image_tensor=image_tensor,
         patch_size=patch_size,
         patch_overlap=patch_overlap,
         misclassification_size=misclassification_size,
@@ -260,18 +259,21 @@ def get_confusion_matrix(
 def load_saved_model(
     checkpoint_dir_path: Path,
     n_classes: int,
-    patch_size: int,
     batch_size: int,
     encoder_kernel_size: int,
 ):
     logger.info("\nLoading the model...")
-    model = build_small_unet(n_classes, patch_size, batch_size, encoder_kernel_size)
+    # model = build_small_unet(n_classes, patch_size, batch_size, encoder_kernel_size)
+    model = build_small_unet_arbitrary_input(
+        n_classes=n_classes,
+        batch_size=batch_size,
+        encoder_kernel_size=encoder_kernel_size,
+    )
     filepath = tf.train.latest_checkpoint(checkpoint_dir=checkpoint_dir_path)
     model.load_weights(filepath=filepath)
     # the warnings logs due to load_weights are here because we don't train (compile/fit) after : they disappear if we do
     logger.info("\nModel loaded successfully.")
     return model
-
 
 
 # def plot_confusion_matrix(

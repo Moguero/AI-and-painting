@@ -1,5 +1,3 @@
-import pandas as pd
-import tensorflow as tf
 from loguru import logger
 from tensorflow import keras
 
@@ -19,22 +17,17 @@ from constants import (
     ENCODER_KERNEL_SIZE,
     DATA_AUGMENTATION,
     MAPPING_CLASS_NUMBER,
-    PALETTE_HEXA,
+    PALETTE_HEXA, VALIDATION_PROPORTION,
 )
-from dataset_utils.file_utils import timeit, get_formatted_time
+from dataset_utils.file_utils import timeit
 
 from dataset_utils.files_stats import (
-    get_patch_labels_composition,
     get_patches_labels_composition,
 )
-from dataset_utils.plotting_tools import save_patch_composition_mean_plot
-from deep_learning.models.unet import build_small_unet
+from deep_learning.models.unet import build_small_unet, build_small_unet_arbitrary_input
 from dataset_utils.dataset_builder import (
     get_image_patches_paths,
     train_dataset_generator,
-    test_dataset_generator,
-    get_test_dataset,
-    # validation_dataset_generator,
 )
 from pathlib import Path
 
@@ -99,12 +92,18 @@ def train_model(
     )
 
     # Define the model
-    model = build_small_unet(
+    model = build_small_unet_arbitrary_input(
         n_classes=n_classes,
-        input_shape=patch_size,
         batch_size=batch_size,
         encoder_kernel_size=encoder_kernel_size,
     )
+
+    # model = build_small_unet(
+    #     n_classes=n_classes,
+    #     input_shape=patch_size,
+    #     batch_size=batch_size,
+    #     encoder_kernel_size=encoder_kernel_size,
+    # )
 
     # TEST to define new metrics
     # class UpdatedMeanIoU(tf.keras.metrics.MeanIoU):
@@ -181,7 +180,6 @@ def train_model(
         palette_hexa=palette_hexa,
         note=note,
     )
-
     # Fit the model
     logger.info("\nStart model training...")
     # history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks)
@@ -246,5 +244,5 @@ def train_model(
 
 # model, history = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, VALIDATION_PROPORTION, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
 # model, history, metrics = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, VALIDATION_PROPORTION, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
-# train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATHH, N_PATCHES_LIMIT, BATCH_SIZE, VALIDATION_PROPORTION, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
+# train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, VALIDATION_PROPORTION, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
 # train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, 100, 16, VALIDATION_PROPORTION, TEST_PROPORTION, 70, 3, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)

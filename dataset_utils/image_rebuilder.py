@@ -4,9 +4,8 @@ from loguru import logger
 import tensorflow as tf
 
 from constants import PATCHES_DIR_PATH, IMAGE_PATH, PATCH_SIZE, PATCH_OVERLAP
-from dataset_utils.image_cropping import crop_tensor, crop_patch_tensor
+from dataset_utils.image_cropping import crop_patch_tensor
 from dataset_utils.image_utils import decode_image, get_tensor_dims
-from deep_learning.preprocessing.downscaling import downscale_image
 
 
 def rebuild_image(
@@ -79,7 +78,7 @@ def rebuild_predictions(
 # todo : set default value of misclassification_size correctly
 def rebuild_predictions_with_overlap(
     patches_list: [tf.Tensor],
-    downscale_image_tensor: tf.Tensor,
+    downscaled_image_tensor: tf.Tensor,
     patch_size: int,
     patch_overlap: int,
     misclassification_size: int = 5,
@@ -115,12 +114,12 @@ def rebuild_predictions_with_overlap(
 
     # counting the number of patches by which the image has been cut
     image_height_index, image_width_index, image_channels_index = get_tensor_dims(
-        downscale_image_tensor
+        downscaled_image_tensor
     )
-    n_vertical_patches = (downscale_image_tensor.shape[image_height_index] - patch_overlap) // (
+    n_vertical_patches = (downscaled_image_tensor.shape[image_height_index] - patch_overlap) // (
         patch_size - patch_overlap
     )
-    n_horizontal_patches = (downscale_image_tensor.shape[image_width_index] - patch_overlap) // (
+    n_horizontal_patches = (downscaled_image_tensor.shape[image_width_index] - patch_overlap) // (
         patch_size - patch_overlap
     )
     assert n_vertical_patches * n_horizontal_patches == len(
@@ -158,7 +157,7 @@ def rebuild_predictions_with_overlap(
 
     logger.info(
         f"\nFull image predictions has been successfully built with size {rebuilt_tensor.shape}."
-        f"\nOriginal image size : {downscale_image_tensor.shape}"
+        f"\nOriginal image size : {downscaled_image_tensor.shape}"
     )
     return rebuilt_tensor
 
