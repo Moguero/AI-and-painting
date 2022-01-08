@@ -1,7 +1,6 @@
 from tensorflow.keras.optimizers import Adam
 from pathlib import Path
 from tensorflow import keras
-import tensorflow as tf
 
 # Paths variables
 from dataset_utils.image_utils import turn_hexadecimal_color_into_nomalized_rgb_list, \
@@ -27,7 +26,7 @@ else:  # aws instance
     TEST_IMAGES_DIR_PATH = DATA_DIR_ROOT / "test_images"
     DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images" / "max"
     TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246/_DSC0246.jpg"
-    N_EPOCHS = 10
+    N_EPOCHS = 5
     N_PATCHES_LIMIT = 100
 
 TEST_IMAGES_NAMES = [
