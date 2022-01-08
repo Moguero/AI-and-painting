@@ -152,7 +152,7 @@ def save_all_images_and_labels_patches(
     )
 
 
-def extract_patches_with_overlap(
+def extract_patches(
     image_tensor: tf.Tensor,
     patch_size: int,
     patch_overlap: int,
@@ -174,30 +174,35 @@ def extract_patches_with_overlap(
     if with_four_channels:
         image = image[:, :, :, :3]
 
-    # todo : use get_image_shape
-    n_rows = image.shape[1]
-    n_columns = image.shape[2]
+    max_row_idx = image.shape[1] - 1
+    max_column_idx = image.shape[2] - 1
 
-    patches = list()
-    # patches_indices = list()
+    main_patches = list()
+    right_side_patches = list()
 
     row_idx = 0
-    while row_idx + patch_size - 1 < n_rows:
+    while row_idx + patch_size - 1 <= max_row_idx:
         column_idx = 0
-        while column_idx + patch_size - 1 < n_columns:
+        while column_idx + patch_size - 1 <= max_column_idx:
             patch = image[
                 :,
-                row_idx: row_idx + patch_size,
-                column_idx: column_idx + patch_size,
+                row_idx: row_idx + patch_size,  # max bound  index is row_idx + patch_size - 1
+                column_idx: column_idx + patch_size,  # max bound index is column_idx + patch_size - 1
                 :,
             ]
-            # dropping the first dimension
-            patches.append(patch[0])
-            # patch_indices = ((row_idx, row_idx + patch_size - 1), (column_idx, column_idx+ patch_size - 1))
-            # patches_indices.append(patch_indices)
+            main_patches.append(patch[0])
             column_idx += patch_size - patch_overlap
+
+        # extract right side patches
+        right_side_patch = image[
+            :,
+            row_idx: row_idx + patch_size,
+            max_column_idx - patch_size: max_column_idx + 1
+        ]
+        right_side_patches.append(right_side_patch[0])
         row_idx += patch_size - patch_overlap
-    return patches
+    # todo : extract down_side patches
+    return main_patches, right_side_patches
 
 
 # ------

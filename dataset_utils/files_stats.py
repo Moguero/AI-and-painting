@@ -119,10 +119,6 @@ def get_images_with_shape_different_than(shape: tuple, images_dir: Path):
     }
 
 
-def get_image_shape(image_path: Path) -> tuple:
-    return tuple(decode_image(image_path).shape)
-
-
 def count_total_number_of_patches(patches_dir: Path) -> int:
     return sum([len(list(image_dir.iterdir())) for image_dir in patches_dir.iterdir()])
 
