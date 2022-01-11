@@ -200,10 +200,10 @@ def extract_patches(
             column_idx += window_stride
 
         # extract right side patches
-        right_side_patch = image_tensor[
+        down_right_side_patch = image_tensor[
             :, row_idx : row_idx + patch_size, image_width - patch_size : image_width, :
         ]
-        right_side_patches.append(right_side_patch[0])
+        right_side_patches.append(down_right_side_patch[0])
 
         row_idx += window_stride
 
@@ -220,11 +220,26 @@ def extract_patches(
         down_side_patches.append(down_side_patch[0])
         column_idx += window_stride
 
+    # down-right corner
+    down_right_side_patch = image_tensor[
+        :,
+        image_height - patch_size : image_height,
+        image_width - patch_size : image_width,
+        :,
+    ]
+    right_side_patches.append(down_right_side_patch[0])
+
     n_vertical_patches = (image_height - 2 * int(patch_overlap / 2)) // window_stride
     n_horizontal_patches = (image_width - 2 * int(patch_overlap / 2)) // window_stride
     assert n_vertical_patches * n_horizontal_patches == len(
         main_patches
     ), f"The number of main patches is not the same : original image of size {image_height}x{image_width} should have {n_horizontal_patches * n_vertical_patches} but we have {len(main_patches)} "
+    assert (n_vertical_patches + 1) == len(
+        right_side_patches
+    ), f"The number of right side patches is not the same : is {len(right_side_patches)}, should be {n_vertical_patches + 1}"
+    assert n_horizontal_patches == len(
+        down_side_patches
+    ), f"The number of right side patches is not the same : is {len(down_side_patches)}, should be {n_horizontal_patches}"
 
     return main_patches, right_side_patches, down_side_patches
 

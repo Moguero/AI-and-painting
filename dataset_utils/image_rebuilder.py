@@ -5,7 +5,12 @@ import tensorflow as tf
 
 from constants import PATCHES_DIR_PATH, IMAGE_PATH, PATCH_SIZE, PATCH_OVERLAP
 from dataset_utils.image_cropping import crop_patch_tensor
-from dataset_utils.image_utils import decode_image, get_tensor_dims, get_image_tensor_shape, get_file_name_with_extension
+from dataset_utils.image_utils import (
+    decode_image,
+    get_tensor_dims,
+    get_image_tensor_shape,
+    get_file_name_with_extension,
+)
 
 
 def rebuild_image(
@@ -133,8 +138,10 @@ def rebuild_predictions_with_overlap(
     )  # number of pixels by which we shift the window at each step of predictions
     n_vertical_patches = (image_height - 2 * int(patch_overlap / 2)) // window_stride
     n_horizontal_patches = (image_width - 2 * int(patch_overlap / 2)) // window_stride
-    
-    logger.info(f"\nRebuilding predictions patches for image {get_file_name_with_extension(target_image_path)}...")
+
+    logger.info(
+        f"\nRebuilding predictions patches for image {get_file_name_with_extension(target_image_path)}..."
+    )
     for row_number in range(n_vertical_patches):
         for column_number in range(n_horizontal_patches):
             # Rebuild the line
@@ -158,7 +165,9 @@ def rebuild_predictions_with_overlap(
         cropped_right_side_patch_tensor = crop_patch_tensor(
             patch_tensor=right_side_patch_tensor, patch_overlap=patch_overlap
         )
-        left_bound_limit_idx = (n_horizontal_patches * window_stride + int(patch_overlap / 2)) - (image_width - patch_size + int(patch_overlap / 2))
+        left_bound_limit_idx = (
+            n_horizontal_patches * window_stride + int(patch_overlap / 2)
+        ) - (image_width - patch_size + int(patch_overlap / 2))
         resized_cropped_right_side_patch_tensor = cropped_right_side_patch_tensor[
             :, left_bound_limit_idx:
         ]
@@ -172,28 +181,58 @@ def rebuild_predictions_with_overlap(
             rebuilt_tensor = tf.concat([rebuilt_tensor, line_rebuilt_tensor], axis=0)
 
     # finally add the down side patches to extend the image bottom
-    for column_number in range(n_horizontal_patches + 1):
+    for column_number in range(n_horizontal_patches):
         patch_tensor = down_side_patch_classes_list[column_number]
 
         # cropping the patch by taking into account the overlap with which it was built
-        cropped_patch_tensor = crop_patch_tensor(
+        cropped_down_side_patch_tensor = crop_patch_tensor(
             patch_tensor=patch_tensor, patch_overlap=patch_overlap
         )
+        up_bound_limit_idx = (
+            n_vertical_patches * window_stride + int(patch_overlap / 2)
+        ) - (image_height - patch_size + int(patch_overlap / 2))
+        resized_cropped_down_side_patch_tensor = cropped_down_side_patch_tensor[
+            up_bound_limit_idx:, :
+        ]
+        line_rebuilt_tensor = tf.concat(
+            [line_rebuilt_tensor, resized_cropped_down_side_patch_tensor], axis=1
+        )
+
         if column_number == 0:
             line_rebuilt_tensor = cropped_patch_tensor
         else:
             line_rebuilt_tensor = tf.concat(
                 [line_rebuilt_tensor, cropped_patch_tensor], axis=1
             )
+
+    down_right_side_patch_tensor = right_side_patch_classes_list[n_vertical_patches]
+    cropped_down_right_side_patch_tensor = crop_patch_tensor(
+        patch_tensor=down_right_side_patch_tensor, patch_overlap=patch_overlap
+    )
+    left_bound_limit_idx = (
+        n_horizontal_patches * window_stride + int(patch_overlap / 2)
+    ) - (image_width - patch_size + int(patch_overlap / 2))
+    up_bound_limit_idx = (
+        n_vertical_patches * window_stride + int(patch_overlap / 2)
+    ) - (image_height - patch_size + int(patch_overlap / 2))
+    resized_cropped_down_right_side_patch_tensor = cropped_down_right_side_patch_tensor[
+        up_bound_limit_idx:, left_bound_limit_idx:
+    ]
+    line_rebuilt_tensor = tf.concat(
+        [line_rebuilt_tensor, resized_cropped_down_right_side_patch_tensor], axis=1
+    )
+
     rebuilt_tensor = tf.concat([rebuilt_tensor, line_rebuilt_tensor], axis=0)
     # todo : unhardcode the axis parameter in tf.concat
 
     # Check that the final size is consistent
-    rebuilt_tensor_height, rebuilt_tensor_width, rebuilt_channels_number = get_image_tensor_shape(
-        image_tensor=rebuilt_tensor
-    )
+    (
+        rebuilt_tensor_height,
+        rebuilt_tensor_width,
+        rebuilt_channels_number,
+    ) = get_image_tensor_shape(image_tensor=rebuilt_tensor)
     assert rebuilt_tensor_height == (
-       int(image_height - 2 * (patch_overlap / 2))
+        int(image_height - 2 * (patch_overlap / 2))
     ), f"Number of rows is not consistent : got {rebuilt_tensor_height}, expected {int(image_height - 2 * (patch_overlap / 2))}"
     assert rebuilt_tensor_width == (
         int(image_width - 2 * (patch_overlap / 2))
@@ -204,6 +243,7 @@ def rebuild_predictions_with_overlap(
         f"\nImage predictions have been successfully built with size {rebuilt_tensor.shape} (original image size : {image_tensor.shape})."
     )
     return rebuilt_tensor
+
 
 # -------
 # DEBUG
