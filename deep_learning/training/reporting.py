@@ -123,9 +123,10 @@ def build_predict_run_report(
 
     for test_image_path in test_images_paths_list:
         # Make predictions
-        predictions_tensor = make_predictions_oneshot(
+        predictions_tensor = make_predictions(
             target_image_path=test_image_path,
             checkpoint_dir_path=report_dir_path / "2_model_report",
+            patch_size=patch_size,
             patch_overlap=patch_overlap,
             n_classes=n_classes,
             batch_size=batch_size,

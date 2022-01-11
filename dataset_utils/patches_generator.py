@@ -9,7 +9,7 @@ from dataset_utils.image_utils import (
     decode_image,
     get_image_name_without_extension,
     get_images_paths,
-    get_image_masks_paths,
+    get_image_masks_paths, get_image_shape,
 )
 from dataset_utils.masks_encoder import save_tensor_to_jpg
 
@@ -169,38 +169,44 @@ def extract_patches(
     :param with_four_channels: Set it to True if the image is a PNG. Default to False for JPEG.
     :return: A list of patches of the original image.
     """
-    image = tf.expand_dims(image_tensor, 0)
-
+    image_tensor = tf.expand_dims(image_tensor, 0)
+    # if the image is a png, drop the brightness channel
     if with_four_channels:
-        image = image[:, :, :, :3]
+        image_tensor = image_tensor[:, :, :, :3]
 
-    max_row_idx = image.shape[1] - 1
-    max_column_idx = image.shape[2] - 1
+    image_height, image_width, channels_number = get_image_shape(image_tensor=image_tensor)
+    window_stride = patch_size - patch_overlap  # number of pixels by which we shift the window at each step of predictions
 
     main_patches = list()
     right_side_patches = list()
-
     row_idx = 0
-    while row_idx + patch_size - 1 <= max_row_idx:
+    while row_idx + patch_size <= image_height:
         column_idx = 0
-        while column_idx + patch_size - 1 <= max_column_idx:
-            patch = image[
+        while column_idx + patch_size <= image_width:
+            patch = image_tensor[
                 :,
                 row_idx: row_idx + patch_size,  # max bound  index is row_idx + patch_size - 1
                 column_idx: column_idx + patch_size,  # max bound index is column_idx + patch_size - 1
                 :,
             ]
             main_patches.append(patch[0])
-            column_idx += patch_size - patch_overlap
+            column_idx += window_stride
 
         # extract right side patches
-        right_side_patch = image[
+        right_side_patch = image_tensor[
             :,
             row_idx: row_idx + patch_size,
-            max_column_idx - patch_size: max_column_idx + 1
+            image_width - patch_size: image_width
         ]
         right_side_patches.append(right_side_patch[0])
-        row_idx += patch_size - patch_overlap
+        row_idx += window_stride
+
+    n_vertical_patches = image_height // window_stride
+    n_horizontal_patches = image_width // window_stride
+    assert n_vertical_patches * n_horizontal_patches == len(
+        main_patches
+    ), f"The number of main patches is not the same : original image should have {n_horizontal_patches * n_vertical_patches} but we have {len(main_patches)} "
+
     # todo : extract down_side patches
     return main_patches, right_side_patches
 
