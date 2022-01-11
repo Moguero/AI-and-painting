@@ -241,7 +241,7 @@ def get_tensor_dims(tensor: tf.Tensor) -> tuple:
     return height_index, width_index, channels_index
 
 
-def get_image_shape(image_tensor: tf.Tensor):
+def get_image_tensor_shape(image_tensor: tf.Tensor):
     """
     Get the height, width and channels number of an image.
     """

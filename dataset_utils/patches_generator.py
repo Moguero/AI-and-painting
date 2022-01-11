@@ -9,7 +9,7 @@ from dataset_utils.image_utils import (
     decode_image,
     get_image_name_without_extension,
     get_images_paths,
-    get_image_masks_paths, get_image_shape,
+    get_image_masks_paths, get_image_tensor_shape,
 )
 from dataset_utils.masks_encoder import save_tensor_to_jpg
 
@@ -174,7 +174,7 @@ def extract_patches(
     if with_four_channels:
         image_tensor = image_tensor[:, :, :, :3]
 
-    image_height, image_width, channels_number = get_image_shape(image_tensor=image_tensor)
+    image_height, image_width, channels_number = get_image_tensor_shape(image_tensor=image_tensor)
     window_stride = patch_size - patch_overlap  # number of pixels by which we shift the window at each step of predictions
 
     main_patches = list()
