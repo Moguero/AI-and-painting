@@ -79,6 +79,7 @@ def get_image_type(image_path: Path) -> str:
     return image_path.parts[-1].split(".")[-1]
 
 
+# todo : check if still useful (I suspect it redundant with get_image_shape)
 def get_image_channels_number(image_path: Path) -> int:
     image_type = get_image_type(image_path)
     image_channels_number = None
@@ -238,6 +239,19 @@ def get_tensor_dims(tensor: tf.Tensor) -> tuple:
     else:
         raise ValueError(f"Dimension is {n_dims} : expected 2, 3 or 4.")
     return height_index, width_index, channels_index
+
+
+def get_image_shape(image_tensor: tf.Tensor):
+    """
+    Get the height, width and channels number of an image.
+    """
+    height_index, width_index, channels_index = get_tensor_dims(tensor=image_tensor)
+
+    image_height = image_tensor.shape[height_index]
+    image_width = image_tensor.shape[width_index]
+    channels_number = image_tensor.shape[channels_index]
+
+    return image_height, image_width, channels_number
 
 
 def turn_hexadecimal_color_into_nomalized_rgb_list(hexadecimal_color: str) -> [int]:

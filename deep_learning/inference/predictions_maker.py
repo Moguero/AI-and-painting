@@ -35,7 +35,7 @@ from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channel
 from deep_learning.models.unet import build_small_unet, build_small_unet_arbitrary_input
 
 
-# todo : delete this one if make_predictions_oneshot works properly
+# todo : deprecate this one if make_predictions_oneshot works properly
 def make_predictions(
     target_image_path: Path,
     checkpoint_dir_path: Path,
@@ -80,6 +80,7 @@ def make_predictions(
     model = load_saved_model(
         checkpoint_dir_path=checkpoint_dir_path,
         n_classes=n_classes,
+        input_shape=patch_size,
         batch_size=batch_size,
         encoder_kernel_size=encoder_kernel_size,
     )
@@ -137,6 +138,7 @@ def make_predictions_oneshot(
     checkpoint_dir_path: Path,
     patch_overlap: int,
     n_classes: int,
+    patch_size: int,
     batch_size: int,
     encoder_kernel_size: int,
 ) -> tf.Tensor:
@@ -169,6 +171,7 @@ def make_predictions_oneshot(
     model = load_saved_model(
         checkpoint_dir_path=checkpoint_dir_path,
         n_classes=n_classes,
+        input_shape=patch_size,
         batch_size=batch_size,
         encoder_kernel_size=encoder_kernel_size,
     )
@@ -213,6 +216,7 @@ def save_labels_vs_predictions_comparison_plot(
         checkpoint_dir_path=report_dir_path / "2_model_report",
         patch_overlap=patch_overlap,
         n_classes=n_classes,
+        patch_size=patch_size,
         batch_size=batch_size,
         encoder_kernel_size=encoder_kernel_size,
     )
@@ -335,13 +339,15 @@ def get_confusion_matrix(
 def load_saved_model(
     checkpoint_dir_path: Path,
     n_classes: int,
+    input_shape: int,
     batch_size: int,
     encoder_kernel_size: int,
 ):
     logger.info("\nLoading the model...")
     # model = build_small_unet(n_classes, patch_size, batch_size, encoder_kernel_size)
-    model = build_small_unet_arbitrary_input(
+    model = build_small_unet(
         n_classes=n_classes,
+        input_shape=input_shape,
         batch_size=batch_size,
         encoder_kernel_size=encoder_kernel_size,
     )
