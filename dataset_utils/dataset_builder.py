@@ -96,7 +96,7 @@ def build_predictions_dataset(
     :return: A Dataset object with tensors of size (1, patch_size, patch_size, 3). Its length corresponds of the number of patches generated.
     """
     logger.info("\nSlice the image into patches...")
-    main_patches_tensors_list, right_side_patches_tensors_list = extract_patches(
+    main_patches_tensors_list, right_side_patches_tensors_list, down_side_patches_tensors_list = extract_patches(
         image_tensor=target_image_tensor,
         patch_size=patch_size,
         patch_overlap=patch_overlap,
@@ -107,10 +107,14 @@ def build_predictions_dataset(
     right_side_prediction_dataset = tf.data.Dataset.from_tensor_slices(right_side_patches_tensors_list)
     right_side_prediction_dataset = right_side_prediction_dataset.batch(batch_size=1, drop_remainder=True)
 
+    down_side_prediction_dataset = tf.data.Dataset.from_tensor_slices(down_side_patches_tensors_list)
+    down_side_prediction_dataset = down_side_prediction_dataset.batch(batch_size=1, drop_remainder=True)
+
     logger.info(f"\n{len(prediction_dataset)} patches created successfully.")
     logger.info(f"\n{len(right_side_prediction_dataset)} right side patches created successfully.")
+    logger.info(f"\n{len(down_side_prediction_dataset)} down side patches created successfully.")
 
-    return prediction_dataset, right_side_prediction_dataset
+    return prediction_dataset, right_side_prediction_dataset, down_side_prediction_dataset
 
 
 def get_dataset_iterator(dataset: tf.data.Dataset) -> tf.data.Iterator:

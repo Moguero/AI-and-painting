@@ -9,7 +9,8 @@ from dataset_utils.image_utils import (
     decode_image,
     get_image_name_without_extension,
     get_images_paths,
-    get_image_masks_paths, get_image_tensor_shape,
+    get_image_masks_paths,
+    get_image_tensor_shape,
 )
 from dataset_utils.masks_encoder import save_tensor_to_jpg
 
@@ -174,8 +175,12 @@ def extract_patches(
     if with_four_channels:
         image_tensor = image_tensor[:, :, :, :3]
 
-    image_height, image_width, channels_number = get_image_tensor_shape(image_tensor=image_tensor)
-    window_stride = patch_size - patch_overlap  # number of pixels by which we shift the window at each step of predictions
+    image_height, image_width, channels_number = get_image_tensor_shape(
+        image_tensor=image_tensor
+    )
+    window_stride = (
+        patch_size - patch_overlap
+    )  # number of pixels by which we shift the window at each step of predictions
 
     main_patches = list()
     right_side_patches = list()
@@ -185,8 +190,10 @@ def extract_patches(
         while column_idx + patch_size <= image_width:
             patch = image_tensor[
                 :,
-                row_idx: row_idx + patch_size,  # max bound  index is row_idx + patch_size - 1
-                column_idx: column_idx + patch_size,  # max bound index is column_idx + patch_size - 1
+                row_idx : row_idx
+                + patch_size,  # max bound  index is row_idx + patch_size - 1
+                column_idx : column_idx
+                + patch_size,  # max bound index is column_idx + patch_size - 1
                 :,
             ]
             main_patches.append(patch[0])
@@ -194,13 +201,24 @@ def extract_patches(
 
         # extract right side patches
         right_side_patch = image_tensor[
-            :,
-            row_idx: row_idx + patch_size,
-            image_width - patch_size: image_width,
-            :
+            :, row_idx : row_idx + patch_size, image_width - patch_size : image_width, :
         ]
         right_side_patches.append(right_side_patch[0])
+
         row_idx += window_stride
+
+    # extract down side patches
+    down_side_patches = list()
+    column_idx = 0
+    while column_idx + patch_size <= image_width:
+        down_side_patch = image_tensor[
+            :,
+            image_height - patch_size : image_height,
+            column_idx : column_idx + patch_size,
+            :,
+        ]
+        down_side_patches.append(down_side_patch[0])
+        column_idx += window_stride
 
     n_vertical_patches = (image_height - 2 * int(patch_overlap / 2)) // window_stride
     n_horizontal_patches = (image_width - 2 * int(patch_overlap / 2)) // window_stride
@@ -208,8 +226,7 @@ def extract_patches(
         main_patches
     ), f"The number of main patches is not the same : original image of size {image_height}x{image_width} should have {n_horizontal_patches * n_vertical_patches} but we have {len(main_patches)} "
 
-    # todo : extract down_side patches
-    return main_patches, right_side_patches
+    return main_patches, right_side_patches, down_side_patches
 
 
 # ------

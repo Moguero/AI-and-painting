@@ -69,7 +69,7 @@ def make_predictions(
 
     # Cut the image into patches of size patch_size
     # & format the image patches to feed the model.predict function
-    main_patches_dataset, right_side_patches_dataset = build_predictions_dataset(
+    main_patches_dataset, right_side_patches_dataset, down_side_patches_dataset = build_predictions_dataset(
         target_image_tensor=image_tensor,
         patch_size=patch_size,
         patch_overlap=patch_overlap,
@@ -93,6 +93,9 @@ def make_predictions(
     right_side_patch_classes_list = patches_predict(
         predictions_dataset=right_side_patches_dataset, model=model
     )
+    down_side_patch_classes_list = patches_predict(
+        predictions_dataset=down_side_patches_dataset, model=model
+    )
 
     # Rebuild the image with the predictions patches
     # output tensor of size (intput_width_size - 2 * patch_overlap, input_height_size - 2 * patch_overlap)
@@ -101,6 +104,7 @@ def make_predictions(
         target_image_path=target_image_path,
         main_patch_classes_list=main_patch_classes_list,
         right_side_patch_classes_list=right_side_patch_classes_list,
+        down_side_patch_classes_list=down_side_patch_classes_list,
         image_tensor=image_tensor,
         patch_size=patch_size,
         patch_overlap=patch_overlap,
