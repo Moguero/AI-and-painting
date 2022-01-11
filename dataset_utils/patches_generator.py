@@ -196,16 +196,17 @@ def extract_patches(
         right_side_patch = image_tensor[
             :,
             row_idx: row_idx + patch_size,
-            image_width - patch_size: image_width
+            image_width - patch_size: image_width,
+            :
         ]
         right_side_patches.append(right_side_patch[0])
         row_idx += window_stride
 
-    n_vertical_patches = image_height // window_stride
-    n_horizontal_patches = image_width // window_stride
+    n_vertical_patches = (image_height - 2 * int(patch_overlap / 2)) // window_stride
+    n_horizontal_patches = (image_width - 2 * int(patch_overlap / 2)) // window_stride
     assert n_vertical_patches * n_horizontal_patches == len(
         main_patches
-    ), f"The number of main patches is not the same : original image should have {n_horizontal_patches * n_vertical_patches} but we have {len(main_patches)} "
+    ), f"The number of main patches is not the same : original image of size {image_height}x{image_width} should have {n_horizontal_patches * n_vertical_patches} but we have {len(main_patches)} "
 
     # todo : extract down_side patches
     return main_patches, right_side_patches

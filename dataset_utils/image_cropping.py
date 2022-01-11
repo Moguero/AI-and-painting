@@ -28,10 +28,10 @@ def crop_tensor(tensor: tf.Tensor, target_height: int, target_width: int) -> tf.
     width_difference = tensor_width - target_width
 
     assert height_difference >= 0
-    height_offset = height_difference // 2
+    height_offset = int(height_difference // 2)
 
     assert width_difference >= 0
-    width_offset = width_difference // 2
+    width_offset = int(width_difference // 2)
 
     # cropping and saving
     cropped_tensor = tf.image.crop_to_bounding_box(
@@ -72,8 +72,8 @@ def crop_patch_tensor(
     image_height, image_width, channels_number = get_image_tensor_shape(
         image_tensor=patch_tensor
     )
-    target_width = image_width - 2 * (patch_overlap / 2)
-    target_height = image_height - 2 * (patch_overlap / 2)
+    target_width = int(image_width - 2 * (patch_overlap / 2))
+    target_height = int(image_height - 2 * (patch_overlap / 2))
 
     patch_tensor = crop_tensor(
         tensor=patch_tensor, target_height=target_height, target_width=target_width

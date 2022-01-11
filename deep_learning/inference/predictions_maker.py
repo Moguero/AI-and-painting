@@ -98,6 +98,7 @@ def make_predictions(
     # output tensor of size (intput_width_size - 2 * patch_overlap, input_height_size - 2 * patch_overlap)
     # todo : check that we reach the size announced on the line above
     final_predictions_tensor = rebuild_predictions_with_overlap(
+        target_image_path=target_image_path,
         main_patch_classes_list=main_patch_classes_list,
         right_side_patch_classes_list=right_side_patch_classes_list,
         image_tensor=image_tensor,
