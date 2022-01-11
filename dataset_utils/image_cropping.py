@@ -2,7 +2,11 @@ import tensorflow as tf
 from pathlib import Path
 
 from constants import TARGET_HEIGHT, TARGET_WIDTH
-from dataset_utils.image_utils import decode_image, get_tensor_dims
+from dataset_utils.image_utils import (
+    decode_image,
+    get_tensor_dims,
+    get_image_tensor_shape,
+)
 
 
 def crop_tensor(tensor: tf.Tensor, target_height: int, target_width: int) -> tf.Tensor:
@@ -15,11 +19,13 @@ def crop_tensor(tensor: tf.Tensor, target_height: int, target_width: int) -> tf.
     :param target_width: Width of the output tensor.
     :return: The cropped tensor of size (target_height, target_width).
     """
-    height_index, width_index, channels_index = get_tensor_dims(tensor=tensor)
+    tensor_height, tensor_width, channels_number = get_image_tensor_shape(
+        image_tensor=tensor
+    )
 
     # center the crop
-    height_difference = tensor.get_shape()[height_index] - target_height
-    width_difference = tensor.get_shape()[width_index] - target_width
+    height_difference = tensor_height - target_height
+    width_difference = tensor_width - target_width
 
     assert height_difference >= 0
     height_offset = height_difference // 2
@@ -35,12 +41,23 @@ def crop_tensor(tensor: tf.Tensor, target_height: int, target_width: int) -> tf.
         target_height=target_height,
         target_width=target_width,
     )
+
+    # Check that the output size is correct
+    (
+        cropped_tensor_height,
+        cropped_tensor_width,
+        channels_number,
+    ) = get_image_tensor_shape(image_tensor=cropped_tensor)
+    assert (cropped_tensor_height == target_height) and (
+        cropped_tensor_height == target_width
+    ), f"\nCropped tensor shape is ({cropped_tensor_height}, {cropped_tensor_width}) : should be {target_height}, {target_width}"
+
     return cropped_tensor
 
 
 def crop_patch_tensor(
-        patch_tensor: tf.Tensor,
-        patch_overlap: int,
+    patch_tensor: tf.Tensor,
+    patch_overlap: int,
 ) -> tf.Tensor:
     """
 
@@ -48,15 +65,16 @@ def crop_patch_tensor(
     :param patch_overlap: Number of pixels on which neighbors patches intersect each other.
     :return: A cropped tensor of size (x - patch_overlap, y - patch_overlap).
     """
-    (
-        patch_width_index,
-        patch_height_index,
-        patch_channels_index,
-    ) = get_tensor_dims(tensor=patch_tensor)
-    target_width = int(patch_tensor.shape[patch_width_index] - 2 * (patch_overlap / 2))
-    target_height = int(
-        patch_tensor.shape[patch_height_index] - 2 * (patch_overlap / 2)
+    assert (
+        patch_overlap % 2 == 0
+    ), f"Patch overlap argument must be a pair number. The one specified was {patch_overlap}."
+
+    image_height, image_width, channels_number = get_image_tensor_shape(
+        image_tensor=patch_tensor
     )
+    target_width = image_width - 2 * (patch_overlap / 2)
+    target_height = image_height - 2 * (patch_overlap / 2)
+
     patch_tensor = crop_tensor(
         tensor=patch_tensor, target_height=target_height, target_width=target_width
     )
@@ -67,7 +85,9 @@ def save_cropped_image(
     image_path: Path, output_path: Path, target_height: int, target_width: int
 ) -> None:
     image_tensor = decode_image(file_path=image_path)
-    cropped_tensor = crop_tensor(tensor=image_tensor, target_height=target_height, target_width=target_width)
+    cropped_tensor = crop_tensor(
+        tensor=image_tensor, target_height=target_height, target_width=target_width
+    )
     encoded_image_tensor = tf.io.encode_jpeg(
         cropped_tensor, format="rgb", optimize_size=True
     )

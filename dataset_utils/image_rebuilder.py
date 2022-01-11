@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from constants import PATCHES_DIR_PATH, IMAGE_PATH, PATCH_SIZE, PATCH_OVERLAP
 from dataset_utils.image_cropping import crop_patch_tensor
-from dataset_utils.image_utils import decode_image, get_tensor_dims, get_image_shape
+from dataset_utils.image_utils import decode_image, get_tensor_dims, get_image_tensor_shape
 
 
 def rebuild_image(
@@ -115,7 +115,7 @@ def rebuild_predictions_with_overlap(
     ]
 
     # Counting the number of main patches by which the image has been cut
-    image_height, image_width, channels_number = get_image_shape(
+    image_height, image_width, channels_number = get_image_tensor_shape(
         image_tensor=image_tensor
     )
 
@@ -162,20 +162,18 @@ def rebuild_predictions_with_overlap(
             rebuilt_tensor = tf.concat([rebuilt_tensor, line_rebuilt_tensor], axis=0)
     # todo : unhardcode the axis parameter in tf.concat
 
-    rebuilt_height_index, rebuilt_width_index, rebuilt_channels_index = get_tensor_dims(
-        tensor=rebuilt_tensor
-    )
-
     # Check that the final size is consistent
-    assert rebuilt_tensor.shape[rebuilt_height_index] == int(
+    rebuilt_tensor_height, rebuilt_tensor_width, rebuilt_channels_number = get_image_tensor_shape(
+        image_tensor=rebuilt_tensor
+    )
+    assert rebuilt_tensor_height == (
         image_height - 2 * (patch_overlap / 2)
-    ), f"Number of rows is not consistent : got {rebuilt_tensor.shape[rebuilt_height_index]}, expected {image_width - 2 * (patch_overlap / 2)}"
-    assert rebuilt_tensor.shape[rebuilt_width_index] == int(
+    ), f"Number of rows is not consistent : got {rebuilt_tensor_height}, expected {image_height - 2 * (patch_overlap / 2)}"
+    assert rebuilt_tensor_width == (
         image_width - 2 * (patch_overlap / 2)
-    ), f"Number of columns is not consistent : got {rebuilt_tensor.shape[rebuilt_width_index]}, expected {image_width - 2 * (patch_overlap / 2)}"
+    ), f"Number of columns is not consistent : got {rebuilt_tensor_width}, expected {image_width - 2 * (patch_overlap / 2)}"
 
-    rebuilt_tensor = tf.squeeze(rebuilt_tensor)
-
+    rebuilt_tensor = tf.squeeze(input=rebuilt_tensor)
     logger.info(
         f"\nImage predictions have been successfully built with size {rebuilt_tensor.shape} (original image size : {image_tensor.shape})."
     )
