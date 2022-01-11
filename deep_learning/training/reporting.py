@@ -170,15 +170,15 @@ def save_test_images_vs_predictions_plot(
     target_image_height, target_image_width, channels_number = get_image_tensor_shape(image_tensor=image_tensor)
     image = image_tensor.numpy()
 
-    predictions_tensor_height, predictions_tensor_width, channels_number = get_image_tensor_shape(image_tensor=image_tensor)
+    predictions_tensor_height, predictions_tensor_width, channels_number = get_image_tensor_shape(image_tensor=predictions_tensor)
     mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
         categorical_mask_tensor=predictions_tensor
     )
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.suptitle(get_image_name_without_extension(image_path=target_image_path))
-    ax1.set_title(f"Original image ({predictions_tensor_width}x{predictions_tensor_height})")
-    ax2.set_title(f"Predictions ({target_image_width}x{target_image_height})")
+    fig.suptitle(f"Image : {get_image_name_without_extension(image_path=target_image_path)}")
+    ax1.set_title(f"Original image ({target_image_width}x{target_image_height})")
+    ax2.set_title(f"Predictions ({predictions_tensor_width}x{predictions_tensor_height})")
     ax1.imshow(image)
     ax2.imshow(mapped_predictions_array)
     ax1.axis("off")

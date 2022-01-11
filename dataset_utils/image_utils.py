@@ -249,7 +249,10 @@ def get_image_tensor_shape(image_tensor: tf.Tensor):
 
     image_height = image_tensor.shape[height_index]
     image_width = image_tensor.shape[width_index]
-    channels_number = image_tensor.shape[channels_index]
+    if channels_index is not None:
+        channels_number = image_tensor.shape[channels_index]
+    else:
+        channels_number = None
 
     return image_height, image_width, channels_number
 
