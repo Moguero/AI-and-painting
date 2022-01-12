@@ -158,7 +158,6 @@ def rebuild_predictions_with_overlap(
                 line_rebuilt_tensor = tf.concat(
                     [line_rebuilt_tensor, cropped_patch_tensor], axis=1
                 )
-        # Rebuild the row
 
         # first add the right side patches to extend the right side
         right_side_patch_tensor = right_side_patch_classes_list[row_number]
@@ -174,7 +173,7 @@ def rebuild_predictions_with_overlap(
         line_rebuilt_tensor = tf.concat(
             [line_rebuilt_tensor, resized_cropped_right_side_patch_tensor], axis=1
         )
-
+        
         if row_number == 0:
             rebuilt_tensor = line_rebuilt_tensor
         else:
@@ -182,11 +181,11 @@ def rebuild_predictions_with_overlap(
 
     # finally add the down side patches to extend the image bottom
     for column_number in range(n_horizontal_patches):
-        patch_tensor = down_side_patch_classes_list[column_number]
+        down_side_patch_tensor = down_side_patch_classes_list[column_number]
 
         # cropping the patch by taking into account the overlap with which it was built
         cropped_down_side_patch_tensor = crop_patch_tensor(
-            patch_tensor=patch_tensor, patch_overlap=patch_overlap
+                patch_tensor=down_side_patch_tensor, patch_overlap=patch_overlap
         )
         up_bound_limit_idx = (
             n_vertical_patches * window_stride + int(patch_overlap / 2)
@@ -194,17 +193,14 @@ def rebuild_predictions_with_overlap(
         resized_cropped_down_side_patch_tensor = cropped_down_side_patch_tensor[
             up_bound_limit_idx:, :
         ]
-        line_rebuilt_tensor = tf.concat(
-            [line_rebuilt_tensor, resized_cropped_down_side_patch_tensor], axis=1
-        )
 
         if column_number == 0:
-            line_rebuilt_tensor = cropped_patch_tensor
+            line_rebuilt_tensor = resized_cropped_down_side_patch_tensor
         else:
             line_rebuilt_tensor = tf.concat(
-                [line_rebuilt_tensor, cropped_patch_tensor], axis=1
+                [line_rebuilt_tensor, resized_cropped_down_side_patch_tensor], axis=1
             )
-
+    # add the right-down corner patch
     down_right_side_patch_tensor = right_side_patch_classes_list[n_vertical_patches]
     cropped_down_right_side_patch_tensor = crop_patch_tensor(
         patch_tensor=down_right_side_patch_tensor, patch_overlap=patch_overlap
