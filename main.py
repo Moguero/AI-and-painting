@@ -96,38 +96,25 @@ if __name__ == "__main__":
     # Parser setup
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--train", default="false", help="Which library to use : can be pandas or dask"
+        "--train", help="Whether to create and train a new model.", action="store_true"
     )
     parser.add_argument(
         "--predict",
-        default="false",
-        help="Which library to use : can be pandas or dask",
+        help="Whether to infer predictions on test images. Will ask the user a model path to use.",
+        action="store_true",
     )
     args = parser.parse_args()
 
-    if args.train.lower() == "true":
-        train_bool = True
-    elif args.train.lower() == "false":
-        train_bool = False
-    else:
+    if not args.predict and not args.train:
         raise ValueError(
-            "train optional argument must be equal to True, true, False or false"
-        )
-
-    if args.predict.lower() == "true":
-        predict_bool = True
-    elif args.predict.lower() == "false":
-        predict_bool = False
-    else:
-        raise ValueError(
-            f"predict optional argument must be equal to True, true, False or false : {args.predict} was given"
+            "At least one of --train or --predict parameters should be given."
         )
 
     main(
-        train_bool=train_bool,
-        predict_bool=predict_bool,
+        train_bool=args.train,
+        predict_bool=args.predict,
     )
 
 
 # CLI command
-# python main.py --train true --predict true
+# python main.py --train --predict
