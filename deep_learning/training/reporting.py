@@ -7,19 +7,34 @@ from matplotlib import pyplot as plt
 from tensorflow import keras
 import tensorflow as tf
 
-from constants import PALETTE_HEXA, MAPPING_CLASS_NUMBER, MASK_TRUE_VALUE, MASK_FALSE_VALUE, TEST_IMAGES_PATHS_LIST
+from constants import (
+    PALETTE_HEXA,
+    MAPPING_CLASS_NUMBER,
+    MASK_TRUE_VALUE,
+    MASK_FALSE_VALUE,
+    TEST_IMAGES_PATHS_LIST,
+)
 from dataset_utils.file_utils import get_formatted_time
-from dataset_utils.image_utils import decode_image, get_image_name_without_extension, get_image_tensor_shape
+from dataset_utils.image_utils import (
+    decode_image,
+    get_image_name_without_extension,
+    get_image_tensor_shape,
+)
 from dataset_utils.plotting_tools import (
     save_patch_composition_mean_plot,
-    map_categorical_mask_to_3_color_channels_tensor, turn_2d_tensor_to_3d_tensor,
+    map_categorical_mask_to_3_color_channels_tensor,
+    turn_2d_tensor_to_3d_tensor,
 )
-from deep_learning.inference.predictions_maker import make_predictions, make_predictions_oneshot
+from deep_learning.inference.predictions_maker import (
+    make_predictions,
+    make_predictions_oneshot,
+)
 
 
 def build_training_run_report(
     report_dir_path: Path,
     model: keras.Model,
+    history: keras.callbacks.History,
     model_config: dict,
     patches_composition_stats: pd.DataFrame,
     palette_hexa: {int: str},
@@ -69,7 +84,7 @@ def build_training_run_report(
 
     # 2. model report
 
-    # Export the model architecture
+    # Save the model architecture
     model_architecture_filename = (
         report_subdirs_paths_dict["model_report"] / "model_architecture.txt"
     )
@@ -77,16 +92,28 @@ def build_training_run_report(
         # Pass the file handle in as a lambda function to make it callable
         model.summary(print_fn=lambda x: file.write(x + "\n"))
 
-    # Export the model config (hyperparameters)
+    # Save the model History.history object (with loss and metrics history)
+    history_filename = report_subdirs_paths_dict["model_report"] / "history.txt"
+    with open(history_filename, "w") as file:
+        file.write(f"{history.history}")
 
+    # Save the README that describes how to open Tensor Board
+    readme_filename = report_subdirs_paths_dict["model_report"] / "README.md"
+    with open(readme_filename, "w") as file:
+        file.write(
+            f"To start TensorBoard, run the following command line in a terminal :"
+            f"\n\ntensorboard --logdir='{str(report_subdirs_paths_dict['model_report'] / 'logs')}'"
+            f"\n\nThen, open a web browser and go to :"
+            f"\n\n http://localhost:6006/ "
+        )
+
+    # Save the model config (hyperparameters)
     model_config_filename = (
         report_subdirs_paths_dict["model_report"] / "model_config.txt"
     )
     with open(model_config_filename, "w") as file:
-        # Pass the file handle in as a lambda function to make it callable
         for key, value in model_config.items():
             file.write(f"{str(key)}: {str(value)} \n")
-    return
 
 
 # todo : rethink the use of this function : is it really useful ?
@@ -167,18 +194,28 @@ def save_test_images_vs_predictions_plot(
 ) -> None:
     # Set-up plotting settings
     image_tensor = decode_image(file_path=target_image_path)
-    target_image_height, target_image_width, channels_number = get_image_tensor_shape(image_tensor=image_tensor)
+    target_image_height, target_image_width, channels_number = get_image_tensor_shape(
+        image_tensor=image_tensor
+    )
     image = image_tensor.numpy()
 
-    predictions_tensor_height, predictions_tensor_width, channels_number = get_image_tensor_shape(image_tensor=predictions_tensor)
+    (
+        predictions_tensor_height,
+        predictions_tensor_width,
+        channels_number,
+    ) = get_image_tensor_shape(image_tensor=predictions_tensor)
     mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
         categorical_mask_tensor=predictions_tensor
     )
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.suptitle(f"Image : {get_image_name_without_extension(image_path=target_image_path)}")
+    fig.suptitle(
+        f"Image : {get_image_name_without_extension(image_path=target_image_path)}"
+    )
     ax1.set_title(f"Original image ({target_image_width}x{target_image_height})")
-    ax2.set_title(f"Predictions ({predictions_tensor_width}x{predictions_tensor_height})")
+    ax2.set_title(
+        f"Predictions ({predictions_tensor_width}x{predictions_tensor_height})"
+    )
     ax1.imshow(image)
     ax2.imshow(mapped_predictions_array)
     ax1.axis("off")
@@ -233,9 +270,9 @@ def save_predictions_only_plot(
 
 
 def save_binary_predictions_plot(
-        target_image_path: Path,
-        predictions_tensor: tf.Tensor,
-        predictions_report_root_path: Path,
+    target_image_path: Path,
+    predictions_tensor: tf.Tensor,
+    predictions_report_root_path: Path,
 ):
     # Separate predictions tensor into a list of n_classes binary tensors of size (width, height)
     binary_predictions_sub_dir = predictions_report_root_path / "binary_predictions"
@@ -256,24 +293,28 @@ def save_binary_predictions_plot(
             for class_name, class_number in MAPPING_CLASS_NUMBER.items()
         }
 
-        binary_predictions_class_sub_dir = predictions_report_root_path / "binary_predictions" / get_image_name_without_extension(target_image_path)
+        binary_predictions_class_sub_dir = (
+            predictions_report_root_path
+            / "binary_predictions"
+            / get_image_name_without_extension(target_image_path)
+        )
         if not binary_predictions_class_sub_dir.exists():
             binary_predictions_class_sub_dir.mkdir(parents=True)
         output_path = (
-                binary_predictions_sub_dir
-                / get_image_name_without_extension(target_image_path)
-                / f"{get_image_name_without_extension(target_image_path)}__{mapping_number_class[idx]}.png"
+            binary_predictions_sub_dir
+            / get_image_name_without_extension(target_image_path)
+            / f"{get_image_name_without_extension(target_image_path)}__{mapping_number_class[idx]}.png"
         )
         tf.keras.preprocessing.image.save_img(output_path, binary_tensor_3d)
         logger.info(f"\nBinary predictions plot successfully saved at : {output_path}")
 
 
 def save_predictions_config(
-        predictions_report_root_path: Path,
-        patch_size: int,
-        patch_overlap: int,
-        batch_size: int,
-        encoder_kernel_size: int,
+    predictions_report_root_path: Path,
+    patch_size: int,
+    patch_overlap: int,
+    batch_size: int,
+    encoder_kernel_size: int,
 ) -> None:
     predictions_config = {
         "patch_size": patch_size,

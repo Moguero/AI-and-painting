@@ -92,18 +92,12 @@ def train_model(
     )
 
     # Define the model
-    model = build_small_unet_arbitrary_input(
+    model = build_small_unet(
         n_classes=n_classes,
+        input_shape=patch_size,
         batch_size=batch_size,
         encoder_kernel_size=encoder_kernel_size,
     )
-
-    # model = build_small_unet(
-    #     n_classes=n_classes,
-    #     input_shape=patch_size,
-    #     batch_size=batch_size,
-    #     encoder_kernel_size=encoder_kernel_size,
-    # )
 
     # TEST to define new metrics
     # class UpdatedMeanIoU(tf.keras.metrics.MeanIoU):
@@ -128,11 +122,18 @@ def train_model(
     # Compile the model
     model.compile(optimizer=optimizer, loss=loss_function, metrics=metrics)
 
-    # Init the callbacks
+    # Init the callbacks (perform actions at various stages on training)
     callbacks = [
+        # save model weights regularly
         keras.callbacks.ModelCheckpoint(
             filepath=report_paths_dict["checkpoint_path"], verbose=1, save_weights_only=True
-        )
+        ),
+        # create a dashboard of the training
+        keras.callbacks.TensorBoard(
+            log_dir=report_paths_dict["model_report"] / "logs",
+            update_freq="epoch",
+            histogram_freq=1,
+        ),
     ]
 
     # Build training/validation dataset
@@ -169,17 +170,6 @@ def train_model(
         "data_augmentation": data_augmentation,
     }
 
-    # Save a run report
-    # todo : put it in the end of the run script to have the history, loss and metrics saved
-    report_dir_path = report_paths_dict["report_dir_path"]
-    build_training_run_report(
-        report_dir_path=report_dir_path,
-        model=model,
-        model_config=model_config,
-        patches_composition_stats=patches_composition_stats,
-        palette_hexa=palette_hexa,
-        note=note,
-    )
     # Fit the model
     logger.info("\nStart model training...")
     # history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks)
@@ -206,6 +196,8 @@ def train_model(
         steps_per_epoch=int(len(image_patches_paths_list) * (1 - test_proportion))
         // batch_size,
         verbose=1,
+        # todo : use multiprocessing
+        # use_multiprocessing=True,
     )
     logger.info("\nEnd of model training.")
 
@@ -234,10 +226,20 @@ def train_model(
     #     callbacks=callbacks,
     # )
 
-    # todo : save history and metrics_values
+    # Save a run report
+    report_dir_path = report_paths_dict["report_dir_path"]
+    build_training_run_report(
+        report_dir_path=report_dir_path,
+        model=model,
+        history=history,
+        model_config=model_config,
+        patches_composition_stats=patches_composition_stats,
+        palette_hexa=palette_hexa,
+        note=note,
+    )
 
-    # return model, history, metrics_values
-    return model, history, report_dir_path
+    # return model, report_dir_path, metrics_values
+    return report_dir_path
 
 # --------
 # DEBUG

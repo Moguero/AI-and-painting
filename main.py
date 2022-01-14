@@ -20,7 +20,7 @@ from constants import (
     MAPPING_CLASS_NUMBER,
     PALETTE_HEXA,
     PATCH_OVERLAP,
-    TEST_IMAGES_PATHS_LIST,
+    # TEST_IMAGES_PATHS_LIST,
     DOWNSCALED_TEST_IMAGES_PATHS_LIST,
 )
 from deep_learning.training.model_runner import train_model
@@ -32,7 +32,7 @@ def main(
     predict_bool: bool,
 ) -> None:
     if train_bool:
-        model, history, report_dir_path = train_model(
+        report_dir_path = train_model(
             n_classes=N_CLASSES,
             patch_size=PATCH_SIZE,
             optimizer=OPTIMIZER,
