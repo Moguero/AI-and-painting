@@ -8,7 +8,7 @@ from constants import (
     LOSS_FUNCTION,
     METRICS,
     REPORTS_ROOT_DIR_PATH,
-    N_PATCHES_LIMIT,    
+    N_PATCHES_LIMIT,
     BATCH_SIZE,
     VALIDATION_PROPORTION,
     TEST_PROPORTION,
@@ -22,6 +22,7 @@ from constants import (
     PATCH_OVERLAP,
     # TEST_IMAGES_PATHS_LIST,
     DOWNSCALED_TEST_IMAGES_PATHS_LIST,
+    EARLY_STOPPING_LOSS_MIN_DELTA,
 )
 from deep_learning.training.model_runner import train_model
 from deep_learning.training.reporting import build_predict_run_report
@@ -47,6 +48,7 @@ def main(
             epochs=N_EPOCHS,
             patches_dir_path=PATCHES_DIR_PATH,
             encoder_kernel_size=ENCODER_KERNEL_SIZE,
+            early_stopping_loss_min_delta=EARLY_STOPPING_LOSS_MIN_DELTA,
             data_augmentation=DATA_AUGMENTATION,
             mapping_class_number=MAPPING_CLASS_NUMBER,
             palette_hexa=PALETTE_HEXA,

@@ -50,6 +50,7 @@ def train_model(
     epochs: int,
     patches_dir_path: Path,
     encoder_kernel_size: int,
+    early_stopping_loss_min_delta: int,
     data_augmentation: bool,
     mapping_class_number: {str: int},
     palette_hexa: {int: str},
@@ -59,6 +60,7 @@ def train_model(
     """
     Build the model, compile it, create a dataset iterator, train the model and save the trained model in callbacks.
 
+    :param early_stopping_loss_min_delta: Used in keras.callbacks.EarlyStopping.
     :param n_classes: Number of classes used for the model, background not included.
     :param patch_size: Standard shape of the input images used for the training.
     :param optimizer: Keras optimizer used for compilation.
@@ -134,6 +136,13 @@ def train_model(
             update_freq="epoch",
             histogram_freq=1,
         ),
+        # stop the training process if the loss stop decreasing considerably
+        keras.callbacks.EarlyStopping(
+            monitor=loss_function,
+            min_delta=early_stopping_loss_min_delta,
+            patience=1,
+            restore_best_weights=True,
+        )
     ]
 
     # Build training/validation dataset
