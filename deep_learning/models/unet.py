@@ -29,7 +29,6 @@ def build_unet(n_classes: int, batch_size: int, encoder_kernel_size: int) -> ker
     return model
 
 
-# todo : delete this one if build_small_unet_arbitrary_input works properly
 def build_small_unet(n_classes: int, input_shape: int, batch_size: int, encoder_kernel_size: int) -> keras.Model:
     """One encoder-decoder level less. Divides by a factor 4 the number of total paramaters of the model."""
     inputs = keras.Input(shape=(input_shape, input_shape, 3), batch_size=batch_size)

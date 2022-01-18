@@ -35,7 +35,6 @@ from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channel
 from deep_learning.models.unet import build_small_unet, build_small_unet_arbitrary_input
 
 
-# todo : deprecate this one if make_predictions_oneshot works properly
 def make_predictions(
     target_image_path: Path,
     checkpoint_dir_path: Path,

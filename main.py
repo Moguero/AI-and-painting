@@ -55,7 +55,6 @@ def main(
         )
 
         if predict_bool:
-            # todo : specify the image path in the parser OR create a config.json
             build_predict_run_report(
                 test_images_paths_list=DOWNSCALED_TEST_IMAGES_PATHS_LIST,
                 report_dir_path=report_dir_path,
@@ -75,7 +74,6 @@ def main(
             if not report_dir_path.exists():
                 raise ValueError("This report directory path does no exist.")
 
-            # todo : specify the report path in the parser OR create a config.json
             build_predict_run_report(
                 test_images_paths_list=DOWNSCALED_TEST_IMAGES_PATHS_LIST,
                 report_dir_path=report_dir_path,

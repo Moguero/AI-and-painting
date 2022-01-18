@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 
 import matplotlib
 import pandas as pd
@@ -29,6 +30,7 @@ from deep_learning.inference.predictions_maker import (
     make_predictions,
     make_predictions_oneshot,
 )
+from deep_learning.postprocessing.median_filtering import save_median_filtering_comparison
 
 
 def build_training_run_report(
@@ -135,7 +137,7 @@ def init_report_paths(report_root_dir_path: Path) -> {str: Path}:
 
 
 def build_predict_run_report(
-    test_images_paths_list: [Path],
+    test_images_paths_list: List[Path],
     report_dir_path: Path,
     patch_size: int,
     patch_overlap: int,
@@ -184,6 +186,11 @@ def build_predict_run_report(
             patch_overlap=patch_overlap,
             batch_size=batch_size,
             encoder_kernel_size=encoder_kernel_size,
+        )
+
+        save_median_filtering_comparison(
+            source_image_path=test_image_path,
+            predictions_report_root_path=predictions_report_root_path,
         )
 
 

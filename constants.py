@@ -133,7 +133,9 @@ TARGET_HEIGHT = 2176
 TARGET_WIDTH = 3264
 PADDING_TYPE = "same"
 # OPTIMIZER = "rmsprop"
-OPTIMIZER = Adam(lr=1e-4)  # maybe put tf.Variable instead of the float to shut the warnings
+# todo : test learning rate 1e-3 (default adam value), 1e-2 and 1e-5
+LEARNING_RATE = 1e-4
+OPTIMIZER = Adam(lr=LEARNING_RATE)  # maybe put tf.Variable instead of the float to shut the warnings
 LOSS_FUNCTION = "categorical_crossentropy"
 # LOSS_FUNCTION = keras.losses.categorical_crossentropy
 # METRICS = ["accuracy", keras.metrics.MeanIoU]
