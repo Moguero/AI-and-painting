@@ -28,10 +28,7 @@ from deep_learning.training.model_runner import train_model
 from deep_learning.training.reporting import build_predict_run_report
 
 
-def main(
-    train_bool: bool,
-    predict_bool: bool,
-) -> None:
+def main(train_bool: bool, predict_bool: bool, light_report_bool: bool) -> None:
     if train_bool:
         report_dir_path = train_model(
             n_classes=N_CLASSES,
@@ -63,6 +60,7 @@ def main(
                 n_classes=N_CLASSES,
                 batch_size=BATCH_SIZE,
                 encoder_kernel_size=ENCODER_KERNEL_SIZE,
+                light_report_bool=light_report_bool,
             )
     else:  # case no training
         if predict_bool:
@@ -82,6 +80,7 @@ def main(
                 n_classes=N_CLASSES,
                 batch_size=BATCH_SIZE,
                 encoder_kernel_size=ENCODER_KERNEL_SIZE,
+                light_report_bool=light_report_bool,
             )
 
         else:
@@ -101,6 +100,11 @@ if __name__ == "__main__":
         help="Whether to infer predictions on test images. Will ask the user a model path to use.",
         action="store_true",
     )
+    parser.add_argument(
+        "--light",
+        help="Build a light report with image/predictions comparisons only.",
+        action="store_true",
+    )
     args = parser.parse_args()
 
     if not args.predict and not args.train:
@@ -111,6 +115,7 @@ if __name__ == "__main__":
     main(
         train_bool=args.train,
         predict_bool=args.predict,
+        light_report_bool=args.light,
     )
 
 

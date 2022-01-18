@@ -28,9 +28,10 @@ from dataset_utils.plotting_tools import (
 )
 from deep_learning.inference.predictions_maker import (
     make_predictions,
-    make_predictions_oneshot,
 )
-from deep_learning.postprocessing.median_filtering import save_median_filtering_comparison
+from deep_learning.postprocessing.median_filtering import (
+    save_median_filtering_comparison,
+)
 
 
 def build_training_run_report(
@@ -144,6 +145,7 @@ def build_predict_run_report(
     n_classes: int,
     batch_size: int,
     encoder_kernel_size: int,
+    light_report_bool: bool,
 ) -> None:
     predictions_report_root_path = (
         report_dir_path / "3_predictions" / get_formatted_time()
@@ -168,18 +170,6 @@ def build_predict_run_report(
             predictions_report_root_path=predictions_report_root_path,
         )
 
-        save_predictions_only_plot(
-            target_image_path=test_image_path,
-            predictions_tensor=predictions_tensor,
-            predictions_report_root_path=predictions_report_root_path,
-        )
-
-        save_binary_predictions_plot(
-            target_image_path=test_image_path,
-            predictions_tensor=predictions_tensor,
-            predictions_report_root_path=predictions_report_root_path,
-        )
-
         save_predictions_config(
             predictions_report_root_path=predictions_report_root_path,
             patch_size=patch_size,
@@ -188,10 +178,24 @@ def build_predict_run_report(
             encoder_kernel_size=encoder_kernel_size,
         )
 
-        save_median_filtering_comparison(
-            source_image_path=test_image_path,
-            predictions_report_root_path=predictions_report_root_path,
-        )
+        if not light_report_bool:
+
+            save_predictions_only_plot(
+                target_image_path=test_image_path,
+                predictions_tensor=predictions_tensor,
+                predictions_report_root_path=predictions_report_root_path,
+            )
+
+            save_binary_predictions_plot(
+                target_image_path=test_image_path,
+                predictions_tensor=predictions_tensor,
+                predictions_report_root_path=predictions_report_root_path,
+            )
+
+            save_median_filtering_comparison(
+                source_image_path=test_image_path,
+                predictions_report_root_path=predictions_report_root_path,
+            )
 
 
 def save_test_images_vs_predictions_plot(
