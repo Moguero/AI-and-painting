@@ -247,6 +247,7 @@ def train_model(
         },  # summarize the hyperparameters config used for the training
         patches_composition_stats=patches_composition_stats,
         palette_hexa=palette_hexa,
+        image_patches_paths_list=image_patches_paths_list,
         note=note,
     )
 

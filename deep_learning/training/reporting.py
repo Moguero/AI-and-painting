@@ -41,6 +41,7 @@ def build_training_run_report(
     model_config: dict,
     patches_composition_stats: pd.DataFrame,
     palette_hexa: {int: str},
+    image_patches_paths_list: [Path],
     note: str,
 ) -> None:
     report_subdirs_paths_dict = {
@@ -83,6 +84,15 @@ def build_training_run_report(
             file.write(f"{key}: {value},\n")
 
     # Save patches used for training
+    patches_paths_path = (
+            report_subdirs_paths_dict["data_report"] / "patches_paths.txt"
+    )
+    with open(patches_paths_path, "w") as file:
+        file.write("[")
+        for patch_path in image_patches_paths_list:
+            file.write(f"{patch_path},\n")
+        file.write("]")
+
     # todo : plot minimized patches used (array of patches)
 
     # 2. model report
