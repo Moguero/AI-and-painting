@@ -180,7 +180,7 @@ def build_predict_run_report(
 
         if not light_report_bool:
 
-            save_predictions_only_plot(
+            predictions_only_path = save_predictions_only_plot(
                 target_image_path=test_image_path,
                 predictions_tensor=predictions_tensor,
                 predictions_report_root_path=predictions_report_root_path,
@@ -193,7 +193,7 @@ def build_predict_run_report(
             )
 
             save_median_filtering_comparison(
-                source_image_path=test_image_path,
+                source_image_path=predictions_only_path,
                 predictions_report_root_path=predictions_report_root_path,
             )
 
@@ -264,7 +264,7 @@ def save_predictions_only_plot(
     target_image_path: Path,
     predictions_tensor: tf.Tensor,
     predictions_report_root_path: Path,
-) -> None:
+) -> Path:
     mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
         categorical_mask_tensor=predictions_tensor
     )
@@ -278,6 +278,8 @@ def save_predictions_only_plot(
     )
     tf.keras.preprocessing.image.save_img(output_path, mapped_predictions_array)
     logger.info(f"\nPredictions only plot successfully saved at : {output_path}")
+
+    return output_path
 
 
 def save_binary_predictions_plot(
