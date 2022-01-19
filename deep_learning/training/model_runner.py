@@ -17,7 +17,8 @@ from constants import (
     ENCODER_KERNEL_SIZE,
     DATA_AUGMENTATION,
     MAPPING_CLASS_NUMBER,
-    PALETTE_HEXA, VALIDATION_PROPORTION,
+    PALETTE_HEXA,
+    VALIDATION_PROPORTION,
 )
 from dataset_utils.file_utils import timeit
 
@@ -31,7 +32,10 @@ from dataset_utils.dataset_builder import (
 )
 from pathlib import Path
 
-from deep_learning.training.reporting import build_training_run_report, init_report_paths
+from deep_learning.training.reporting import (
+    build_training_run_report,
+    init_report_paths,
+)
 
 
 @timeit
@@ -55,6 +59,7 @@ def train_model(
     mapping_class_number: {str: int},
     palette_hexa: {int: str},
     add_note: bool = False,
+    image_patches_paths: [Path] = None,
 ):
     # Add a note in the report to describe the run more specifically
     """
@@ -79,6 +84,7 @@ def train_model(
     :param mapping_class_number: Mapping dictionary between class names and their representative number.
     :param palette_hexa: Mapping dictionary between class number and their corresponding plotting color.
     :param add_note: If set to True, add a note to the report in order to describe the run shortly.
+    :param image_patches_paths: If not None, list of patches to use to make the training on.
     :return: The trained model and its metrics history.
     """
 
@@ -89,9 +95,8 @@ def train_model(
         note = ""
 
     # Init report paths
-    report_paths_dict = init_report_paths(
-        report_root_dir_path=report_root_dir_path
-    )
+    report_paths_dict = init_report_paths(report_root_dir_path=report_root_dir_path)
+    # todo : check repo to see the function to init path + use of json configs
 
     # Define the model
     model = build_small_unet(
@@ -128,7 +133,9 @@ def train_model(
     callbacks = [
         # save model weights regularly
         keras.callbacks.ModelCheckpoint(
-            filepath=report_paths_dict["checkpoint_path"], verbose=1, save_weights_only=True
+            filepath=report_paths_dict["checkpoint_path"],
+            verbose=1,
+            save_weights_only=True,
         ),
         # create a dashboard of the training
         keras.callbacks.TensorBoard(
@@ -142,7 +149,7 @@ def train_model(
             min_delta=early_stopping_loss_min_delta,
             patience=1,
             restore_best_weights=True,
-        )
+        ),
     ]
 
     # Build training/validation dataset
@@ -152,6 +159,7 @@ def train_model(
         batch_size=batch_size,
         patch_coverage_percent_limit=patch_coverage_percent_limit,
         test_proportion=test_proportion,
+        image_patches_paths=image_patches_paths,
     )
 
     # Compute statistics on the dataset
@@ -160,24 +168,6 @@ def train_model(
         n_classes=n_classes,
         mapping_class_number=mapping_class_number,
     ).describe()
-
-    # Summarize the hyperparameters config used for the training
-    # todo : set parameters in this_model_config dict in build_training_run_report function : then delete this model_config from the training function
-    # todo : check live repo to see the function to init path + use of json configs
-    model_config = {
-        "n_classes": n_classes,
-        "patch_size": patch_size,
-        "optimizer": optimizer,
-        "loss_function": loss_function,
-        "metrics": metrics,
-        "n_patches_limit": n_patches_limit,
-        "batch_size": batch_size,
-        "test_proportion": test_proportion,
-        "patch_coverage_percent_limit": patch_coverage_percent_limit,
-        "epochs": epochs,
-        "encoder_kernel_size": encoder_kernel_size,
-        "data_augmentation": data_augmentation,
-    }
 
     # Fit the model
     logger.info("\nStart model training...")
@@ -241,7 +231,20 @@ def train_model(
         report_dir_path=report_dir_path,
         model=model,
         history=history,
-        model_config=model_config,
+        model_config={
+            "n_classes": n_classes,
+            "patch_size": patch_size,
+            "optimizer": optimizer,
+            "loss_function": loss_function,
+            "metrics": metrics,
+            "n_patches_limit": n_patches_limit,
+            "batch_size": batch_size,
+            "test_proportion": test_proportion,
+            "patch_coverage_percent_limit": patch_coverage_percent_limit,
+            "epochs": epochs,
+            "encoder_kernel_size": encoder_kernel_size,
+            "data_augmentation": data_augmentation,
+        },  # summarize the hyperparameters config used for the training
         patches_composition_stats=patches_composition_stats,
         palette_hexa=palette_hexa,
         note=note,
@@ -249,6 +252,7 @@ def train_model(
 
     # return model, report_dir_path, metrics_values
     return report_dir_path
+
 
 # --------
 # DEBUG

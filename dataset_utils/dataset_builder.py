@@ -6,12 +6,13 @@ from loguru import logger
 from tqdm import tqdm
 
 from dataset_utils.file_utils import timeit
-from dataset_utils.image_utils import decode_image
+from dataset_utils.image_utils import decode_image, get_image_patches_paths_with_limit
 from dataset_utils.masks_encoder import one_hot_encode_image_patch_masks
 from dataset_utils.patches_generator import extract_patches
-from dataset_utils.patches_sorter import get_patches_above_coverage_percent_limit
+from dataset_utils.patches_sorter import get_patch_coverage
 
 
+# deprecated
 @timeit
 def get_train_and_test_dataset(
     n_patches_limit: int,
@@ -46,10 +47,12 @@ def get_train_and_test_dataset(
     ) >= 1, f"Size of training dataset is 0. Increase the n_patches_limit parameter or decrease the batch_size."
 
     # Get the paths of the valid patches for training
-    image_patches_paths = get_patches_above_coverage_percent_limit(
-        coverage_percent_limit=patch_coverage_percent_limit,
-        patches_dir=patches_dir_path,
+    image_patches_paths = get_image_patches_paths(
+        patches_dir_path=patches_dir_path,
+        patch_coverage_percent_limit=patch_coverage_percent_limit,
         n_patches_limit=n_patches_limit,
+        batch_size=batch_size,
+        test_proportion=test_proportion
     )
     if n_patches_limit < len(image_patches_paths):
         logger.info(
@@ -83,7 +86,6 @@ def get_train_and_test_dataset(
     return train_dataset, test_dataset
 
 
-# todo : don't hardcode the batch_size to 1
 def build_predictions_dataset(
     target_image_tensor: tf.Tensor, patch_size: int, patch_overlap: int
 ) -> (tf.data.Dataset, tf.data.Dataset):
@@ -102,7 +104,7 @@ def build_predictions_dataset(
         patch_overlap=patch_overlap,
     )
     prediction_dataset = tf.data.Dataset.from_tensor_slices(main_patches_tensors_list)
-    prediction_dataset = prediction_dataset.batch(batch_size=1, drop_remainder=True)
+    prediction_dataset = prediction_dataset.batch(batch_size=1, drop_remainder=True)  # todo : don't hardcode the batch_size to 1
 
     right_side_prediction_dataset = tf.data.Dataset.from_tensor_slices(right_side_patches_tensors_list)
     right_side_prediction_dataset = right_side_prediction_dataset.batch(batch_size=1, drop_remainder=True)
@@ -117,6 +119,7 @@ def build_predictions_dataset(
     return prediction_dataset, right_side_prediction_dataset, down_side_prediction_dataset
 
 
+# deprecated
 def get_dataset_iterator(dataset: tf.data.Dataset) -> tf.data.Iterator:
     iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
     return iterator
@@ -128,6 +131,7 @@ def get_image_patches_paths(
     batch_size: int,
     patch_coverage_percent_limit: int,
     test_proportion: float,
+    image_patches_paths: [Path] = None,
 ) -> [Path]:
     """
     Get images patches paths on which the model will train on.
@@ -138,6 +142,7 @@ def get_image_patches_paths(
     :param batch_size: Size of the batches.
     :param patch_coverage_percent_limit: Int, minimum coverage percent of a patch labels on this patch.
     :param test_proportion: Float, used to set the proportion of the test dataset.
+    :param image_patches_paths: If not None, list of patches to use to make the training on.
     :return: A list of paths of images to train on.
     """
     assert (
@@ -148,15 +153,26 @@ def get_image_patches_paths(
         1 - test_proportion
     ) >= 1, f"Size of training dataset is 0. Increase the n_patches_limit parameter or decrease the batch_size."
 
-    # Get the paths of the valid patches for training
     logger.info("\nGet the paths of the valid patches for training...")
-    image_patches_paths = get_patches_above_coverage_percent_limit(
-        coverage_percent_limit=patch_coverage_percent_limit,
-        patches_dir=patches_dir_path,
-        n_patches_limit=n_patches_limit,
-    )
+    patches_under_coverage_percent_limit_list = list()
 
-    return image_patches_paths
+    # if the image patches to train on are not provided, randomly select n_patches_limit patches
+    if image_patches_paths is None:
+        image_patch_paths = get_image_patches_paths_with_limit(
+            patches_dir=patches_dir_path, n_patches_limit=n_patches_limit
+        )
+
+    for image_patch_path in tqdm(
+        image_patch_paths, desc="Selecting patches above the coverage percent limit..."
+    ):
+        coverage_percent = get_patch_coverage(image_patch_path=image_patch_path)
+        if int(float(coverage_percent)) > patch_coverage_percent_limit:
+            patches_under_coverage_percent_limit_list.append(image_patch_path)
+
+    logger.info(
+        f"\n{len(patches_under_coverage_percent_limit_list)}/{len(image_patch_paths)} patches above coverage percent limit selected."
+    )
+    return patches_under_coverage_percent_limit_list
 
 
 def train_dataset_generator(
@@ -339,6 +355,7 @@ def test_dataset_generator(
             yield tf.stack(image_tensors_list), tf.stack(labels_tensors_list)
 
 
+# debug
 def get_test_dataset(
     image_patches_paths: [Path],
     n_classes: int,

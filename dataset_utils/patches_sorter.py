@@ -61,26 +61,6 @@ def save_all_patches_coverage(
     return patches_coverage_dict
 
 
-def get_patches_above_coverage_percent_limit(
-    coverage_percent_limit: int, patches_dir: Path, n_patches_limit: int
-) -> [Path]:
-    patches_under_coverage_percent_limit_list = list()
-    image_patch_paths = get_image_patches_paths_with_limit(
-        patches_dir=patches_dir, n_patches_limit=n_patches_limit
-    )
-    for image_patch_path in tqdm(
-        image_patch_paths, desc="Selecting patches above the coverage percent limit..."
-    ):
-        coverage_percent = get_patch_coverage(image_patch_path=image_patch_path)
-        if int(float(coverage_percent)) > coverage_percent_limit:
-            patches_under_coverage_percent_limit_list.append(image_patch_path)
-
-    logger.info(
-        f"\n{len(patches_under_coverage_percent_limit_list)}/{len(image_patch_paths)} patches above coverage percent limit selected."
-    )
-    return patches_under_coverage_percent_limit_list
-
-
 def is_patch_only_background(image_patch_path: Path, patch_size: int) -> bool:
     """
     Test if the labels of a patch is background only, i.e. a patch_size x patch_size array of zeros.
