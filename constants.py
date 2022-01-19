@@ -143,7 +143,7 @@ LOSS_FUNCTION = "categorical_crossentropy"
 METRICS = [keras.metrics.categorical_accuracy, keras.metrics.MeanIoU(N_CLASSES)]
 DOWNSCALE_FACTORS = (6, 6, 1)
 DATA_AUGMENTATION = False
-EARLY_STOPPING_LOSS_MIN_DELTA = 0.05
+EARLY_STOPPING_LOSS_MIN_DELTA = 0.01
 
 # Physical parameters (in mm)
 

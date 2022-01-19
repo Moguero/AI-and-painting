@@ -145,7 +145,7 @@ def train_model(
         ),
         # stop the training process if the loss stop decreasing considerably
         keras.callbacks.EarlyStopping(
-            monitor=loss_function,
+            monitor="loss",
             min_delta=early_stopping_loss_min_delta,
             patience=1,
             restore_best_weights=True,
@@ -195,8 +195,6 @@ def train_model(
         steps_per_epoch=int(len(image_patches_paths_list) * (1 - test_proportion))
         // batch_size,
         verbose=1,
-        # todo : use multiprocessing
-        # use_multiprocessing=True,
     )
     logger.info("\nEnd of model training.")
 
