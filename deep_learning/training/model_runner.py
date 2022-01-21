@@ -19,6 +19,8 @@ from constants import (
     MAPPING_CLASS_NUMBER,
     PALETTE_HEXA,
     VALIDATION_PROPORTION,
+    EARLY_STOPPING_LOSS_MIN_DELTA,
+    EARLY_STOPPING_ACCURACY_MIN_DELTA,
 )
 from dataset_utils.file_utils import timeit
 
@@ -36,6 +38,7 @@ from deep_learning.training.reporting import (
     build_training_run_report,
     init_report_paths,
 )
+import math
 
 
 @timeit
@@ -55,6 +58,7 @@ def train_model(
     patches_dir_path: Path,
     encoder_kernel_size: int,
     early_stopping_loss_min_delta: int,
+    early_stopping_accuracy_min_delta:int,
     data_augmentation: bool,
     mapping_class_number: {str: int},
     palette_hexa: {int: str},
@@ -65,6 +69,7 @@ def train_model(
     """
     Build the model, compile it, create a dataset iterator, train the model and save the trained model in callbacks.
 
+    :param early_stopping_accuracy_min_delta: Used in keras.callbacks.EarlyStopping.
     :param early_stopping_loss_min_delta: Used in keras.callbacks.EarlyStopping.
     :param n_classes: Number of classes used for the model, background not included.
     :param patch_size: Standard shape of the input images used for the training.
@@ -150,6 +155,13 @@ def train_model(
             patience=1,
             restore_best_weights=True,
         ),
+        # stop the training process if the accuracy stop increasing considerably
+        keras.callbacks.EarlyStopping(
+            monitor=metrics[0],
+            min_delta=early_stopping_accuracy_min_delta,
+            patience=1,
+            restore_best_weights=True,
+        ),
     ]
 
     # Build training/validation dataset
@@ -168,6 +180,18 @@ def train_model(
         n_classes=n_classes,
         mapping_class_number=mapping_class_number,
     ).describe()
+
+    # class_proportions_dict = patches_composition_stats.loc["mean"].to_dict()
+    #
+    # class_weights_dict = {
+    #     mapping_class_number[class_name]: int(1 / class_proportion)
+    #     for class_name, class_proportion in class_proportions_dict.items()
+    # }
+    #
+    # # class_weights_dict = {
+    # #     mapping_class_number[class_name]: int(math.log(1 / class_proportion))
+    # #     for class_name, class_proportion in class_proportions_dict.items()
+    # # }
 
     # Fit the model
     logger.info("\nStart model training...")
@@ -190,6 +214,7 @@ def train_model(
         #     test_proportion=test_proportion,
         #     data_augmentation=data_augmentation,
         # ),
+        # class_weight=class_weights_dict,
         epochs=epochs,
         callbacks=callbacks,
         steps_per_epoch=int(len(image_patches_paths_list) * (1 - test_proportion))
@@ -249,14 +274,10 @@ def train_model(
         note=note,
     )
 
-    # return model, report_dir_path, metrics_values
     return report_dir_path
 
 
 # --------
 # DEBUG
 
-# model, history = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, VALIDATION_PROPORTION, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
-# model, history, metrics = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, VALIDATION_PROPORTION, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
-# train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, VALIDATION_PROPORTION, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
-# train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, 100, 16, VALIDATION_PROPORTION, TEST_PROPORTION, 70, 3, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)
+# report_dir_path = train_model(N_CLASSES, PATCH_SIZE, OPTIMIZER, LOSS_FUNCTION, METRICS, REPORTS_ROOT_DIR_PATH, N_PATCHES_LIMIT, BATCH_SIZE, VALIDATION_PROPORTION, TEST_PROPORTION, PATCH_COVERAGE_PERCENT_LIMIT, N_EPOCHS, PATCHES_DIR_PATH, ENCODER_KERNEL_SIZE, EARLY_STOPPING_LOSS_MIN_DELTA, EARLY_STOPPING_ACCURACY_MIN_DELTA, DATA_AUGMENTATION, MAPPING_CLASS_NUMBER, PALETTE_HEXA)

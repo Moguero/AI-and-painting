@@ -136,14 +136,13 @@ PADDING_TYPE = "same"
 # todo : test learning rate 1e-3 (default adam value), 1e-2 and 1e-5
 LEARNING_RATE = 1e-4
 OPTIMIZER = Adam(lr=LEARNING_RATE)  # maybe put tf.Variable instead of the float to shut the warnings
-LOSS_FUNCTION = "categorical_crossentropy"
-# LOSS_FUNCTION = keras.losses.categorical_crossentropy
+LOSS_FUNCTION = keras.losses.categorical_crossentropy
 # METRICS = ["accuracy", keras.metrics.MeanIoU]
-# METRICS = [keras.metrics.MeanIoU(N_CLASSES)]
 METRICS = [keras.metrics.categorical_accuracy, keras.metrics.MeanIoU(N_CLASSES)]
 DOWNSCALE_FACTORS = (6, 6, 1)
 DATA_AUGMENTATION = False
-EARLY_STOPPING_LOSS_MIN_DELTA = 0.01
+EARLY_STOPPING_LOSS_MIN_DELTA = 0.02
+EARLY_STOPPING_ACCURACY_MIN_DELTA = 1
 
 # Physical parameters (in mm)
 

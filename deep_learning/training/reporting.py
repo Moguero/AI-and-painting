@@ -88,7 +88,7 @@ def build_training_run_report(
             report_subdirs_paths_dict["data_report"] / "patches_paths.txt"
     )
     with open(patches_paths_path, "w") as file:
-        file.write("[")
+        file.write("[\n")
         for patch_path in image_patches_paths_list:
             file.write(f"{patch_path},\n")
         file.write("]")
