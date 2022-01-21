@@ -47,7 +47,7 @@ def main(train_bool: bool, predict_bool: bool, light_report_bool: bool) -> None:
             patches_dir_path=PATCHES_DIR_PATH,
             encoder_kernel_size=ENCODER_KERNEL_SIZE,
             early_stopping_loss_min_delta=EARLY_STOPPING_LOSS_MIN_DELTA,
-            early_stopping_accuracy_accuracy_delta=EARLY_STOPPING_ACCURACY_MIN_DELTA,
+            early_stopping_accuracy_min_delta=EARLY_STOPPING_ACCURACY_MIN_DELTA,
             data_augmentation=DATA_AUGMENTATION,
             mapping_class_number=MAPPING_CLASS_NUMBER,
             palette_hexa=PALETTE_HEXA,
