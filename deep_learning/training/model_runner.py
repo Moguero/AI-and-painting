@@ -46,8 +46,8 @@ def train_model(
     n_classes: int,
     patch_size: int,
     optimizer: keras.optimizers,
-    loss_function: str,
-    metrics: [str],
+    loss_function: [keras.losses.Loss],
+    metrics: [keras.metrics.Metric],
     report_root_dir_path: Path,
     n_patches_limit: int,
     batch_size: int,
@@ -157,7 +157,7 @@ def train_model(
         ),
         # stop the training process if the accuracy stop increasing considerably
         keras.callbacks.EarlyStopping(
-            monitor=metrics[0],
+            monitor=metrics[0].__name__,
             min_delta=early_stopping_accuracy_min_delta,
             patience=1,
             restore_best_weights=True,

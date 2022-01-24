@@ -29,7 +29,7 @@ from deep_learning.training.model_runner import train_model
 from deep_learning.training.reporting import build_predict_run_report
 
 
-def main(train_bool: bool, predict_bool: bool, light_report_bool: bool) -> None:
+def main(train_bool: bool, predict_bool: bool, light_report_bool: bool, add_note: bool) -> None:
     if train_bool:
         report_dir_path = train_model(
             n_classes=N_CLASSES,
@@ -51,6 +51,7 @@ def main(train_bool: bool, predict_bool: bool, light_report_bool: bool) -> None:
             data_augmentation=DATA_AUGMENTATION,
             mapping_class_number=MAPPING_CLASS_NUMBER,
             palette_hexa=PALETTE_HEXA,
+            add_note=add_note,
         )
 
         if predict_bool:
@@ -104,7 +105,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--light",
-        help="Build a light report with image/predictions comparisons only.",
+        help="Build a light report with image/predictions comparisons only. Can only be used with --predict.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--note",
+        help="Add a note to the training report. Can only be used with --train.",
         action="store_true",
     )
     args = parser.parse_args()
@@ -114,10 +120,21 @@ if __name__ == "__main__":
             "At least one of --train or --predict parameters should be given."
         )
 
+    if not args.predict and args.light:
+        raise ValueError(
+            "--light parameter can only be used with --predict parameter."
+        )
+
+    if not args.train and args.note:
+        raise ValueError(
+            "--note parameter can only be used with --train parameter"
+        )
+
     main(
         train_bool=args.train,
         predict_bool=args.predict,
         light_report_bool=args.light,
+        add_note=args.note,
     )
 
 
