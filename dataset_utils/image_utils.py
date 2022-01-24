@@ -151,10 +151,10 @@ def get_dir_paths(dir_path: Path) -> [Path]:
     return list(dir_path.iterdir())
 
 
-def get_images_paths(images_dir: Path) -> [Path]:
+def get_images_paths(images_dir_path: Path) -> [Path]:
     return [
         image_path
-        for image_dir_path in images_dir.iterdir()
+        for image_dir_path in images_dir_path.iterdir()
         for image_path in image_dir_path.iterdir()
     ]
 

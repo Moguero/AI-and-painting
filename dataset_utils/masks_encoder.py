@@ -17,17 +17,24 @@ from dataset_utils.image_utils import decode_image
 
 def stack_image_patch_masks(
     image_patch_path: Path,
-    save_stats: bool = False,
-    save_stats_dir_path: Path = None,
+    mapping_class_number: {str: int},
 ) -> tf.Tensor:
-    image_patch_masks_paths = get_image_patch_masks_paths(image_patch_path)
-    shape = decode_image(image_patch_masks_paths[0])[:, :, 0].shape
+    assert "background" in list(
+        mapping_class_number.keys()
+    ), f"'background' class is not specified in the class/number mapping : {mapping_class_number}"
+
+    image_patch_masks_paths = get_image_patch_masks_paths(
+        image_patch_path=image_patch_path
+    )
+    shape = decode_image(file_path=image_patch_masks_paths[0])[:, :, 0].shape
     stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
 
     problematic_indices_list = list()
     zeros_tensor = tf.zeros(shape=shape, dtype=tf.int32)
     for patch_mask_path in image_patch_masks_paths:
-        class_categorical_tensor = turn_mask_into_categorical_tensor(patch_mask_path)
+        class_categorical_tensor = turn_mask_into_categorical_tensor(
+            mask_path=patch_mask_path
+        )
 
         # spotting the problematic pixels indices
         background_mask_class_categorical_tensor = tf.logical_not(
@@ -53,14 +60,9 @@ def stack_image_patch_masks(
 
     # setting the irregular pixels to background class
     if problematic_indices_list:
-        # logger.info(
-        #     f"\nMasks are overlapping."
-        #     f"\nNumber of problematic pixels : {len(problematic_indices_list)}"
-        #     f"\nProblematic pixels indices : {problematic_indices_list}"
-        # )
         categorical_array = stacked_tensor.numpy()
         for pixels_coordinates in problematic_indices_list:
-            categorical_array[tuple(pixels_coordinates)] = MAPPING_CLASS_NUMBER[
+            categorical_array[tuple(pixels_coordinates)] = mapping_class_number[
                 "background"
             ]
         stacked_tensor = tf.constant(categorical_array, dtype=tf.int32)
@@ -69,37 +71,22 @@ def stack_image_patch_masks(
     for pixels_coordinates in problematic_indices_list:
         assert (
             stacked_tensor[tuple(pixels_coordinates)].numpy()
-            == MAPPING_CLASS_NUMBER["background"]
-        )
-
-    # save problematic pixels coordinates
-    if save_stats:
-        assert (
-            save_stats_dir_path is not None
-        ), "Please specify a path to save the stats."
-        sub_dir = (
-            save_stats_dir_path
-            / "patches"
-            / image_patch_path.parts[-4]
-            / image_patch_path.parts[-3]
-        )
-        if not Path(sub_dir).exists():
-            sub_dir.mkdir(parents=True)
-            logger.info(f"\nSub folder {sub_dir} was created")
-        save_list_to_csv(
-            problematic_indices_list,
-            sub_dir / f"stats_image_{image_patch_path.parts[-4]}_patch_{image_patch_path.parts[-3]}.csv",
+            == mapping_class_number["background"]
         )
 
     return stacked_tensor
 
 
 def one_hot_encode_image_patch_masks(
-    image_patch_path: Path, n_classes: int
+    image_patch_path: Path,
+    n_classes: int,
+    mapping_class_number: {str: int},
 ) -> tf.Tensor:
-    categorical_mask_tensor = stack_image_patch_masks(image_patch_path)
+    categorical_mask_tensor = stack_image_patch_masks(
+        image_patch_path=image_patch_path, mapping_class_number=mapping_class_number
+    )
     one_hot_encoded_tensor = tf.one_hot(
-        categorical_mask_tensor, n_classes + 1, dtype=tf.int32
+        indices=categorical_mask_tensor, depth=n_classes + 1, dtype=tf.int32
     )
     return one_hot_encoded_tensor
 
@@ -142,14 +129,18 @@ def stack_image_masks(
     :param masks_dir_path: The masks source directory path.
     :return: A 2D stacked tensor.
     """
-    image_masks_paths = get_image_masks_paths(image_path=image_path, masks_dir_path=masks_dir_path)
+    image_masks_paths = get_image_masks_paths(
+        image_path=image_path, masks_dir_path=masks_dir_path
+    )
     shape = decode_image(image_masks_paths[0])[:, :, 0].shape
     stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
 
     problematic_indices_list = list()
     zeros_tensor = tf.zeros(shape=shape, dtype=tf.int32)
     for mask_path in image_masks_paths:
-        class_categorical_tensor = turn_mask_into_categorical_tensor(mask_path=mask_path)
+        class_categorical_tensor = turn_mask_into_categorical_tensor(
+            mask_path=mask_path
+        )
 
         # spotting the problematic pixels indices
         background_mask_class_categorical_tensor = tf.logical_not(
@@ -192,71 +183,6 @@ def stack_image_masks(
     return stacked_tensor
 
 
-# todo : delete
-def one_hot_encode_image_masks(
-    image_path: Path, categorical_masks_dir: Path, n_classes: int
-) -> tf.Tensor:
-    categorical_mask_tensor = decode_image(get_categorical_mask_path(image_path, categorical_masks_dir))[:, :, 0]
-    one_hot_encoded_tensor = tf.one_hot(
-        categorical_mask_tensor, n_classes, dtype=tf.int32
-    )
-    return one_hot_encoded_tensor
-
-
-# todo : delete
-def save_categorical_mask(
-    image_path: Path,
-    masks_dir: Path,
-    output_filepath: Path,
-    all_patch_masks_overlap_indices_path: Path,
-) -> None:
-    """Encode a categorical tensor into a png."""
-    stacked_image_tensor = tf.expand_dims(
-        tf.cast(
-            stack_image_masks(
-                image_path, masks_dir, all_patch_masks_overlap_indices_path
-            ),
-            tf.uint8,
-        ),
-        -1,
-    )
-    save_tensor_to_jpg(stacked_image_tensor, output_filepath)
-    logger.info(f"\nCategorical mask {output_filepath} was saved successfully.")
-
-
-# todo: delete
-def save_all_categorical_masks(
-    images_dir: Path,
-    masks_dir: Path,
-    categorical_masks_dir: Path,
-    all_patch_masks_overlap_indices_path: Path,
-) -> None:
-    image_dir_paths = get_images_paths(images_dir)
-    for image_path in image_dir_paths:
-        image_name = get_image_name_without_extension(image_path)
-        output_sub_dir = categorical_masks_dir / image_name
-        if not output_sub_dir.exists():
-            output_sub_dir.mkdir()
-            logger.info(f"\nSub folder {output_sub_dir} was created.")
-        output_path = output_sub_dir / ("categorical_mask__" + image_name + ".jpg")
-        save_categorical_mask(
-            image_path, masks_dir, output_path, all_patch_masks_overlap_indices_path
-        )
-
-
-# todo: delete
-def get_categorical_mask_path(image_path: Path, categorical_masks_dir: Path):
-    image_name = get_image_name_without_extension(image_path)
-    categorical_masks_subdir = categorical_masks_dir / image_name
-    assert (
-        categorical_masks_subdir.exists()
-    ), f"Subdir {categorical_masks_subdir} does not exist."
-    assert (
-        len(list(categorical_masks_subdir.iterdir())) == 1
-    ), f"Subdir {categorical_masks_subdir} contains more than one mask."
-    return list(categorical_masks_subdir.iterdir())[0]
-
-
 # debug
 def f():
     zeros_tensor = tf.zeros(shape=(3, 3), dtype=tf.int32)
@@ -274,15 +200,3 @@ def f():
         f"\nNumber of problematic pixels : {len(problematic_indices)}"
         f"\nProblematic pixels indices : {problematic_indices}"
     )
-
-
-# debug
-def g(SAVE_STATS_DIR_PATH=None):
-    problematic_patches = list()
-    for image_dir_path in tqdm(SAVE_STATS_DIR_PATH.iterdir(), desc="Iterating through images..."):
-        for patch_dir_path in image_dir_path.iterdir():
-            for csv_file_path in patch_dir_path.iterdir(): # loop of size 1
-                problematic_indices = load_saved_list(csv_file_path)
-                if problematic_indices:
-                    problematic_patches.append(len(problematic_indices))
-    return sum(problematic_patches)

@@ -83,12 +83,12 @@ def save_image_patches(
 
 def save_image_labels_patches(
     image_path: Path,
-    masks_dir: Path,
+    masks_dir_path: Path,
     patch_size,
     output_dir_path: Path,
     padding: str = "VALID",
 ) -> None:
-    image_masks_paths = get_image_masks_paths(image_path, masks_dir)
+    image_masks_paths = get_image_masks_paths(image_path, masks_dir_path)
     for image_mask_path in image_masks_paths:
         image_labels_patches = extract_image_patches(
             image_path=image_mask_path,
@@ -118,20 +118,29 @@ def save_image_labels_patches(
 
 def save_image_and_labels_patches(
     image_path: Path,
-    masks_dir: Path,
+    masks_dir_path: Path,
     image_patches_dir_path: Path,
     patch_size: 256,
     padding: str = "VALID",
 ):
-    save_image_patches(image_path, patch_size, image_patches_dir_path, padding)
+    save_image_patches(
+        image_path=image_path,
+        patch_size=patch_size,
+        output_dir_path=image_patches_dir_path,
+        padding=padding,
+    )
     save_image_labels_patches(
-        image_path, masks_dir, patch_size, image_patches_dir_path, padding
+        image_path=image_path,
+        masks_dir_path=masks_dir_path,
+        patch_size=patch_size,
+        output_dir_path=image_patches_dir_path,
+        padding=padding,
     )
 
 
 def save_all_images_and_labels_patches(
-    images_dir: Path,
-    masks_dir: Path,
+    images_dir_path: Path,
+    masks_dir_path: Path,
     image_patches_dir_path: Path,
     patch_size: int,
     padding: str = "VALID",
@@ -143,10 +152,14 @@ def save_all_images_and_labels_patches(
     if not image_patches_subdir_path.exists():
         image_patches_subdir_path.mkdir()
 
-    image_dir_paths = get_images_paths(images_dir)
+    image_dir_paths = get_images_paths(images_dir_path=images_dir_path)
     for image_path in tqdm(image_dir_paths):
         save_image_and_labels_patches(
-            image_path, masks_dir, image_patches_subdir_path, patch_size, padding
+            image_path=image_path,
+            masks_dir_path=masks_dir_path,
+            image_patches_dir_path=image_patches_subdir_path,
+            patch_size=patch_size,
+            padding=padding,
         )
     logger.info(
         f"\nImages and labels patches saving finished in {(time.time() - start_time)/60:.1f} minutes.\n"

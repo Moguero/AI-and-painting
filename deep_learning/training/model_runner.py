@@ -1,3 +1,4 @@
+import pandas as pd
 from loguru import logger
 from tensorflow import keras
 
@@ -58,7 +59,7 @@ def train_model(
     patches_dir_path: Path,
     encoder_kernel_size: int,
     early_stopping_loss_min_delta: int,
-    early_stopping_accuracy_min_delta:int,
+    early_stopping_accuracy_min_delta: int,
     data_augmentation: bool,
     mapping_class_number: {str: int},
     palette_hexa: {int: str},
@@ -95,7 +96,9 @@ def train_model(
 
     # Add custom note to the report
     if add_note:
-        note = input("Add a note in the report to describe the run more specifically :")
+        note = input(
+            "\nAdd a note in the report to describe the run more specifically :\n"
+        )
     else:
         note = ""
 
@@ -132,7 +135,12 @@ def train_model(
     # metrics = [keras.metrics.categorical_accuracy, MyMeanIOU(n_classes)]
 
     # Compile the model
-    model.compile(optimizer=optimizer, loss=loss_function, metrics=metrics)
+    model.compile(
+        optimizer=optimizer,
+        loss=loss_function,
+        metrics=metrics,
+        sample_weight_mode="temporal",
+    )
 
     # Init the callbacks (perform actions at various stages on training)
     callbacks = [
@@ -172,6 +180,7 @@ def train_model(
         patch_coverage_percent_limit=patch_coverage_percent_limit,
         test_proportion=test_proportion,
         image_patches_paths=image_patches_paths,
+        mapping_class_number=mapping_class_number,
     )
 
     # Compute statistics on the dataset
@@ -181,21 +190,13 @@ def train_model(
         mapping_class_number=mapping_class_number,
     ).describe()
 
-    # class_proportions_dict = patches_composition_stats.loc["mean"].to_dict()
-    #
-    # class_weights_dict = {
-    #     mapping_class_number[class_name]: int(1 / class_proportion)
-    #     for class_name, class_proportion in class_proportions_dict.items()
-    # }
-    #
-    # # class_weights_dict = {
-    # #     mapping_class_number[class_name]: int(math.log(1 / class_proportion))
-    # #     for class_name, class_proportion in class_proportions_dict.items()
-    # # }
+    class_weights_dict = get_class_weights_dict(
+        patches_composition_stats=patches_composition_stats,
+        mapping_class_number=mapping_class_number,
+    )
 
     # Fit the model
     logger.info("\nStart model training...")
-    # history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks)
     # Warning : the steps_per_epoch param must be not null in order to end the infinite loop of the generator !
     history = model.fit(
         x=train_dataset_generator(
@@ -204,6 +205,8 @@ def train_model(
             batch_size=batch_size,
             validation_proportion=validation_proportion,
             test_proportion=test_proportion,
+            class_weights_dict=class_weights_dict,
+            mapping_class_number=mapping_class_number,
             data_augmentation=data_augmentation,
         ),
         # validation_data=validation_dataset_generator(
@@ -275,6 +278,27 @@ def train_model(
     )
 
     return report_dir_path
+
+
+def get_class_weights_dict(
+    patches_composition_stats: pd.DataFrame,
+    mapping_class_number: {str: int},
+):
+    class_proportions_dict = patches_composition_stats.loc["mean"].to_dict()
+
+    class_weights_dict = dict()
+    for class_name, class_proportion in class_proportions_dict.items():
+        if class_proportion == 0:  # class not in the dataset
+            weight = 1
+        elif mapping_class_number[class_name] == 0:  # class background
+            weight = 1
+        else:  # non background class present in the dataset
+            weight = int(1 / class_proportion)
+            # int(math.log(1 / class_proportion))
+
+        class_weights_dict[mapping_class_number[class_name]] = weight
+
+    return class_weights_dict
 
 
 # --------

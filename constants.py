@@ -7,6 +7,7 @@ from dataset_utils.image_utils import turn_hexadecimal_color_into_nomalized_rgb_
     turn_hexadecimal_color_into_rgb_list, decode_image
 
 local_machine = False
+# local_machine = True
 
 if local_machine:
     DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")

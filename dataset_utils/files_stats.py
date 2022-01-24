@@ -28,7 +28,6 @@ from dataset_utils.image_utils import (
 )
 from dataset_utils.masks_encoder import (
     stack_image_masks,
-    one_hot_encode_image_patch_masks,
     stack_image_patch_masks,
 )
 
@@ -309,11 +308,12 @@ def count_all_irregular_pixels(
 def get_patch_labels_composition(
     patch_path: Path,
     n_classes: int,
+    mapping_class_number: {str: int}
 ) -> {int: float}:
     # initialize patch composition
     patch_composition = {class_number: 0.0 for class_number in range(n_classes + 1)}
 
-    labels_tensor = stack_image_patch_masks(image_patch_path=patch_path)
+    labels_tensor = stack_image_patch_masks(image_patch_path=patch_path, mapping_class_number=mapping_class_number)
     unique_with_count_tensor = tf.unique_with_counts(tf.reshape(labels_tensor, [-1]))
 
     values_array = unique_with_count_tensor.y.numpy()
@@ -343,6 +343,7 @@ def get_patches_labels_composition(
         patch_composition = get_patch_labels_composition(
             patch_path=patch_path,
             n_classes=n_classes,
+            mapping_class_number=mapping_class_number,
         )
         patch_composition_list.append([proportion for proportion in patch_composition.values()])
     patch_composition_dataframe = pd.DataFrame(patch_composition_list, columns=mapping_class_number.keys())
