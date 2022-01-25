@@ -22,7 +22,7 @@ from dataset_utils.image_utils import (
     get_image_tensor_shape,
 )
 from dataset_utils.plotting_tools import (
-    save_patch_composition_mean_plot,
+    save_patch_composition_plot,
     map_categorical_mask_to_3_color_channels_tensor,
     turn_2d_tensor_to_3d_tensor,
 )
@@ -42,6 +42,8 @@ def build_training_run_report(
     patches_composition_stats: pd.DataFrame,
     palette_hexa: {int: str},
     image_patches_paths_list: [Path],
+    class_weights_dict: {int: int},
+    mapping_class_number: {str: int},
     note: str,
 ) -> None:
     report_subdirs_paths_dict = {
@@ -62,31 +64,63 @@ def build_training_run_report(
 
     # 1. data report
 
-    # Plot patches labels composition
+    # Plot original patches labels composition
     patches_composition_mean_stats_dict = patches_composition_stats.loc[
         "mean"
     ].to_dict()
     patch_composition_mean_plot_output_path = (
         report_subdirs_paths_dict["data_report"] / "patches_composition.png"
     )
-    save_patch_composition_mean_plot(
+    save_patch_composition_plot(
         patch_composition_stats_dict=patches_composition_mean_stats_dict,
         output_path=patch_composition_mean_plot_output_path,
         palette_hexa=palette_hexa,
     )
 
-    # Save the figures with which the plot was made
-    patch_composition_mean_output_path = (
+    # Save the figures with which the original composition plot was made
+    patch_original_composition_output_path = (
         report_subdirs_paths_dict["data_report"] / "patches_composition.txt"
     )
-    with open(patch_composition_mean_output_path, "w") as file:
+    with open(patch_original_composition_output_path, "w") as file:
         for key, value in patches_composition_mean_stats_dict.items():
             file.write(f"{key}: {value},\n")
 
-    # Save patches used for training
-    patches_paths_path = (
-            report_subdirs_paths_dict["data_report"] / "patches_paths.txt"
+    # Plot rebalanced patches labels composition
+    patches_composition_mean_stats_dict = patches_composition_stats.loc[
+        "mean"
+    ].to_dict()
+    patches_rebalanced_composition_stats_dict = dict()
+    classes_weights_sum = 0
+    for class_name in patches_composition_mean_stats_dict.keys():
+        classes_weights_sum += (
+            patches_rebalanced_composition_stats_dict[class_name]
+            * class_weights_dict[mapping_class_number[class_name]]
+        )
+
+    for class_name in patches_composition_mean_stats_dict.keys():
+        patches_rebalanced_composition_stats_dict[class_name] = (
+            patches_composition_mean_stats_dict[class_name]
+            * class_weights_dict[mapping_class_number[class_name]]
+        ) / classes_weights_sum
+    patch_composition_mean_plot_output_path = (
+        report_subdirs_paths_dict["data_report"] / "rebalanced_patches_composition.png"
     )
+    save_patch_composition_plot(
+        patch_composition_stats_dict=patches_rebalanced_composition_stats_dict,
+        output_path=patch_composition_mean_plot_output_path,
+        palette_hexa=palette_hexa,
+    )
+
+    # Save the figures with which the rebalanced composition plot was made
+    patch_rebalanced_composition_output_path = (
+        report_subdirs_paths_dict["data_report"] / "rebalanced_patches_composition.txt"
+    )
+    with open(patch_rebalanced_composition_output_path, "w") as file:
+        for key, value in patches_rebalanced_composition_stats_dict.items():
+            file.write(f"{key}: {value},\n")
+
+    # Save patches used for training
+    patches_paths_path = report_subdirs_paths_dict["data_report"] / "patches_paths.txt"
     with open(patches_paths_path, "w") as file:
         file.write("[\n")
         for patch_path in image_patches_paths_list:
@@ -129,13 +163,12 @@ def build_training_run_report(
             file.write(f"{str(key)}: {str(value)} \n")
 
 
-# todo : rethink the use of this function : is it really useful ?
 def init_report_paths(report_root_dir_path: Path) -> {str: Path}:
     _report_dir_path = report_root_dir_path / f"report_{get_formatted_time()}"
     _data_report = _report_dir_path / "1_data_report"
     _model_report = _report_dir_path / "2_model_report"
     _predictions_report = _report_dir_path / "3_predictions_report"
-    _checkpoint_path = _model_report / "model_checkpoint"
+    _checkpoint_path = _model_report / "model_checkpoint/model_checkpoint"
 
     report_paths_dict = dict()
     report_paths_dict["report_dir_path"] = _report_dir_path

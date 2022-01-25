@@ -29,7 +29,13 @@ from deep_learning.training.model_runner import train_model
 from deep_learning.training.reporting import build_predict_run_report
 
 
-def main(train_bool: bool, predict_bool: bool, light_report_bool: bool, add_note: bool) -> None:
+def main(
+    train_bool: bool,
+    predict_bool: bool,
+    light_report_bool: bool,
+    add_note: bool,
+    n_patches_limit: int,
+) -> None:
     if train_bool:
         report_dir_path = train_model(
             n_classes=N_CLASSES,
@@ -38,7 +44,7 @@ def main(train_bool: bool, predict_bool: bool, light_report_bool: bool, add_note
             loss_function=LOSS_FUNCTION,
             metrics=METRICS,
             report_root_dir_path=REPORTS_ROOT_DIR_PATH,
-            n_patches_limit=N_PATCHES_LIMIT,
+            n_patches_limit=n_patches_limit,
             batch_size=BATCH_SIZE,
             validation_proportion=VALIDATION_PROPORTION,
             test_proportion=TEST_PROPORTION,
@@ -94,24 +100,37 @@ def main(train_bool: bool, predict_bool: bool, light_report_bool: bool, add_note
 
 if __name__ == "__main__":
     # Parser setup
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(allow_abbrev=True)
     parser.add_argument(
-        "--train", help="Whether to create and train a new model.", action="store_true"
+        "--train",
+        "-t",
+        help="Whether to create and train a new model.",
+        action="store_true",
     )
     parser.add_argument(
         "--predict",
+        "-pred",
         help="Whether to infer predictions on test images. Will ask the user a model path to use.",
         action="store_true",
     )
     parser.add_argument(
         "--light",
+        "-l",
         help="Build a light report with image/predictions comparisons only. Can only be used with --predict.",
         action="store_true",
     )
     parser.add_argument(
         "--note",
+        "-n",
         help="Add a note to the training report. Can only be used with --train.",
         action="store_true",
+    )
+    parser.add_argument(
+        "--patches-limit",
+        "-pl",
+        default=N_PATCHES_LIMIT,
+        type=int,
+        help="Maximum number of patches to use for training. Can only be used with --train.",
     )
     args = parser.parse_args()
 
@@ -121,20 +140,17 @@ if __name__ == "__main__":
         )
 
     if not args.predict and args.light:
-        raise ValueError(
-            "--light parameter can only be used with --predict parameter."
-        )
+        raise ValueError("--light parameter can only be used with --predict parameter.")
 
     if not args.train and args.note:
-        raise ValueError(
-            "--note parameter can only be used with --train parameter"
-        )
+        raise ValueError("--note parameter can only be used with --train parameter")
 
     main(
         train_bool=args.train,
         predict_bool=args.predict,
         light_report_bool=args.light,
         add_note=args.note,
+        n_patches_limit=args.patches_limit,
     )
 
 

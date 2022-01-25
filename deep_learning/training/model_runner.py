@@ -188,8 +188,9 @@ def train_model(
         image_patches_paths_list=image_patches_paths_list,
         n_classes=n_classes,
         mapping_class_number=mapping_class_number,
-    ).describe()
+    )
 
+    # todo : normaliser les weights ?
     class_weights_dict = get_class_weights_dict(
         patches_composition_stats=patches_composition_stats,
         mapping_class_number=mapping_class_number,
@@ -274,6 +275,8 @@ def train_model(
         patches_composition_stats=patches_composition_stats,
         palette_hexa=palette_hexa,
         image_patches_paths_list=image_patches_paths_list,
+        class_weights_dict=class_weights_dict,
+        mapping_class_number=mapping_class_number,
         note=note,
     )
 
@@ -293,8 +296,8 @@ def get_class_weights_dict(
         elif mapping_class_number[class_name] == 0:  # class background
             weight = 1
         else:  # non background class present in the dataset
-            weight = int(1 / class_proportion)
-            # int(math.log(1 / class_proportion))
+            # weight = int(1 / class_proportion)
+            weight = int(math.log(1 / class_proportion))
 
         class_weights_dict[mapping_class_number[class_name]] = weight
 

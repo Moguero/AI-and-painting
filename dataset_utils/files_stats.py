@@ -310,6 +310,7 @@ def get_patch_labels_composition(
     n_classes: int,
     mapping_class_number: {str: int}
 ) -> {int: float}:
+    """Compute the proportion (in %) of each class in the patch."""
     # initialize patch composition
     patch_composition = {class_number: 0.0 for class_number in range(n_classes + 1)}
 
@@ -326,6 +327,8 @@ def get_patch_labels_composition(
     )
     for class_number in patch_class_proportions.keys():
         patch_composition[class_number] = patch_class_proportions[class_number]
+
+    assert sum(patch_composition.values()) == 1
 
     return patch_composition
 
@@ -346,8 +349,12 @@ def get_patches_labels_composition(
             mapping_class_number=mapping_class_number,
         )
         patch_composition_list.append([proportion for proportion in patch_composition.values()])
-    patch_composition_dataframe = pd.DataFrame(patch_composition_list, columns=mapping_class_number.keys())
-    return patch_composition_dataframe
+    patches_composition_dataframe = pd.DataFrame(patch_composition_list, columns=mapping_class_number.keys())
+    patches_composition_stats = patches_composition_dataframe.describe()
+
+    assert int(sum(list(patches_composition_stats.loc["mean"]))) == 1
+
+    return patches_composition_stats
 
 
 # labels_patches_composition = get_patch_labels_composition(IMAGE_PATCH_PATH, N_CLASSES)

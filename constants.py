@@ -13,10 +13,11 @@ if local_machine:
     DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
     REPORT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17"
+    CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17/2_model_report"
     IMAGES_DIR_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\images\sorted_images\kept\all")
     TEST_IMAGES_DIR_PATH = DATA_DIR_ROOT / "test_images"
     DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images" / "max"
-    TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246.jpg"
+    TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246.JPG"
     N_EPOCHS = 2
     N_PATCHES_LIMIT = 50
 else:  # aws instance
@@ -134,7 +135,7 @@ TARGET_HEIGHT = 2176
 TARGET_WIDTH = 3264
 PADDING_TYPE = "same"
 # OPTIMIZER = "rmsprop"
-# todo : test learning rate 1e-3 (default adam value), 1e-2 and 1e-5
+# todo : test learning rate 1e-5
 LEARNING_RATE = 1e-4
 OPTIMIZER = Adam(lr=LEARNING_RATE)  # maybe put tf.Variable instead of the float to shut the warnings
 LOSS_FUNCTION = keras.losses.categorical_crossentropy

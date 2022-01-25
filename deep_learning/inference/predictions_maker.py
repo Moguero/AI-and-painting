@@ -6,7 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
-# import scikitplot as skplt
+import scikitplot as skplt
 
 from constants import (
     PALETTE_HEXA,
@@ -23,6 +23,8 @@ from constants import (
     IMAGES_DIR_PATH,
     MASK_TRUE_VALUE,
     MASK_FALSE_VALUE,
+    CHECKPOINT_DIR_PATH,
+    TEST_IMAGE_PATH,
 )
 from dataset_utils.dataset_builder import build_predictions_dataset
 from dataset_utils.file_utils import get_formatted_time
@@ -32,7 +34,7 @@ from dataset_utils.image_rebuilder import (
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.masks_encoder import stack_image_masks
 from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channels_tensor
-from deep_learning.models.unet import build_small_unet, build_small_unet_arbitrary_input
+from deep_learning.models.unet import build_small_unet
 
 
 def make_predictions(
@@ -68,7 +70,11 @@ def make_predictions(
 
     # Cut the image into patches of size patch_size
     # & format the image patches to feed the model.predict function
-    main_patches_dataset, right_side_patches_dataset, down_side_patches_dataset = build_predictions_dataset(
+    (
+        main_patches_dataset,
+        right_side_patches_dataset,
+        down_side_patches_dataset,
+    ) = build_predictions_dataset(
         target_image_tensor=image_tensor,
         patch_size=patch_size,
         patch_overlap=patch_overlap,
@@ -290,10 +296,9 @@ def get_confusion_matrix(
     Compute the confusion matrix for the predictions input tensor regarding its labels.
 
     :param image_path: The path of the image on which the predictions are made
-    :param predictions_tensor: A categorical predicitions tensor.
+    :param predictions_tensor: A categorical predictions tensor.
     :param masks_dir_path: The masks source directory path.
     :param n_classes: Total number of classes, background not included.
-    :return:
     """
     # todo : remove the image_path argument from this function
 
@@ -332,7 +337,7 @@ def get_confusion_matrix(
     assert predictions_tensor.shape == labels_tensor.shape
 
     # get the confusion matrix
-    # note : there is a little hack with the +1 to consider the background class, and remote it just after ith [1:]
+    # note : there is a little hack with the +1 to consider the background class, and remove it just after ith [1:]
     confusion_matrix = tf.math.confusion_matrix(
         labels=labels_tensor, predictions=predictions_tensor, num_classes=n_classes + 1
     )[1:, 1:]
@@ -362,19 +367,20 @@ def load_saved_model(
     return model
 
 
-# def plot_confusion_matrix(
-#     labels_tensor: tf.Tensor,
-#     predictions_tensor: tf.Tensor,
-# ) -> None:
-#     skplt.metrics.plot_confusion_matrix(
-#         y_true=labels_tensor,
-#         y_pred=predictions_tensor,
-#         figsize=(10, 10),
-#         title="Confusion matrix",
-#         x_tick_rotation=45,
-#         cmap="Greens",
-#     )
-#     plt.show()
+def plot_confusion_matrix(
+    labels_tensor: tf.Tensor,
+    predictions_tensor: tf.Tensor,
+) -> None:
+    skplt.metrics.plot_confusion_matrix(
+        y_true=labels_tensor,
+        y_pred=predictions_tensor,
+        figsize=(10, 10),
+        title="Confusion matrix",
+        x_tick_rotation=45,
+        cmap="Greens",
+    )
+    plt.show()
+
 
 #
 # def save_confusion_matrix(
@@ -399,27 +405,26 @@ def load_saved_model(
 # save_full_plot_predictions(IMAGE_PATH, MASKS_DIR_PATH, OUTPUT_DIR_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE, DOWNSCALE_FACTORS)
 # save_predictions_plot_only(IMAGE_PATH, PREDICTIONS_DIR_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE, DOWNSCALE_FACTORS)
 
-#
-# image_path = IMAGES_DIR_PATH / "_DSC0246/_DSC0246.jpg"
+
+# test_image_path = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\test_images\downscaled_images\max\downscaled_max__DSC0245.jpg")
 # predictions_tensor = make_predictions(
-#     image_path,
-#     CHECKPOINT_DIR_PATH,
-#     PATCH_SIZE,
-#     PATCH_OVERLAP,
-#     N_CLASSES,
-#     BATCH_SIZE,
-#     ENCODER_KERNEL_SIZE,
-#     downscale_factors=(1, 1, 1),
+#     target_image_path=test_image_path,
+#     checkpoint_dir_path=CHECKPOINT_DIR_PATH,
+#     patch_size=PATCH_SIZE,
+#     patch_overlap=PATCH_OVERLAP,
+#     n_classes=N_CLASSES,
+#     batch_size=BATCH_SIZE,
+#     encoder_kernel_size=ENCODER_KERNEL_SIZE,
 # )
 #
 # confusion_matrix, labels_tensor, predictions_tensor = get_confusion_matrix(
-#     image_path=image_path,
+#     image_path=TEST_IMAGE_PATH,
 #     predictions_tensor=predictions_tensor,
 #     masks_dir_path=MASKS_DIR_PATH,
 #     n_classes=N_CLASSES,
 #     patch_overlap=PATCH_OVERLAP,
 # )
-#
+# #
 # plot_confusion_matrix(
 #     labels_tensor=labels_tensor, predictions_tensor=predictions_tensor
 # )
@@ -428,5 +433,3 @@ def load_saved_model(
 #     predictions_tensor=predictions_tensor,
 #     output_path=Path(""),
 # )
-
-# todo : generate patches of downsampled images

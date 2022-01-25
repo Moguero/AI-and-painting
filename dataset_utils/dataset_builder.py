@@ -66,7 +66,7 @@ def get_image_patches_paths(
             patches_under_coverage_percent_limit_list.append(image_patch_path)
 
     logger.info(
-        f"\n{len(patches_under_coverage_percent_limit_list)}/{len(image_patch_paths)} patches above coverage percent limit selected."
+        f"\n{len(patches_under_coverage_percent_limit_list)}/{len(image_patches_paths)} patches above coverage percent limit selected."
     )
     return patches_under_coverage_percent_limit_list
 

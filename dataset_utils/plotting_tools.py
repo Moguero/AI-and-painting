@@ -190,7 +190,7 @@ def plot_training_history(history: keras.callbacks.History) -> None:
     plt.show()
 
 
-def save_patch_composition_mean_plot(
+def save_patch_composition_plot(
         patch_composition_stats_dict: {str: float},
         output_path: Path,
         palette_hexa: {int: str},
@@ -210,6 +210,3 @@ def save_patch_composition_mean_plot(
     ax.set_title('Patches composition')
 
     plt.savefig(output_path, bbox_inches="tight", dpi=300)
-
-
-# todo : superposer les masques de sorties avec l'image d'entrée non-downsamplée (toujours de haute résolution), mais croppée légèrement
