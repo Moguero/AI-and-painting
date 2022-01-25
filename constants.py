@@ -24,6 +24,7 @@ else:  # aws instance
     DATA_DIR_ROOT = Path(r"/home/data")
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
     REPORT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17"
+    CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17/2_model_report"
     IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
     TEST_IMAGES_DIR_PATH = DATA_DIR_ROOT / "test_images"
     DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images" / "max"

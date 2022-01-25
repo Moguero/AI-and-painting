@@ -86,28 +86,20 @@ def build_training_run_report(
             file.write(f"{key}: {value},\n")
 
     # Plot rebalanced patches labels composition
-    patches_composition_mean_stats_dict = patches_composition_stats.loc[
-        "mean"
-    ].to_dict()
-    patches_rebalanced_composition_stats_dict = dict()
-    classes_weights_sum = 0
-    for class_name in patches_composition_mean_stats_dict.keys():
-        classes_weights_sum += (
-            patches_rebalanced_composition_stats_dict[class_name]
-            * class_weights_dict[mapping_class_number[class_name]]
+    patches_rebalanced_composition_stats_dict = (
+        get_patches_rebalanced_composition_stats_dict(
+            patches_composition_stats=patches_composition_stats,
+            class_weights_dict=class_weights_dict,
+            mapping_class_number=mapping_class_number,
         )
+    )
 
-    for class_name in patches_composition_mean_stats_dict.keys():
-        patches_rebalanced_composition_stats_dict[class_name] = (
-            patches_composition_mean_stats_dict[class_name]
-            * class_weights_dict[mapping_class_number[class_name]]
-        ) / classes_weights_sum
-    patch_composition_mean_plot_output_path = (
+    patch_rebalanced_composition_plot_output_path = (
         report_subdirs_paths_dict["data_report"] / "rebalanced_patches_composition.png"
     )
     save_patch_composition_plot(
         patch_composition_stats_dict=patches_rebalanced_composition_stats_dict,
-        output_path=patch_composition_mean_plot_output_path,
+        output_path=patch_rebalanced_composition_plot_output_path,
         palette_hexa=palette_hexa,
     )
 
@@ -161,6 +153,31 @@ def build_training_run_report(
     with open(model_config_filename, "w") as file:
         for key, value in model_config.items():
             file.write(f"{str(key)}: {str(value)} \n")
+
+
+def get_patches_rebalanced_composition_stats_dict(
+    patches_composition_stats: pd.DataFrame,
+    class_weights_dict: {int: int},
+    mapping_class_number: {str: int},
+):
+    patches_composition_mean_stats_dict = patches_composition_stats.loc[
+        "mean"
+    ].to_dict()
+    patches_rebalanced_composition_stats_dict = dict()
+    classes_weights_sum = 0
+    for class_name in patches_composition_mean_stats_dict.keys():
+        classes_weights_sum += (
+            patches_composition_mean_stats_dict[class_name]
+            * class_weights_dict[mapping_class_number[class_name]]
+        )
+
+    for class_name in patches_composition_mean_stats_dict.keys():
+        patches_rebalanced_composition_stats_dict[class_name] = (
+            patches_composition_mean_stats_dict[class_name]
+            * class_weights_dict[mapping_class_number[class_name]]
+        ) / classes_weights_sum
+
+    return patches_rebalanced_composition_stats_dict
 
 
 def init_report_paths(report_root_dir_path: Path) -> {str: Path}:
