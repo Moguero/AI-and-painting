@@ -35,6 +35,7 @@ def main(
     light_report_bool: bool,
     add_note: bool,
     n_patches_limit: int,
+    n_epochs: int,
 ) -> None:
     if train_bool:
         report_dir_path = train_model(
@@ -49,7 +50,7 @@ def main(
             validation_proportion=VALIDATION_PROPORTION,
             test_proportion=TEST_PROPORTION,
             patch_coverage_percent_limit=PATCH_COVERAGE_PERCENT_LIMIT,
-            epochs=N_EPOCHS,
+            epochs=n_epochs,
             patches_dir_path=PATCHES_DIR_PATH,
             encoder_kernel_size=ENCODER_KERNEL_SIZE,
             early_stopping_loss_min_delta=EARLY_STOPPING_LOSS_MIN_DELTA,
@@ -132,6 +133,13 @@ if __name__ == "__main__":
         type=int,
         help="Maximum number of patches to use for training. Can only be used with --train.",
     )
+    parser.add_argument(
+        "--epochs",
+        "-e",
+        default=N_EPOCHS,
+        type=int,
+        help="Maximum number of epochs during training. Can only be used with --train.",
+    )
     args = parser.parse_args()
 
     if not args.predict and not args.train:
@@ -145,12 +153,19 @@ if __name__ == "__main__":
     if not args.train and args.note:
         raise ValueError("--note parameter can only be used with --train parameter")
 
+    if not args.train and args.patches_limit:
+        raise ValueError("--patches-limit parameter can only be used with --train parameter")
+
+    if not args.train and args.epochs:
+        raise ValueError("--epochs parameter can only be used with --train parameter")
+
     main(
         train_bool=args.train,
         predict_bool=args.predict,
         light_report_bool=args.light,
         add_note=args.note,
         n_patches_limit=args.patches_limit,
+        n_epochs=args.epochs,
     )
 
 

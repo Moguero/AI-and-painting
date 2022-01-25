@@ -6,7 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
-import scikitplot as skplt
+# import scikitplot as skplt
 
 from constants import (
     PALETTE_HEXA,
@@ -367,19 +367,19 @@ def load_saved_model(
     return model
 
 
-def plot_confusion_matrix(
-    labels_tensor: tf.Tensor,
-    predictions_tensor: tf.Tensor,
-) -> None:
-    skplt.metrics.plot_confusion_matrix(
-        y_true=labels_tensor,
-        y_pred=predictions_tensor,
-        figsize=(10, 10),
-        title="Confusion matrix",
-        x_tick_rotation=45,
-        cmap="Greens",
-    )
-    plt.show()
+# def plot_confusion_matrix(
+#     labels_tensor: tf.Tensor,
+#     predictions_tensor: tf.Tensor,
+# ) -> None:
+#     skplt.metrics.plot_confusion_matrix(
+#         y_true=labels_tensor,
+#         y_pred=predictions_tensor,
+#         figsize=(10, 10),
+#         title="Confusion matrix",
+#         x_tick_rotation=45,
+#         cmap="Greens",
+#     )
+#     plt.show()
 
 
 #
