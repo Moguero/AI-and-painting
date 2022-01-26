@@ -1,4 +1,5 @@
 import argparse
+import warnings
 from pathlib import Path
 
 from constants import (
@@ -36,6 +37,7 @@ def main(
     add_note: bool,
     n_patches_limit: int,
     n_epochs: int,
+    report_dir: str,
 ) -> None:
     if train_bool:
         report_dir_path = train_model(
@@ -74,13 +76,13 @@ def main(
             )
     else:  # case no training
         if predict_bool:
-            report_dir_path = Path(
-                input(
-                    "What is the report directory path ? \nEx: .../reports/report_2021_12_13__13_12_18\n"
-                )
-            )
+            if report_dir is None:
+                report_dir = input(
+                        "Please specify a correct report directory path. \nEx: .../reports/report_2021_12_13__13_12_18\n"
+                    )
+            report_dir_path = Path(report_dir)
             if not report_dir_path.exists():
-                raise ValueError("This report directory path does no exist.")
+                raise ValueError(f"This report directory path does no exist : {report_dir_path}")
 
             build_predict_run_report(
                 test_images_paths_list=DOWNSCALED_TEST_IMAGES_PATHS_LIST,
@@ -117,13 +119,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--light",
         "-l",
-        help="Build a light report with image/predictions comparisons only. Can only be used with --predict.",
+        help="Build a light report with image/predictions comparisons only. Should only be used with --predict.",
         action="store_true",
     )
     parser.add_argument(
         "--note",
         "-n",
-        help="Add a note to the training report. Can only be used with --train.",
+        help="Add a note to the training report. Should only be used with --train.",
         action="store_true",
     )
     parser.add_argument(
@@ -131,14 +133,20 @@ if __name__ == "__main__":
         "-pl",
         default=N_PATCHES_LIMIT,
         type=int,
-        help="Maximum number of patches to use for training. Can only be used with --train.",
+        help="Maximum number of patches to use for training. Should only be used with --train.",
     )
     parser.add_argument(
         "--epochs",
         "-e",
         default=N_EPOCHS,
         type=int,
-        help="Maximum number of epochs during training. Can only be used with --train.",
+        help="Maximum number of epochs during training. Should only be used with --train.",
+    )
+
+    parser.add_argument(
+        "--report",
+        "-r",
+        help="Report path to give the model to make the inference with. Should only be used with --predict.",
     )
     args = parser.parse_args()
 
@@ -147,17 +155,20 @@ if __name__ == "__main__":
             "At least one of --train or --predict parameters should be given."
         )
 
-    if not args.predict and args.light:
-        raise ValueError("--light parameter can only be used with --predict parameter.")
-
     if not args.train and args.note:
-        raise ValueError("--note parameter can only be used with --train parameter")
+        warnings.warn("--note parameter should only be used with --train parameter")
 
-    if not args.train and args.patches_limit:
-        raise ValueError("--patches-limit parameter can only be used with --train parameter")
+    if not args.train and args.patches_limit != N_PATCHES_LIMIT:
+        warnings.warn("--patches-limit parameter should only be used with --train parameter")
 
-    if not args.train and args.epochs:
-        raise ValueError("--epochs parameter can only be used with --train parameter")
+    if not args.train and args.epochs != N_EPOCHS:
+        warnings.warn("--epochs parameter should only be used with --train parameter")
+
+    if not args.predict and args.light:
+        warnings.warn("--light parameter should only be used with --predict parameter.")
+
+    if not args.predict and args.report is not None:
+        warnings.warn("--report parameter should only be used with --predict parameter.")
 
     main(
         train_bool=args.train,
@@ -166,6 +177,7 @@ if __name__ == "__main__":
         add_note=args.note,
         n_patches_limit=args.patches_limit,
         n_epochs=args.epochs,
+        report_dir=args.report,
     )
 
 
