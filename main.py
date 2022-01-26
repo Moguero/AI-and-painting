@@ -25,6 +25,7 @@ from constants import (
     DOWNSCALED_TEST_IMAGES_PATHS_LIST,
     EARLY_STOPPING_LOSS_MIN_DELTA,
     EARLY_STOPPING_ACCURACY_MIN_DELTA,
+    CORRELATE_PREDICTIONS_BOOL, CORRELATION_FILTER,
 )
 from deep_learning.training.model_runner import train_model
 from deep_learning.training.reporting import build_predict_run_report
@@ -73,16 +74,20 @@ def main(
                 batch_size=BATCH_SIZE,
                 encoder_kernel_size=ENCODER_KERNEL_SIZE,
                 light_report_bool=light_report_bool,
+                correlate_predictions_bool=CORRELATE_PREDICTIONS_BOOL,
+                correlation_filter=CORRELATION_FILTER,
             )
     else:  # case no training
         if predict_bool:
             if report_dir is None:
                 report_dir = input(
-                        "Please specify a correct report directory path. \nEx: .../reports/report_2021_12_13__13_12_18\n"
-                    )
+                    "Please specify a correct report directory path. \nEx: .../reports/report_2021_12_13__13_12_18\n"
+                )
             report_dir_path = Path(report_dir)
             if not report_dir_path.exists():
-                raise ValueError(f"This report directory path does no exist : {report_dir_path}")
+                raise ValueError(
+                    f"This report directory path does no exist : {report_dir_path}"
+                )
 
             build_predict_run_report(
                 test_images_paths_list=DOWNSCALED_TEST_IMAGES_PATHS_LIST,
@@ -93,6 +98,8 @@ def main(
                 batch_size=BATCH_SIZE,
                 encoder_kernel_size=ENCODER_KERNEL_SIZE,
                 light_report_bool=light_report_bool,
+                correlate_predictions_bool=CORRELATE_PREDICTIONS_BOOL,
+                correlation_filter=CORRELATION_FILTER,
             )
 
         else:
@@ -159,7 +166,9 @@ if __name__ == "__main__":
         warnings.warn("--note parameter should only be used with --train parameter")
 
     if not args.train and args.patches_limit != N_PATCHES_LIMIT:
-        warnings.warn("--patches-limit parameter should only be used with --train parameter")
+        warnings.warn(
+            "--patches-limit parameter should only be used with --train parameter"
+        )
 
     if not args.train and args.epochs != N_EPOCHS:
         warnings.warn("--epochs parameter should only be used with --train parameter")
@@ -168,7 +177,9 @@ if __name__ == "__main__":
         warnings.warn("--light parameter should only be used with --predict parameter.")
 
     if not args.predict and args.report is not None:
-        warnings.warn("--report parameter should only be used with --predict parameter.")
+        warnings.warn(
+            "--report parameter should only be used with --predict parameter."
+        )
 
     main(
         train_bool=args.train,

@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List
 
 import matplotlib
+import numpy as np
 import pandas as pd
 from loguru import logger
 from matplotlib import pyplot as plt
@@ -206,6 +207,8 @@ def build_predict_run_report(
     batch_size: int,
     encoder_kernel_size: int,
     light_report_bool: bool,
+    correlate_predictions_bool: bool,
+    correlation_filter: np.ndarray,
 ) -> None:
     predictions_report_root_path = (
         report_dir_path / "3_predictions" / get_formatted_time()
@@ -222,6 +225,8 @@ def build_predict_run_report(
             n_classes=n_classes,
             batch_size=batch_size,
             encoder_kernel_size=encoder_kernel_size,
+            correlate_predictions_bool=correlate_predictions_bool,
+            correlation_filter=correlation_filter,
         )
 
         save_test_images_vs_predictions_plot(
@@ -252,10 +257,10 @@ def build_predict_run_report(
                 predictions_report_root_path=predictions_report_root_path,
             )
 
-            save_median_filtering_comparison(
-                source_image_path=predictions_only_path,
-                predictions_report_root_path=predictions_report_root_path,
-            )
+            # save_median_filtering_comparison(
+            #     source_image_path=predictions_only_path,
+            #     predictions_report_root_path=predictions_report_root_path,
+            # )
 
 
 def save_test_images_vs_predictions_plot(

@@ -109,6 +109,9 @@ def train_dataset_generator(
     # todo : data augmentation with ImageDataGenerator : will create a generator,
     #  that can be used to reload the augmented images in a tensor that will be yielded by this generator
     #  pass an augmentation_object parameter to this function (cf tuto)
+    #  random crop, luminosité, légère rotation, hue, saturation, compression jpe
+    #  hsv cylinder
+    #  algo de traitement de signal jpeg pour la compression d'images
     # https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image/ImageDataGenerator
     # idée : data augmentation on each batch
     logger.info(
@@ -303,7 +306,7 @@ def test_dataset_generator(
 
 def build_predictions_dataset(
     target_image_tensor: tf.Tensor, patch_size: int, patch_overlap: int
-) -> (tf.data.Dataset, tf.data.Dataset):
+) -> (tf.data.Dataset, tf.data.Dataset, tf.data.Dataset):
     """
     Build a dataset of patches to make predictions on each one of them.
 

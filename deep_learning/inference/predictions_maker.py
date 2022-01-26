@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import scipy
 from loguru import logger
 import numpy as np
 import matplotlib
@@ -45,6 +46,8 @@ def make_predictions(
     n_classes: int,
     batch_size: int,
     encoder_kernel_size: int,
+    correlate_predictions_bool: bool,
+    correlation_filter: np.ndarray,
     misclassification_size: int = 5,
 ) -> tf.Tensor:
     """
@@ -57,6 +60,8 @@ def make_predictions(
     :param patch_overlap: Number of pixels on which neighbors patches intersect each other.
     :param n_classes: Number of classes to map, background excluded.
     :param batch_size: Batch size that was used for the model which is loaded.
+    :param correlate_predictions_bool: Whether or not to apply correlation on the predictions, i.e. make a local weighted mean on each class probability.
+    :param correlation_filter: The filter to use for correlation.
     :param misclassification_size: Estimated number of pixels on which the classification is wrong due to side effects between neighbors patches.
 
     :return: A 2D categorical tensor of size (width, height), width and height being the cropped size of the target image tensor
@@ -93,18 +98,29 @@ def make_predictions(
     # Make predictions on the patches
     # output : array of shape (n_patches, patch_size, patch_size, n_classes)
     main_patch_classes_list = patches_predict(
-        predictions_dataset=main_patches_dataset, model=model
+        predictions_dataset=main_patches_dataset,
+        model=model,
+        n_classes=n_classes,
+        correlate_predictions_bool=correlate_predictions_bool,
+        correlation_filter=correlation_filter,
     )
     right_side_patch_classes_list = patches_predict(
-        predictions_dataset=right_side_patches_dataset, model=model
+        predictions_dataset=right_side_patches_dataset,
+        model=model,
+        n_classes=n_classes,
+        correlate_predictions_bool=correlate_predictions_bool,
+        correlation_filter=correlation_filter,
     )
     down_side_patch_classes_list = patches_predict(
-        predictions_dataset=down_side_patches_dataset, model=model
+        predictions_dataset=down_side_patches_dataset,
+        model=model,
+        n_classes=n_classes,
+        correlate_predictions_bool=correlate_predictions_bool,
+        correlation_filter=correlation_filter,
     )
 
     # Rebuild the image with the predictions patches
     # output tensor of size (intput_width_size - 2 * patch_overlap, input_height_size - 2 * patch_overlap)
-    # todo : check that we reach the size announced on the line above
     final_predictions_tensor = rebuild_predictions_with_overlap(
         target_image_path=target_image_path,
         main_patch_classes_list=main_patch_classes_list,
@@ -124,9 +140,20 @@ def make_predictions(
 
 
 def patches_predict(
-    predictions_dataset: tf.data.Dataset, model: tf.keras.Model
+    predictions_dataset: tf.data.Dataset,
+    model: tf.keras.Model,
+    n_classes: int,
+    correlate_predictions_bool: bool,
+    correlation_filter: np.ndarray,
 ) -> [tf.Tensor]:
-    predictions = model.predict(predictions_dataset, verbose=1)
+    predictions: np.ndarray = model.predict(x=predictions_dataset, verbose=1)
+
+    if correlate_predictions_bool:
+        predictions = correlate_predictions(
+            predictions_array=predictions,
+            correlation_filter=correlation_filter,
+            n_classes=n_classes,
+        )
 
     # Remove background predictions so it takes the max on the non background classes
     # Note : the argmax function shift the classes numbers of -1, that is why we add one just after
@@ -143,6 +170,40 @@ def patches_predict(
     return patch_classes_list
 
 
+def correlate_predictions(
+    predictions_array: np.ndarray, correlation_filter: np.ndarray, n_classes: int
+) -> tf.Tensor:
+    """Smooth the predictions by applying a gaussian filter to the predictions probabilities.
+    It computes a local weighted average on each class probabilities."""
+    assert (
+        predictions_array.shape[-1] == n_classes + 1
+    ), f"Predictions tensor has shape {predictions_array.shape} (last axis dim {predictions_array.shape[-1]}), last axis should have dim {n_classes + 1}"
+
+    n_patches = predictions_array.shape[0]
+    correlated_patches_predictions_list = list()
+    for patch_tensor_idx in range(n_patches):
+        correlated_classes_means_list = list()
+        for class_idx in range(n_classes + 1):
+            # compute a local weighted average
+            correlated_class_means = (
+                scipy.ndimage.correlate(
+                    input=predictions_array[patch_tensor_idx, :, :, class_idx],
+                    weights=correlation_filter,
+                )
+                / int(tf.reduce_sum(correlation_filter))
+            )
+            # remark : no need to normalize the weighted probabilities because only an argmax is done after
+            correlated_classes_means_list.append(correlated_class_means)
+        patch_correlated_predictions = tf.stack(
+            values=correlated_classes_means_list, axis=-1
+        )
+        correlated_patches_predictions_list.append(patch_correlated_predictions)
+    correlated_predictions = tf.stack(
+        values=correlated_patches_predictions_list, axis=0
+    )
+    return correlated_predictions
+
+
 def make_predictions_oneshot(
     target_image_path: Path,
     checkpoint_dir_path: Path,
@@ -152,7 +213,7 @@ def make_predictions_oneshot(
     batch_size: int,
     encoder_kernel_size: int,
 ) -> tf.Tensor:
-    """
+    """,
     Make predictions on the target image specified with its path.
 
     :param encoder_kernel_size: Size of the kernel encoder.
@@ -173,8 +234,6 @@ def make_predictions_oneshot(
 
     image_tensor = decode_image(file_path=target_image_path)
     image_tensor = tf.expand_dims(input=image_tensor, axis=0)
-
-    # todo : generate patches of downsampled images
 
     # Build the model
     # & apply saved weights to the built model
@@ -199,7 +258,6 @@ def make_predictions_oneshot(
     return predictions
 
 
-# todo : put it in the plotting_tools.py instead of reporting.py ?
 def save_labels_vs_predictions_comparison_plot(
     target_image_path: Path,
     masks_dir_path: Path,
@@ -265,7 +323,6 @@ def save_labels_vs_predictions_comparison_plot(
     ax3.legend(handles=handles, bbox_to_anchor=(1.4, 1), loc="upper left", prop=fontP)
 
     # Save the plot
-    # todo : save it at the root of the report predictions, (if this function is still needed)
     predictions_dir_path = (
         report_dir_path
         / "3_predictions"

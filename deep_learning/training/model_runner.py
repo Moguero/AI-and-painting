@@ -297,7 +297,7 @@ def get_class_weights_dict(
             weight = 1
         else:  # non background class present in the dataset
             # weight = int(1 / class_proportion)
-            weight = int(math.log(1 / class_proportion))
+            weight = -int(math.log(class_proportion))
 
         class_weights_dict[mapping_class_number[class_name]] = weight
 

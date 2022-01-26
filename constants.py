@@ -1,20 +1,31 @@
+import numpy as np
 from tensorflow.keras.optimizers import Adam
 from pathlib import Path
 from tensorflow import keras
+from scipy.signal import gaussian
 
 # Paths variables
-from dataset_utils.image_utils import turn_hexadecimal_color_into_nomalized_rgb_list, \
-    turn_hexadecimal_color_into_rgb_list, decode_image
+from dataset_utils.image_utils import (
+    turn_hexadecimal_color_into_nomalized_rgb_list,
+    turn_hexadecimal_color_into_rgb_list,
+    decode_image,
+)
 
 local_machine = False
 # local_machine = True
 
 if local_machine:
-    DATA_DIR_ROOT = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files")
+    DATA_DIR_ROOT = Path(
+        r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files"
+    )
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks/all"
     REPORT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17"
-    CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17/2_model_report"
-    IMAGES_DIR_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\images\sorted_images\kept\all")
+    CHECKPOINT_DIR_PATH = (
+        DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17/2_model_report"
+    )
+    IMAGES_DIR_PATH = Path(
+        r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\images\sorted_images\kept\all"
+    )
     TEST_IMAGES_DIR_PATH = DATA_DIR_ROOT / "test_images"
     DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images" / "max"
     TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246.JPG"
@@ -24,7 +35,9 @@ else:  # aws instance
     DATA_DIR_ROOT = Path(r"/home/data")
     MASKS_DIR_PATH = DATA_DIR_ROOT / "labels_masks"
     REPORT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17"
-    CHECKPOINT_DIR_PATH = DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17/2_model_report"
+    CHECKPOINT_DIR_PATH = (
+        DATA_DIR_ROOT / r"reports/report_2022_01_06__17_43_17/2_model_report"
+    )
     IMAGES_DIR_PATH = DATA_DIR_ROOT / "images"
     TEST_IMAGES_DIR_PATH = DATA_DIR_ROOT / "test_images"
     DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images" / "max"
@@ -55,8 +68,13 @@ TEST_IMAGES_NAMES = [
     "_DSC0300.jpg",
 ]
 
-TEST_IMAGES_PATHS_LIST = [TEST_IMAGES_DIR_PATH / image_name for image_name in TEST_IMAGES_NAMES]
-DOWNSCALED_TEST_IMAGES_PATHS_LIST = [DOWNSCALED_TEST_IMAGES_DIR_PATH / ("downscaled_max_" + image_name) for image_name in TEST_IMAGES_NAMES]
+TEST_IMAGES_PATHS_LIST = [
+    TEST_IMAGES_DIR_PATH / image_name for image_name in TEST_IMAGES_NAMES
+]
+DOWNSCALED_TEST_IMAGES_PATHS_LIST = [
+    DOWNSCALED_TEST_IMAGES_DIR_PATH / ("downscaled_max_" + image_name)
+    for image_name in TEST_IMAGES_NAMES
+]
 
 PATCHES_DIR_PATH = DATA_DIR_ROOT / "patches/256x256"
 PREDICTIONS_DIR_PATH = DATA_DIR_ROOT / "predictions"
@@ -84,27 +102,29 @@ MAPPING_CLASS_NUMBER = {
     "feuilles-vertes": 6,
     "herbe": 7,
     "eau": 8,
-    "roche": 9
+    "roche": 9,
 }  # Maps each labelling class to a number
 
 
 PALETTE_HEXA = {
-    0: "#DCDCDC",  #gainsboro
-    1: "#8B6914",  #goldenrod4
-    2: "#BF3EFF", #darkorchid1
-    3: "#FF7D40",  #flesh
-    4: "#E3CF57",  #banana
-    5: "#6495ED",  #cornerflowblue
-    6: "#458B00",  #chartreuse4
-    7: "#7FFF00",  #chartreuse1
-    8: "#00FFFF",  #aqua
-    9: "#FF0000"  #red
+    0: "#DCDCDC",  # gainsboro
+    1: "#8B6914",  # goldenrod4
+    2: "#BF3EFF",  # darkorchid1
+    3: "#FF7D40",  # flesh
+    4: "#E3CF57",  # banana
+    5: "#6495ED",  # cornerflowblue
+    6: "#458B00",  # chartreuse4
+    7: "#7FFF00",  # chartreuse1
+    8: "#00FFFF",  # aqua
+    9: "#FF0000",  # red
 }
 PALETTE_RGB_NORMALIZED = {
-    key: turn_hexadecimal_color_into_nomalized_rgb_list(value) for key, value in PALETTE_HEXA.items()
+    key: turn_hexadecimal_color_into_nomalized_rgb_list(value)
+    for key, value in PALETTE_HEXA.items()
 }
 PALETTE_RGB = {
-    key: turn_hexadecimal_color_into_rgb_list(value) for key, value in PALETTE_HEXA.items()
+    key: turn_hexadecimal_color_into_rgb_list(value)
+    for key, value in PALETTE_HEXA.items()
 }
 MASK_URL = "https://api.labelbox.com/masks/feature/ckph5r33g00043a6dklihalmq?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja3BneTBhZDc4OXAwMHk5dzZlcWM2bzNlIiwib3JnYW5pemF0aW9uSWQiOiJja3BneTBhY3U4OW96MHk5dzNrcW43MGxmIiwiaWF0IjoxNjIyNzQwNjczLCJleHAiOjE2MjUzMzI2NzN9.VeR0ot2_MAkY769kcXSz8RWqRguopgO1rlbRIGwZWV0"
 
@@ -138,13 +158,35 @@ PADDING_TYPE = "same"
 # OPTIMIZER = "rmsprop"
 # todo : test learning rate 1e-5
 LEARNING_RATE = 1e-4
-OPTIMIZER = Adam(lr=LEARNING_RATE)  # maybe put tf.Variable instead of the float to shut the warnings
+OPTIMIZER = Adam(
+    lr=LEARNING_RATE
+)  # maybe put tf.Variable instead of the float to shut the warnings
 LOSS_FUNCTION = keras.losses.categorical_crossentropy
 METRICS = [keras.metrics.categorical_accuracy, keras.metrics.MeanIoU(N_CLASSES)]
 DOWNSCALE_FACTORS = (6, 6, 1)
 DATA_AUGMENTATION = False
 EARLY_STOPPING_LOSS_MIN_DELTA = 0.02
 EARLY_STOPPING_ACCURACY_MIN_DELTA = 0.01
+CORRELATE_PREDICTIONS_BOOL = False
+
+
+def generate_gaussian_kernel(sigma, neigh):
+    """
+    Gaussian kernel generator.
+
+    Inputs:
+        sigma:     Std of Gaussian
+        neigh:     Size of window
+    """
+
+    kernel_1d = gaussian(M=neigh, std=sigma)
+    kernel = np.outer(kernel_1d, kernel_1d)
+
+    return kernel / np.sum(kernel)
+
+
+CORRELATION_FILTER = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]])
+CORRELATION_FILTER = 10 * generate_gaussian_kernel(sigma=1, neigh=5)
 
 # Physical parameters (in mm)
 
