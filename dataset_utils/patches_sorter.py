@@ -15,13 +15,18 @@ from dataset_utils.files_stats import count_mask_value_occurences_percent_of_2d_
 from dataset_utils.image_utils import (
     get_file_name_with_extension,
     get_image_patches_paths_with_limit,
+    get_image_patch_masks_paths, decode_image,
 )
 from dataset_utils.masks_encoder import stack_image_patch_masks
 
 
-def get_patch_coverage(image_patch_path: Path, mapping_class_number: {str: int}) -> float:
+def get_patch_coverage(
+    image_patch_masks_paths: [Path],
+    mapping_class_number: {str: int},
+) -> float:
     mask_tensor = stack_image_patch_masks(
-        image_patch_path=image_patch_path, mapping_class_number=mapping_class_number
+        image_patch_masks_paths=image_patch_masks_paths,
+        mapping_class_number=mapping_class_number,
     )
     count_mask_value_occurrence = count_mask_value_occurences_percent_of_2d_tensor(
         mask_tensor
@@ -32,17 +37,21 @@ def get_patch_coverage(image_patch_path: Path, mapping_class_number: {str: int})
         return 100 - count_mask_value_occurrence[0]
 
 
+# deprecated
 def create_generator_patches_coverage(
     patches_dir_path: Path, mapping_class_number: {str: int}
 ) -> [Path]:
     for image_dir_path in patches_dir_path.iterdir():
         for patch_dir_path in image_dir_path.iterdir():
             for image_patch_path in (patch_dir_path / "image").iterdir():
+                image_patch_masks_paths = get_image_patch_masks_paths(image_patch_path)
                 yield image_patch_path, get_patch_coverage(
-                    image_patch_path, mapping_class_number
+                    image_patch_masks_paths=image_patch_masks_paths,
+                    mapping_class_number=mapping_class_number,
                 )
 
 
+# deprecated
 def save_all_patches_coverage(
     patches_dir_path: Path, output_path: Path, mapping_class_number: {str: int}
 ) -> dict:
@@ -63,13 +72,14 @@ def save_all_patches_coverage(
     return patches_coverage_dict
 
 
-def is_patch_only_background(image_patch_path: Path, patch_size: int) -> bool:
+# deprecated
+def is_patch_only_background(image_patch_masks_paths: [Path], patch_size: int) -> bool:
     """
     Test if the labels of a patch is background only, i.e. a patch_size x patch_size array of zeros.
     """
     background_array = tf.zeros((patch_size, patch_size), dtype=tf.int32).numpy()
     patch_mask_array = stack_image_patch_masks(
-        image_patch_path=image_patch_path
+        image_patch_masks_paths=image_patch_masks_paths,
     ).numpy()
     try:
         np.testing.assert_array_equal(patch_mask_array, background_array)
@@ -78,6 +88,7 @@ def is_patch_only_background(image_patch_path: Path, patch_size: int) -> bool:
         return False
 
 
+# deprecated
 def get_only_background_patches_dir_paths(
     image_dir_path: Path, patch_size: int, all_masks_overlap_indices_path: Path
 ) -> [Path]:
@@ -91,6 +102,7 @@ def get_only_background_patches_dir_paths(
     return only_background_patches_dir_paths
 
 
+# deprecated
 def create_generator_all_only_background_patches(
     patches_dir_path: Path, patch_size: int, all_masks_overlap_indices_path: Path
 ) -> [Path]:
@@ -101,6 +113,7 @@ def create_generator_all_only_background_patches(
         yield image_dir_path, only_background_patches_dir_paths
 
 
+# deprecated
 def save_all_only_background_patches_dir_paths(
     patches_dir_path: Path,
     patch_size: int,

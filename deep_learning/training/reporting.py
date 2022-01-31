@@ -77,6 +77,7 @@ def build_training_run_report(
         output_path=patch_composition_mean_plot_output_path,
         palette_hexa=palette_hexa,
     )
+    # todo : modify precision of class proportions in both patches composition plots
 
     # Save the figures with which the original composition plot was made
     patch_original_composition_output_path = (

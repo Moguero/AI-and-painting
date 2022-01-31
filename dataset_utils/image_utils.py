@@ -1,4 +1,5 @@
 import shutil
+from typing import Union
 
 from loguru import logger
 from pathlib import Path
@@ -32,10 +33,13 @@ def get_image_masks_paths(image_path: Path, masks_dir_path: Path) -> [Path]:
     ]
 
 
-def get_image_patch_masks_paths(image_patch_path: Path):
+def get_image_patch_masks_paths(image_patch_path: Union[Path, str]) -> [Path]:
     """
     Get the paths of the image patch masks.
     """
+    if isinstance(image_patch_path, str):
+        image_patch_path = Path(image_patch_path)
+
     image_patch_masks_sub_dir = image_patch_path.parents[1] / "labels"
     assert (
         image_patch_masks_sub_dir.exists()
@@ -198,7 +202,9 @@ def group_images_and_all_masks_together(
                 shutil.copyfile(str(mask_path), str(output_path))
 
 
-def get_image_patches_paths_with_limit(patches_dir: Path, n_patches_limit: int) -> [Path]:
+def get_image_patches_paths_with_limit(
+    patches_dir: Path, n_patches_limit: int
+) -> [Path]:
     """
     Randomly take n_patches_limit patches in the patches_dir folder.
     """

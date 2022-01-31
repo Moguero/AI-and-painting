@@ -167,7 +167,6 @@ def save_count_all_categorical_mask_irregular_pixels(
             colour="yellow",
         )
     }
-    breakpoint()
     save_dict_to_csv(dict_to_save, output_path)
 
 
@@ -306,15 +305,18 @@ def count_all_irregular_pixels(
 
 
 def get_patch_labels_composition(
-    patch_path: Path,
+    image_patch_masks_paths: [Path],
     n_classes: int,
-    mapping_class_number: {str: int}
+    mapping_class_number: {str: int},
 ) -> {int: float}:
     """Compute the proportion (in %) of each class in the patch."""
     # initialize patch composition
     patch_composition = {class_number: 0.0 for class_number in range(n_classes + 1)}
 
-    labels_tensor = stack_image_patch_masks(image_patch_path=patch_path, mapping_class_number=mapping_class_number)
+    labels_tensor = stack_image_patch_masks(
+        image_patch_masks_paths=image_patch_masks_paths,
+        mapping_class_number=mapping_class_number,
+    )
     unique_with_count_tensor = tf.unique_with_counts(tf.reshape(labels_tensor, [-1]))
 
     values_array = unique_with_count_tensor.y.numpy()
@@ -334,22 +336,27 @@ def get_patch_labels_composition(
 
 
 def get_patches_labels_composition(
-        image_patches_paths_list: [Path],
-        n_classes: int,
-        mapping_class_number: {str: int}
+    image_patches_paths_list: [Path], n_classes: int, mapping_class_number: {str: int}
 ) -> pd.DataFrame:
     """
     For each patch of the list, returns the proportion of each class.
     """
     patch_composition_list = list()
-    for patch_path in image_patches_paths_list:
+    for image_patch_path in image_patches_paths_list:
+        image_patch_masks_paths = get_image_patch_masks_paths(
+            image_patch_path=image_patch_path
+        )
         patch_composition = get_patch_labels_composition(
-            patch_path=patch_path,
+            image_patch_masks_paths=image_patch_masks_paths,
             n_classes=n_classes,
             mapping_class_number=mapping_class_number,
         )
-        patch_composition_list.append([proportion for proportion in patch_composition.values()])
-    patches_composition_dataframe = pd.DataFrame(patch_composition_list, columns=mapping_class_number.keys())
+        patch_composition_list.append(
+            [proportion for proportion in patch_composition.values()]
+        )
+    patches_composition_dataframe = pd.DataFrame(
+        patch_composition_list, columns=mapping_class_number.keys()
+    )
     patches_composition_stats = patches_composition_dataframe.describe()
 
     assert int(sum(list(patches_composition_stats.loc["mean"]))) == 1

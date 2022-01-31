@@ -16,16 +16,16 @@ from dataset_utils.image_utils import decode_image
 
 
 def stack_image_patch_masks(
-    image_patch_path: Path,
+    image_patch_masks_paths: [Path],
     mapping_class_number: {str: int},
 ) -> tf.Tensor:
+    """
+
+    :param image_patch_masks_shape: A tuple (width, height) only : no channels dim !
+    """
     assert "background" in list(
         mapping_class_number.keys()
     ), f"'background' class is not specified in the class/number mapping : {mapping_class_number}"
-
-    image_patch_masks_paths = get_image_patch_masks_paths(
-        image_patch_path=image_patch_path
-    )
     shape = decode_image(file_path=image_patch_masks_paths[0])[:, :, 0].shape
     stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
 
@@ -78,12 +78,13 @@ def stack_image_patch_masks(
 
 
 def one_hot_encode_image_patch_masks(
-    image_patch_path: Path,
+    image_patch_masks_paths: [Path],
     n_classes: int,
     mapping_class_number: {str: int},
 ) -> tf.Tensor:
     categorical_mask_tensor = stack_image_patch_masks(
-        image_patch_path=image_patch_path, mapping_class_number=mapping_class_number
+        image_patch_masks_paths=image_patch_masks_paths,
+        mapping_class_number=mapping_class_number,
     )
     one_hot_encoded_tensor = tf.one_hot(
         indices=categorical_mask_tensor, depth=n_classes + 1, dtype=tf.int32

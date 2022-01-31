@@ -198,6 +198,7 @@ def save_patch_composition_plot(
     fig, ax = plt.subplots()
 
     classes = list(patch_composition_stats_dict.keys())
+    # todo : replace int() by floor() at 1 decimal
     means = [int(percent * 100) for percent in list(patch_composition_stats_dict.values())]
     colors = [color for color in palette_hexa.values()]
 
