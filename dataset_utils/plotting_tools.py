@@ -4,7 +4,12 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 
-from constants import MAPPING_CLASS_NUMBER, PALETTE_RGB_NORMALIZED, PALETTE_RGB, PALETTE_HEXA
+from constants import (
+    MAPPING_CLASS_NUMBER,
+    PALETTE_RGB_NORMALIZED,
+    PALETTE_RGB,
+    PALETTE_HEXA,
+)
 from dataset_utils.file_utils import timeit
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.image_utils import get_image_masks_paths, get_mask_class
@@ -76,6 +81,16 @@ def plot_image_from_tensor(tensor: tf.Tensor) -> None:
     plt.show()
 
 
+def save_image_from_tensor(
+    tensor: tf.Tensor, output_path: Path, title: str = ""
+) -> None:
+    image = tensor.numpy()
+    plt.imshow(image)
+    plt.title(title)
+    plt.axis("off")
+    plt.savefig(output_path, bbox_inches="tight", dpi=300)
+
+
 def plot_image_from_array(array: np.ndarray) -> None:
     plt.imshow(array)
     plt.axis("off")
@@ -114,7 +129,9 @@ def turn_2d_tensor_to_3d_tensor(
 
 @timeit
 def full_plot_image(
-    image_path: Path, masks_dir: Path, predictions_tensor: tf.Tensor, all_patch_masks_overlap_indices_path: Path
+    image_path: Path,
+    masks_dir: Path,
+    predictions_tensor: tf.Tensor,
 ) -> None:
     image = decode_image(image_path).numpy()
     categorical_tensor = stack_image_masks(image_path, masks_dir)
@@ -140,7 +157,9 @@ def full_plot_image(
     fontP = matplotlib.font_manager.FontProperties()
     fontP.set_size("x-small")
     handles = [
-        matplotlib.patches.Patch(color=PALETTE_HEXA[MAPPING_CLASS_NUMBER[class_name]], label=class_name)
+        matplotlib.patches.Patch(
+            color=PALETTE_HEXA[MAPPING_CLASS_NUMBER[class_name]], label=class_name
+        )
         for class_name in MAPPING_CLASS_NUMBER.keys()
     ]
     ax3.legend(handles=handles, bbox_to_anchor=(1.4, 1), loc="upper left", prop=fontP)
@@ -149,7 +168,6 @@ def full_plot_image(
 
 
 # save_full_plot_image(IMAGE_PATH, MASKS_DIR, predictions, OUTPUT_PATH)
-
 
 
 @timeit
@@ -166,6 +184,7 @@ def save_plot_predictions_only(
 
     plt.savefig(output_path, bbox_inches="tight", dpi=300)
 
+
 # save_plot_predictions_only(IMAGE_PATH, predictions, DATA_DIR_ROOT / "predictions/test2.jpg")
 
 
@@ -173,41 +192,48 @@ def save_plot_predictions_only(
 # {'loss': [2.4902284145355225, 2.272948980331421, 2.180922746658325, 2.123626708984375, 2.0806949138641357, 2.0426666736602783, 2.0098025798797607, 1.9834508895874023, 1.954201102256775, 1.9568171501159668], 'accuracy': [0.12945209443569183, 0.20466716587543488, 0.24759912490844727, 0.2723337709903717, 0.2895956039428711, 0.3004612624645233, 0.3144834637641907, 0.32735636830329895, 0.34158948063850403, 0.3489217460155487]}
 def plot_training_history(history: keras.callbacks.History) -> None:
     # summarize history for accuracy
-    plt.plot(history.history['accuracy'])
-    plt.title('model accuracy')
-    plt.ylabel('accuracy')
-    plt.xlabel('epoch')
-    plt.legend(["train"], loc='upper left')
+    plt.plot(history.history["accuracy"])
+    plt.title("model accuracy")
+    plt.ylabel("accuracy")
+    plt.xlabel("epoch")
+    plt.legend(["train"], loc="upper left")
     plt.grid(True)
     plt.show()
     # summarize history for loss
-    plt.plot(history.history['loss'])
-    plt.title('Model loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend(['train'], loc='upper left')
+    plt.plot(history.history["loss"])
+    plt.title("Model loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend(["train"], loc="upper left")
     plt.grid(True)
     plt.show()
 
 
 def save_patch_composition_plot(
-        patch_composition_stats_dict: {str: float},
-        output_path: Path,
-        palette_hexa: {int: str},
+    patch_composition_stats_dict: {str: float},
+    output_path: Path,
+    palette_hexa: {int: str},
 ):
     fig, ax = plt.subplots()
 
     classes = list(patch_composition_stats_dict.keys())
-    # todo : replace int() by floor() at 1 decimal
-    means = [int(percent * 100) for percent in list(patch_composition_stats_dict.values())]
+    means = [
+        round((percent * 100), 1) for percent in list(patch_composition_stats_dict.values())
+    ]
     colors = [color for color in palette_hexa.values()]
 
     bars = ax.barh(classes, means, color=colors)
     for bar in bars:
         width = bar.get_width()
-        ax.text(width * 0.95, bar.get_y() + bar.get_height() / 2, '%d' % int(width), ha='right', va='center')
+        ax.text(
+            width * 0.95,
+            bar.get_y() + bar.get_height() / 2,
+            "%d" % int(width),
+            ha="right",
+            va="center",
+        )
 
-    ax.set_xlabel('Class proportion (%)')
-    ax.set_title('Patches composition')
+    ax.set_xlabel("Class proportion (%)")
+    ax.set_title("Patches composition")
 
     plt.savefig(output_path, bbox_inches="tight", dpi=300)

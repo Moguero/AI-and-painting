@@ -61,6 +61,7 @@ def train_model(
     early_stopping_loss_min_delta: int,
     early_stopping_accuracy_min_delta: int,
     data_augmentation: bool,
+    image_data_generator_config_dict: dict,
     mapping_class_number: {str: int},
     palette_hexa: {int: str},
     add_note: bool = False,
@@ -87,6 +88,7 @@ def train_model(
     :param patches_dir_path: Path of the main patches directory.
     :param encoder_kernel_size: Tuple of 2 integers, size of the encoder kernel (usually set to 3x3).
     :param data_augmentation: If set to True, perform data augmentation.
+    :param image_data_generator_config_dict: :param image_data_generator_config_dict: Dict of parameters to apply with ImageDataGenerator for data augmentation.
     :param mapping_class_number: Mapping dictionary between class names and their representative number.
     :param palette_hexa: Mapping dictionary between class number and their corresponding plotting color.
     :param add_note: If set to True, add a note to the report in order to describe the run shortly.
@@ -209,6 +211,8 @@ def train_model(
             class_weights_dict=class_weights_dict,
             mapping_class_number=mapping_class_number,
             data_augmentation=data_augmentation,
+            image_data_generator_config_dict=image_data_generator_config_dict,
+            data_augmentation_plot_path=report_paths_dict["data_augmentation"]
         ),
         # validation_data=validation_dataset_generator(
         #     image_patches_paths=image_patches_paths_list,
@@ -221,7 +225,10 @@ def train_model(
         # class_weight=class_weights_dict,
         epochs=epochs,
         callbacks=callbacks,
-        steps_per_epoch=int(len(image_patches_paths_list) * (1 - test_proportion))
+        steps_per_epoch=int(
+            int(len(image_patches_paths_list) * (1 - test_proportion))
+            * (1 - validation_proportion)
+        )
         // batch_size,
         verbose=1,
     )

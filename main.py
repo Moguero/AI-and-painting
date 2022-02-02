@@ -25,7 +25,7 @@ from constants import (
     DOWNSCALED_TEST_IMAGES_PATHS_LIST,
     EARLY_STOPPING_LOSS_MIN_DELTA,
     EARLY_STOPPING_ACCURACY_MIN_DELTA,
-    CORRELATE_PREDICTIONS_BOOL, CORRELATION_FILTER,
+    CORRELATE_PREDICTIONS_BOOL, CORRELATION_FILTER, IMAGE_DATA_GENERATOR_CONFIG_DICT,
 )
 from deep_learning.training.model_runner import train_model
 from deep_learning.training.reporting import build_predict_run_report
@@ -59,6 +59,7 @@ def main(
             early_stopping_loss_min_delta=EARLY_STOPPING_LOSS_MIN_DELTA,
             early_stopping_accuracy_min_delta=EARLY_STOPPING_ACCURACY_MIN_DELTA,
             data_augmentation=DATA_AUGMENTATION,
+            image_data_generator_config_dict=IMAGE_DATA_GENERATOR_CONFIG_DICT,
             mapping_class_number=MAPPING_CLASS_NUMBER,
             palette_hexa=PALETTE_HEXA,
             add_note=add_note,
@@ -194,3 +195,5 @@ if __name__ == "__main__":
 
 # CLI command
 # python main.py --train --predict
+
+# todo : faire une liste d'improvements à la fin du README

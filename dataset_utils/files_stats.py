@@ -359,7 +359,9 @@ def get_patches_labels_composition(
     )
     patches_composition_stats = patches_composition_dataframe.describe()
 
-    assert int(sum(list(patches_composition_stats.loc["mean"]))) == 1
+    assert (
+        round(sum(list(patches_composition_stats.loc["mean"])), 2) == 1
+    ), f'Total patches composition is {round(sum(list(patches_composition_stats.loc["mean"])), 2)}, should be 1.0'
 
     return patches_composition_stats
 

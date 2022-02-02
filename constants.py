@@ -165,6 +165,14 @@ LOSS_FUNCTION = keras.losses.categorical_crossentropy
 METRICS = [keras.metrics.categorical_accuracy, keras.metrics.MeanIoU(N_CLASSES)]
 DOWNSCALE_FACTORS = (6, 6, 1)
 DATA_AUGMENTATION = False
+IMAGE_DATA_GENERATOR_CONFIG_DICT = dict(
+    brightness_range=[0.8, 1.2],
+    horizontal_flip=True,
+    zoom_range=[1.0, 1.2],
+    # rotation_range=5,
+    # channel_shift_range=50,
+    # samplewise_std_normalization=True,
+)
 EARLY_STOPPING_LOSS_MIN_DELTA = 0.02
 EARLY_STOPPING_ACCURACY_MIN_DELTA = 0.01
 CORRELATE_PREDICTIONS_BOOL = False

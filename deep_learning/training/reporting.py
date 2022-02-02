@@ -188,6 +188,7 @@ def init_report_paths(report_root_dir_path: Path) -> {str: Path}:
     _model_report = _report_dir_path / "2_model_report"
     _predictions_report = _report_dir_path / "3_predictions_report"
     _checkpoint_path = _model_report / "model_checkpoint"
+    _data_augmentation = _data_report / "data_aumgentation"
 
     report_paths_dict = dict()
     report_paths_dict["report_dir_path"] = _report_dir_path
@@ -195,6 +196,7 @@ def init_report_paths(report_root_dir_path: Path) -> {str: Path}:
     report_paths_dict["model_report"] = _model_report
     report_paths_dict["predictions_report"] = _predictions_report
     report_paths_dict["checkpoint_path"] = _checkpoint_path
+    report_paths_dict["data_augmentation"] = _data_augmentation
 
     return report_paths_dict
 
