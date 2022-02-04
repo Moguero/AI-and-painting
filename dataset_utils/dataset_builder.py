@@ -49,9 +49,10 @@ def get_image_patches_paths(
         0 <= test_proportion < 1
     ), f"Test proportion must be between 0 and 1 : {test_proportion} was given."
     logger.info("\nStart to build dataset...")
-    assert (n_patches_limit // batch_size) * (
-        1 - test_proportion
-    ) >= 1, f"Size of training dataset is 0. Increase the n_patches_limit parameter or decrease the batch_size."
+    if n_patches_limit is not None:
+        assert (n_patches_limit // batch_size) * (
+            1 - test_proportion
+        ) >= 1, f"Size of training dataset is 0. Increase the n_patches_limit parameter or decrease the batch_size."
 
     logger.info("\nGet the paths of the valid patches for training...")
     patches_under_coverage_percent_limit_list = list()

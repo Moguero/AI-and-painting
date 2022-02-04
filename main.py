@@ -139,7 +139,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--patches-limit",
         "-pl",
-        default=N_PATCHES_LIMIT,
         type=int,
         help="Maximum number of patches to use for training. Should only be used with --train.",
     )

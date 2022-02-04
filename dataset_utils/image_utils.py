@@ -208,13 +208,14 @@ def get_image_patches_paths_with_limit(
     """
     Randomly take n_patches_limit patches in the patches_dir folder.
     """
-    assert (
-        type(n_patches_limit) == int
-    ), f"n_patches_limit argument should be of type int : got {type(n_patches_limit)} instead."
-
     logger.info("\nRetrieving image patch paths...")
     patch_paths_list = list()
-    if n_patches_limit is not None:
+    if n_patches_limit is None:
+        for image_patches_subdir in patches_dir.iterdir():
+            for patch_dir in image_patches_subdir.iterdir():
+                for patch_path in (patch_dir / "image").iterdir():  # loop of size 1
+                    patch_paths_list.append(patch_path)
+    else:
         counter = 0
         image_patches_subdirs = list(patches_dir.iterdir())
         while counter < n_patches_limit:
@@ -225,11 +226,6 @@ def get_image_patches_paths_with_limit(
                 if patch_path not in patch_paths_list:
                     patch_paths_list.append(patch_path)
                     counter += 1
-    else:
-        for image_patches_subdir in patches_dir.iterdir():
-            for patch_dir in image_patches_subdir.iterdir():
-                for patch_path in (patch_dir / "image").iterdir():  # loop of size 1
-                    patch_paths_list.append(patch_path)
     logger.info("\nImage patch paths retrieved successfully.")
     return patch_paths_list
 
