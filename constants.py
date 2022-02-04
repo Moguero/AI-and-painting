@@ -43,7 +43,8 @@ else:  # aws instance
     DOWNSCALED_TEST_IMAGES_DIR_PATH = TEST_IMAGES_DIR_PATH / "downscaled_images" / "max"
     TEST_IMAGE_PATH = IMAGES_DIR_PATH / "_DSC0246/_DSC0246.jpg"
     N_EPOCHS = 10
-    N_PATCHES_LIMIT = 10000
+    # N_PATCHES_LIMIT = 10000
+    N_PATCHES_LIMIT = None
 
 TEST_IMAGES_NAMES = [
     "3.jpg",

@@ -203,7 +203,7 @@ def group_images_and_all_masks_together(
 
 
 def get_image_patches_paths_with_limit(
-    patches_dir: Path, n_patches_limit: int
+    patches_dir: Path, n_patches_limit: int = None,
 ) -> [Path]:
     """
     Randomly take n_patches_limit patches in the patches_dir folder.
@@ -214,16 +214,22 @@ def get_image_patches_paths_with_limit(
 
     logger.info("\nRetrieving image patch paths...")
     patch_paths_list = list()
-    counter = 0
-    image_patches_subdirs = list(patches_dir.iterdir())
-    while counter < n_patches_limit:
-        # select a random patch among all the patches
-        image_patches_subdir = random.choice(image_patches_subdirs)
-        patch_dir = random.choice(list(image_patches_subdir.iterdir()))
-        for patch_path in (patch_dir / "image").iterdir():  # loop of size 1
-            if patch_path not in patch_paths_list:
-                patch_paths_list.append(patch_path)
-                counter += 1
+    if n_patches_limit is not None:
+        counter = 0
+        image_patches_subdirs = list(patches_dir.iterdir())
+        while counter < n_patches_limit:
+            # select a random patch among all the patches
+            image_patches_subdir = random.choice(image_patches_subdirs)
+            patch_dir = random.choice(list(image_patches_subdir.iterdir()))
+            for patch_path in (patch_dir / "image").iterdir():  # loop of size 1
+                if patch_path not in patch_paths_list:
+                    patch_paths_list.append(patch_path)
+                    counter += 1
+    else:
+        for image_patches_subdir in patches_dir.iterdir():
+            for patch_dir in image_patches_subdir.iterdir():
+                for patch_path in (patch_dir / "image").iterdir():  # loop of size 1
+                    patch_paths_list.append(patch_path)
     logger.info("\nImage patch paths retrieved successfully.")
     return patch_paths_list
 

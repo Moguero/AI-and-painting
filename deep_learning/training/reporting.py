@@ -408,3 +408,6 @@ def save_predictions_config(
         # Pass the file handle in as a lambda function to make it callable
         for key, value in predictions_config.items():
             file.write(f"{str(key)}: {str(value)} \n")
+
+
+# todo : save the data augmentation dict at each run in the report

@@ -14,8 +14,7 @@ from dataset_utils.file_utils import (
 from dataset_utils.files_stats import count_mask_value_occurences_percent_of_2d_tensor
 from dataset_utils.image_utils import (
     get_file_name_with_extension,
-    get_image_patches_paths_with_limit,
-    get_image_patch_masks_paths, decode_image,
+    get_image_patch_masks_paths,
 )
 from dataset_utils.masks_encoder import stack_image_patch_masks
 

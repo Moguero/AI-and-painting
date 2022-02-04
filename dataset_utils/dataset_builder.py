@@ -25,11 +25,11 @@ from dataset_utils.plotting_tools import (
 
 def get_image_patches_paths(
     patches_dir_path: Path,
-    n_patches_limit: int,
     batch_size: int,
     patch_coverage_percent_limit: int,
     test_proportion: float,
     mapping_class_number: {str: int},
+    n_patches_limit: int = None,
     image_patches_paths: [Path] = None,
 ) -> [Path]:
     """
@@ -428,10 +428,10 @@ def get_train_dataset(
     image_patches_paths = get_image_patches_paths(
         patches_dir_path=patches_dir_path,
         patch_coverage_percent_limit=patch_coverage_percent_limit,
-        n_patches_limit=n_patches_limit,
         batch_size=batch_size,
         test_proportion=test_proportion,
         mapping_class_number=mapping_class_number,
+        n_patches_limit=n_patches_limit,
     )
 
     image_patches_masks_path = [

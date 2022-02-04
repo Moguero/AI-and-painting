@@ -177,12 +177,12 @@ def train_model(
     # Build training/validation dataset
     image_patches_paths_list = get_image_patches_paths(
         patches_dir_path=patches_dir_path,
-        n_patches_limit=n_patches_limit,
         batch_size=batch_size,
         patch_coverage_percent_limit=patch_coverage_percent_limit,
         test_proportion=test_proportion,
-        image_patches_paths=image_patches_paths,
         mapping_class_number=mapping_class_number,
+        n_patches_limit=n_patches_limit,
+        image_patches_paths=image_patches_paths,
     )
 
     # Compute statistics on the dataset
@@ -212,7 +212,7 @@ def train_model(
             mapping_class_number=mapping_class_number,
             data_augmentation=data_augmentation,
             image_data_generator_config_dict=image_data_generator_config_dict,
-            data_augmentation_plot_path=report_paths_dict["data_augmentation"]
+            data_augmentation_plot_path=report_paths_dict["data_augmentation"]  # todo : fix this
         ),
         # validation_data=validation_dataset_generator(
         #     image_patches_paths=image_patches_paths_list,
