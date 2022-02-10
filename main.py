@@ -39,6 +39,7 @@ def main(
     n_patches_limit: int,
     n_epochs: int,
     report_dir: str,
+    data_augmentation: bool
 ) -> None:
     if train_bool:
         report_dir_path = train_model(
@@ -58,7 +59,7 @@ def main(
             encoder_kernel_size=ENCODER_KERNEL_SIZE,
             early_stopping_loss_min_delta=EARLY_STOPPING_LOSS_MIN_DELTA,
             early_stopping_accuracy_min_delta=EARLY_STOPPING_ACCURACY_MIN_DELTA,
-            data_augmentation=DATA_AUGMENTATION,
+            data_augmentation=data_augmentation,
             image_data_generator_config_dict=IMAGE_DATA_GENERATOR_CONFIG_DICT,
             mapping_class_number=MAPPING_CLASS_NUMBER,
             palette_hexa=PALETTE_HEXA,
@@ -155,6 +156,12 @@ if __name__ == "__main__":
         "-r",
         help="Report path to give the model to make the inference with. Should only be used with --predict.",
     )
+    parser.add_argument(
+        "--data-augment",
+        "-da",
+        action="store_true",
+        help="Apply data augmentation on the training data. Should only be used with --train.",
+    )
     args = parser.parse_args()
 
     if not args.predict and not args.train:
@@ -173,6 +180,9 @@ if __name__ == "__main__":
     if not args.train and args.epochs != N_EPOCHS:
         warnings.warn("--epochs parameter should only be used with --train parameter")
 
+    if not args.train and args.epochs is True:
+        warnings.warn("--data-augment parameter should only be used with --train parameter")
+
     if not args.predict and args.light:
         warnings.warn("--light parameter should only be used with --predict parameter.")
 
@@ -189,6 +199,7 @@ if __name__ == "__main__":
         n_patches_limit=args.patches_limit,
         n_epochs=args.epochs,
         report_dir=args.report,
+        data_augmentation=args.data_augment,
     )
 
 
@@ -196,3 +207,5 @@ if __name__ == "__main__":
 # python main.py --train --predict
 
 # todo : faire une liste d'improvements à la fin du README
+
+# todo : store number of patches used for training
