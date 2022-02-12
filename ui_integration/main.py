@@ -1,6 +1,10 @@
 from pathlib import Path
 from ui_integration.predictions_maker import make_predictions
-from ui_integration.utils import get_formatted_time, get_image_name_without_extension, turn_2d_tensor_to_3d_tensor
+from ui_integration.utils import (
+    get_formatted_time,
+    get_image_name_without_extension,
+    turn_2d_tensor_to_3d_tensor,
+)
 
 import tensorflow as tf
 
@@ -27,42 +31,31 @@ MASK_TRUE_VALUE = 255
 MASK_FALSE_VALUE = 0
 
 
-# todo : change report_dir_path with "path where to store binary classifications"
-def main(image_path: Path, report_dir_path: Path):
-    build_predict_run_report(
-        image_path=image_path,
-        report_dir_path=report_dir_path,
+def main(
+    image_path: Path,
+    model_checkpoint_dir_path: Path,
+    workspace_dir_path: Path,
+) -> None:
+    """
+    Generate and save binary predictions masks in the specified workspace folder.
+
+    :param image_path: The image on which to make predictions on.
+    :param model_checkpoint_dir_path: The path to the model checkpoint.
+    :param workspace_dir_path: Folder where to save the binary predictions.
+      It will create a subfolder named "predictions__<image_name>__<run_date>",
+      with binary masks "<image_name>__<class_name>.png" in it.
+
+    Example : main(Path(".../image.jpg", Path(".../final_models/1_model_2022_01_06__17_43_17"), Path(".../my_workspace/")
+    """
+    # Make predictions
+    predictions_tensor = make_predictions(
+        target_image_path=image_path,
+        checkpoint_dir_path=model_checkpoint_dir_path,
         patch_size=PATCH_SIZE,
         patch_overlap=PATCH_OVERLAP,
         n_classes=N_CLASSES,
         batch_size=BATCH_SIZE,
         encoder_kernel_size=ENCODER_KERNEL_SIZE,
-    )
-
-
-def build_predict_run_report(
-    image_path: Path,
-    report_dir_path: Path,
-    patch_size: int,
-    patch_overlap: int,
-    n_classes: int,
-    batch_size: int,
-    encoder_kernel_size: int,
-) -> None:
-    predictions_report_root_path = (
-        report_dir_path / "3_predictions" / get_formatted_time()
-    )
-    predictions_report_root_path.mkdir(parents=True)
-
-    # Make predictions
-    predictions_tensor = make_predictions(
-        target_image_path=image_path,
-        checkpoint_dir_path=report_dir_path / "2_model_report",
-        patch_size=patch_size,
-        patch_overlap=patch_overlap,
-        n_classes=n_classes,
-        batch_size=batch_size,
-        encoder_kernel_size=encoder_kernel_size,
     )
 
     # todo : ask if Alexandre wants to keep it ?
@@ -79,22 +72,12 @@ def build_predict_run_report(
     #     predictions_report_root_path=predictions_report_root_path,
     # )
 
-    save_binary_predictions_plot(
-        target_image_path=image_path,
-        predictions_tensor=predictions_tensor,
-        predictions_report_root_path=predictions_report_root_path,
+    # Create a subfolder for the predictions
+    predictions_report_root_path = (
+            workspace_dir_path / (
+                "predictions__" + get_image_name_without_extension(image_path) + "__" + get_formatted_time())
     )
-
-
-def save_binary_predictions_plot(
-    target_image_path: Path,
-    predictions_tensor: tf.Tensor,
-    predictions_report_root_path: Path,
-):
-    # Separate predictions tensor into a list of n_classes binary tensors of size (width, height)
-    binary_predictions_sub_dir = predictions_report_root_path / "binary_predictions"
-    if not binary_predictions_sub_dir.exists():
-        binary_predictions_sub_dir.mkdir()
+    predictions_report_root_path.mkdir(parents=True)
 
     # Create and save binary tensors
     for idx, class_number in enumerate(MAPPING_CLASS_NUMBER.values()):
@@ -110,17 +93,15 @@ def save_binary_predictions_plot(
             for class_name, class_number in MAPPING_CLASS_NUMBER.items()
         }
 
-        binary_predictions_class_sub_dir = (
-            predictions_report_root_path
-            / "binary_predictions"
-            / get_image_name_without_extension(target_image_path)
-        )
-        if not binary_predictions_class_sub_dir.exists():
-            binary_predictions_class_sub_dir.mkdir(parents=True)
         output_path = (
-            binary_predictions_sub_dir
-            / get_image_name_without_extension(target_image_path)
-            / f"{get_image_name_without_extension(target_image_path)}__{mapping_number_class[idx]}.png"
+            predictions_report_root_path
+            / f"{get_image_name_without_extension(image_path)}__{mapping_number_class[idx]}.png"
         )
         tf.keras.preprocessing.image.save_img(output_path, binary_tensor_3d)
-        print(f"\nBinary predictions plot successfully saved at : {output_path}")
+
+    print(f"\nBinary predictions plot successfully saved in folder : {predictions_report_root_path}")
+
+
+main(model_checkpoint_dir_path=Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\final_models\1_model_2022_01_06__17_43_17"),
+     image_path=Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\test_images\downscaled_images\max\downscaled_max_4.jpg"),
+     workspace_dir_path=Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files"))
