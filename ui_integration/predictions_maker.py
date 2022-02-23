@@ -80,7 +80,6 @@ def make_predictions(
     # Rebuild the image with the predictions patches
     # output tensor of size (intput_width_size - 2 * patch_overlap, input_height_size - 2 * patch_overlap)
     final_predictions_tensor = rebuild_predictions_with_overlap(
-        target_image_path=target_image_path,
         main_patch_classes_list=main_patch_classes_list,
         right_side_patch_classes_list=right_side_patch_classes_list,
         down_side_patch_classes_list=down_side_patch_classes_list,
@@ -265,7 +264,6 @@ def patches_predict(
 
 
 def rebuild_predictions_with_overlap(
-        target_image_path: Path,
         main_patch_classes_list: [tf.Tensor],
         right_side_patch_classes_list: [tf.Tensor],
         down_side_patch_classes_list: [tf.Tensor],
@@ -278,7 +276,6 @@ def rebuild_predictions_with_overlap(
     Restructure the patches that were generated with the extract_patches_with_overlap() function.
     Warning : This function is strongly coupled with the function extract_patches() from the patches_generator.py module
 
-    :param target_image_path:
     :param down_side_patch_classes_list:
     :param main_patch_classes_list: List with size n_patches of tensor with size (patch_size, patch_size)
     :param right_side_patch_classes_list:
@@ -322,9 +319,7 @@ def rebuild_predictions_with_overlap(
     n_vertical_patches = (image_height - 2 * int(patch_overlap / 2)) // window_stride
     n_horizontal_patches = (image_width - 2 * int(patch_overlap / 2)) // window_stride
 
-    print(
-        f"\nRebuilding predictions patches for image {get_file_name_with_extension(target_image_path)}..."
-    )
+    print("\nRebuilding predictions patches...")
     for row_number in range(n_vertical_patches):
         for column_number in range(n_horizontal_patches):
             # Rebuild the line

@@ -11,47 +11,28 @@ def get_formatted_time():
 
 def decode_image(file_path: Path) -> tf.Tensor:
     """
-    Turns a png or jpeg images into its tensor 3D (for jpeg) or 4D (for png) version.
+    Turns a png or jpeg images into its tensor 3D version (dropping the 4th channel if PNG).
 
     :param filepath: The path of the file to decode.
     """
     value = tf.io.read_file(str(file_path))
     image_type = get_image_type(file_path)
-    channels = get_image_channels_number(file_path)
     if image_type == "png" or image_type == "PNG":
-        decoded_image = tf.image.decode_png(value, channels=channels)
+        decoded_image = tf.image.decode_png(value, channels=3)
     elif (
         image_type == "jpg"
         or image_type == "JPG"
         or image_type == "jpeg"
         or image_type == "JPEG"
     ):
-        decoded_image = tf.image.decode_jpeg(value, channels=channels)
+        decoded_image = tf.image.decode_jpeg(value, channels=3)
     else:
-        decoded_image = tf.image.decode_image(value, channels=channels)
+        raise ValueError(f"Image {file_path} if not png nor jpeg.")
     return decoded_image
 
 
 def get_image_type(image_path: Path) -> str:
     return image_path.parts[-1].split(".")[-1]
-
-
-def get_image_channels_number(image_path: Path) -> int:
-    image_type = get_image_type(image_path)
-    image_channels_number = None
-    if image_type == "png" or image_type == "PNG":
-        image_channels_number = 4
-    elif (
-        image_type == "jpg"
-        or image_type == "JPG"
-        or image_type == "jpeg"
-        or image_type == "JPEG"
-    ):
-        image_channels_number = 3
-    assert (
-        image_channels_number is not None
-    ), f"Incorrect images type {image_type} of images with path {image_path}"
-    return image_channels_number
 
 
 def get_image_tensor_shape(image_tensor: tf.Tensor):

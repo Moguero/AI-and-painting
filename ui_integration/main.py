@@ -35,15 +35,17 @@ def main(
     image_path: Path,
     model_checkpoint_dir_path: Path,
     workspace_dir_path: Path,
-) -> None:
+) -> {str: Path}:
     """
     Generate and save binary predictions masks in the specified workspace folder.
 
     :param image_path: The image on which to make predictions on.
     :param model_checkpoint_dir_path: The path to the model checkpoint.
     :param workspace_dir_path: Folder where to save the binary predictions.
-      It will create a subfolder named "predictions__<image_name>__<run_date>",
+      It will create a subfolder named "<image_name>/predictions__<run_date>",
       with binary masks "<image_name>__<class_name>.png" in it.
+
+    :returns A dictionnary with key <class_name> and value <class_mask_path>.
 
     Example : main(Path(".../image.jpg", Path(".../final_models/1_model_2022_01_06__17_43_17"), Path(".../my_workspace/")
     """
@@ -58,28 +60,16 @@ def main(
         encoder_kernel_size=ENCODER_KERNEL_SIZE,
     )
 
-    # todo : ask if Alexandre wants to keep it ?
-    # save_test_images_vs_predictions_plot(
-    #     target_image_path=image_path,
-    #     predictions_tensor=predictions_tensor,
-    #     predictions_report_root_path=predictions_report_root_path,
-    # )
-
-    # todo : ask if Alexandre wants to keep it ?
-    # predictions_only_path = save_predictions_only_plot(
-    #     target_image_path=image_path,
-    #     predictions_tensor=predictions_tensor,
-    #     predictions_report_root_path=predictions_report_root_path,
-    # )
-
     # Create a subfolder for the predictions
-    predictions_report_root_path = (
-            workspace_dir_path / (
-                "predictions__" + get_image_name_without_extension(image_path) + "__" + get_formatted_time())
+    predictions_root_path = (
+        workspace_dir_path
+        / get_image_name_without_extension(image_path)
+        / ("predictions__" + get_formatted_time())
     )
-    predictions_report_root_path.mkdir(parents=True)
+    predictions_root_path.mkdir(parents=True)
 
     # Create and save binary tensors
+    class_masks_paths_dict = dict()
     for idx, class_number in enumerate(MAPPING_CLASS_NUMBER.values()):
         binary_tensor = tf.where(
             condition=tf.equal(predictions_tensor, class_number),
@@ -94,14 +84,26 @@ def main(
         }
 
         output_path = (
-            predictions_report_root_path
+            predictions_root_path
             / f"{get_image_name_without_extension(image_path)}__{mapping_number_class[idx]}.png"
         )
         tf.keras.preprocessing.image.save_img(output_path, binary_tensor_3d)
+        class_masks_paths_dict[mapping_number_class[idx]] = output_path
+    print(
+        f"\nBinary predictions plot successfully saved in folder : {predictions_root_path}"
+    )
 
-    print(f"\nBinary predictions plot successfully saved in folder : {predictions_report_root_path}")
+    return class_masks_paths_dict
 
 
-main(model_checkpoint_dir_path=Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\final_models\1_model_2022_01_06__17_43_17"),
-     image_path=Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\test_images\downscaled_images\max\downscaled_max_4.jpg"),
-     workspace_dir_path=Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files"))
+class_masks_path_dict = main(
+    model_checkpoint_dir_path=Path(
+        r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\final_models\1_model_2022_01_06__17_43_17"
+    ),
+    image_path=Path(
+        r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\test_images\downscaled_images\max\downscaled_max_4.jpg"
+    ),
+    workspace_dir_path=Path(
+        r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files"
+    ),
+)
