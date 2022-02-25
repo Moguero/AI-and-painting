@@ -1,8 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from pathlib import Path
-from typing import Generator, Tuple, Union, List
-
+from typing import Generator, Tuple
 from loguru import logger
 from tqdm import tqdm
 
@@ -17,10 +16,7 @@ from dataset_utils.masks_encoder import (
 )
 from dataset_utils.patches_generator import extract_patches
 from dataset_utils.patches_sorter import get_patch_coverage
-from dataset_utils.plotting_tools import (
-    plot_image_from_tensor,
-    save_image_from_tensor,
-)
+from dataset_utils.plotting_tools import save_image_from_tensor
 
 
 def get_image_patches_paths(
@@ -123,14 +119,6 @@ def train_dataset_generator(
     train_limit_idx = int(validation_limit_idx * (1 - validation_proportion))
     n_batches = train_limit_idx // batch_size
 
-    # todo : data augmentation with ImageDataGenerator : will create a generator,
-    #  that can be used to reload the augmented images in a tensor that will be yielded by this generator
-    #  pass an augmentation_object parameter to this function (cf tuto)
-    #  random crop, luminosité, légère rotation, hue, saturation, compression jpeg
-    #  hsv cylinder
-    #  algo de traitement de signal jpeg pour la compression d'images
-    # https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image/ImageDataGenerator
-    # idée : data augmentation on each batch
     logger.info(
         f"\n{validation_limit_idx}/{len(image_patches_paths)} patches taken for training and validation : validation proportion of {validation_proportion} and test proportion of {test_proportion}"
         f"\n - {train_limit_idx}/{len(image_patches_paths)} patches for training (validation proportion of {validation_proportion} and test proportion of {test_proportion})"
@@ -209,129 +197,6 @@ def get_image_weights(
     return weights_tensor
 
 
-# NOT USED ANYMORE
-# def validation_dataset_generator(
-#     image_patches_paths: [Path],
-#     n_classes: int,
-#     batch_size: int,
-#     validation_proportion: float,
-#     test_proportion: float,
-#     mapping_class_number: {str: int},
-#     data_augmentation: bool = False,
-# ) -> Generator[Tuple[tf.Tensor, tf.Tensor], None, None]:
-#     """
-#     Create a dataset generator that will be used to feed model.fit().
-#     This generator yields batches (acts like "drop_remainder == True") of augmented images.
-#
-#     Warning : this function builds a generator which is only meant to be used with "model.fit()" function.
-#     Appropriate behaviour is not expected in a different context.
-#
-#     :param image_patches_paths: Paths of the images (already filtered) to train on.
-#     :param n_classes: Number of classes, background not included.
-#     :param batch_size: Size of the batches.
-#     :param validation_proportion: Float, used to set the proportion of the validation images dataset.
-#     :param test_proportion: Float, used to set the proportion of the training images dataset.
-#     :param mapping_class_number: Mapping dictionary between class names and their representative number.
-#     :param data_augmentation: Boolean, apply data augmentation to the each batch of the training dataset if True.
-#     :return: Yield 2 tensors of size (batch_size, patch_size, patch_size, 3) and (batch_size, patch_size, patch_size, n_classes + 1),
-#             corresponding to image tensors and their corresponding one-hot-encoded masks tensors
-#     """
-#     validation_limit_idx = int(len(image_patches_paths) * (1 - test_proportion))
-#     train_limit_idx = int(validation_limit_idx * (1 - validation_proportion))
-#
-#     while True:
-#         n_batches = (validation_limit_idx - train_limit_idx) // batch_size
-#         for n_batch in range(n_batches):
-#             # lists of length batch_size, containing :
-#             # - image tensors of shape (patch_size, patch_size, 3)
-#             # - labels tensors of shape (patch_size, patch_size, n_classes + 1)
-#             # - weights tensors of shape (patch_size, patch_size, n_classes + 1)
-#             image_tensors_list = list()
-#             labels_tensors_list = list()
-#             weights_tensors_list = list()
-#
-#             for image_patch_path in image_patches_paths[
-#                 train_limit_idx
-#                 + n_batch * batch_size : train_limit_idx
-#                 + (n_batch + 1) * batch_size
-#             ]:
-#                 image_tensor, labels_tensor = decode_image(
-#                     file_path=image_patch_path
-#                 ), one_hot_encode_image_patch_masks(
-#                     image_patch_path=image_patch_path,
-#                     n_classes=n_classes,
-#                     mapping_class_number=mapping_class_number,
-#                 )
-#                 weights_tensor = ...  # todo
-#
-#                 image_tensors_list.append(image_tensor)
-#                 labels_tensors_list.append(labels_tensor)
-#                 weights_tensors_list.append(weights_tensor)
-#
-#             if data_augmentation:
-#                 (
-#                     augmented_image_tensors,
-#                     augmented_labels_tensors,
-#                     weights_tensors,
-#                 ) = augment_batch(
-#                     image_tensors=image_tensors_list,
-#                     labels_tensors=labels_tensors_list,
-#                     weights_tensors=weights_tensors_list,
-#                     batch_size=batch_size,
-#                 )
-#             else:
-#                 augmented_image_tensors, augmented_labels_tensors = tf.stack(
-#                     image_tensors_list
-#                 ), tf.stack(labels_tensors_list)
-#
-#             yield augmented_image_tensors, augmented_labels_tensors
-
-
-# def test_dataset_generator(
-#     image_patches_paths: [Path],
-#     n_classes: int,
-#     batch_size: int,
-#     test_proportion: float,
-# ) -> Generator[Tuple[tf.Tensor, tf.Tensor], None, None]:
-#     """
-#     Create a dataset generator that will be used to feed model.evaluate()
-#     . This generator yields batches (acts like "drop_remainder == True") of augmented images.
-#
-#     Warning : this function builds a generator which is only meant to be used with "model.evaluate()" function.
-#     Appropriate behaviour is not expected in a different context.
-#
-#     :param image_patches_paths: Paths of the images (already filtered) to train on.
-#     :param n_classes: Number of classes, background not included.
-#     :param batch_size: Size of the batches.
-#     :param test_proportion: Float, used to set the proportion of the validation images dataset.
-#     :return: Yield 2 tensors of size (batch_size, patch_size, patch_size, 3) and (batch_size, patch_size, patch_size, n_classes + 1),
-#             corresponding to image tensors and their corresponding one-hot-encoded masks tensors
-#     """
-#     train_limit_idx = int(len(image_patches_paths) * (1 - test_proportion))
-#
-#     while True:
-#         n_batches = (len(image_patches_paths) - train_limit_idx) // batch_size
-#         for n_batch in range(n_batches):
-#             # list of length batch_size, containing image tensors of shape (256, 256, 3)
-#             image_tensors_list = list()
-#             # list of length batch_size, containing corresponding labels tensors of shape (256, 256, 10)
-#             labels_tensors_list = list()
-#
-#             for image_patch_path in image_patches_paths[
-#                 train_limit_idx
-#                 + n_batch * batch_size : train_limit_idx
-#                 + (n_batch + 1) * batch_size
-#             ]:
-#                 image_tensor, labels_tensor = decode_image(
-#                     file_path=image_patch_path
-#                 ), one_hot_encode_image_patch_masks(
-#                     image_patch_path=image_patch_path, n_classes=n_classes
-#                 )
-#                 image_tensors_list.append(image_tensor)
-#                 labels_tensors_list.append(labels_tensor)
-#             yield tf.stack(image_tensors_list), tf.stack(labels_tensors_list)
-
-
 def build_predictions_dataset(
     target_image_tensor: tf.Tensor, patch_size: int, patch_overlap: int
 ) -> (tf.data.Dataset, tf.data.Dataset, tf.data.Dataset):
@@ -354,9 +219,7 @@ def build_predictions_dataset(
         patch_overlap=patch_overlap,
     )
     prediction_dataset = tf.data.Dataset.from_tensor_slices(main_patches_tensors_list)
-    prediction_dataset = prediction_dataset.batch(
-        batch_size=1, drop_remainder=True
-    )  # todo : don't hardcode the batch_size to 1
+    prediction_dataset = prediction_dataset.batch(batch_size=1, drop_remainder=True)
 
     right_side_prediction_dataset = tf.data.Dataset.from_tensor_slices(
         right_side_patches_tensors_list
@@ -387,136 +250,13 @@ def build_predictions_dataset(
     )
 
 
-# deprecated + never finished
-def get_train_dataset(
-    n_patches_limit: int,
-    n_classes: int,
-    batch_size: int,
-    validation_proportion: float,
-    test_proportion: float,
-    class_weights_dict: {int: float},
-    patch_coverage_percent_limit: int,
-    patches_dir_path: Path,
-    mapping_class_number: {str: int},
-) -> tf.data.Dataset:
-    """
-
-    :param n_patches_limit: Maximum number of patches used for the training.
-    :param n_classes: Total number of classes, background not included.
-    :param batch_size: Size of the batch.
-    :param validation_proportion: Float, used to set the proportion of the validation images dataset.
-    :param test_proportion: Float, used to set the proportion of the test dataset.
-    :param class_weights_dict: Mapping of classes and their global weight in the dataset : used to balance the loss function.
-    :param patch_coverage_percent_limit: Int, minimum coverage percent of a patch labels on this patch.
-    :param patches_dir_path: Path of the folder with patches of size patch_size.
-    :param mapping_class_number: Mapping dictionary between class names and their representative number.
-    :return: A training Dataset object of length (n_patches_limit // batch_size) * (1 - test_proportion),
-        with tuples of tensors of size (batch_size, patch_size, patch_size, 3) and
-        (batch_size, patch_size, patch_size, n_classes + 1) respectfully.
-    """
-    assert (
-        0 <= test_proportion < 1
-    ), f"Test proportion must be between 0 and 1 : {test_proportion} was given."
-    logger.info("\nStart to build dataset...")
-    assert (n_patches_limit // batch_size) * (
-        1 - test_proportion
-    ) >= 1, f"Size of training dataset is 0. Increase the n_patches_limit parameter or decrease the batch_size."
-    assert sorted(class_weights_dict) == [
-        i for i in range(n_classes + 1)
-    ], f"Class weights dict is missing a class : should have {n_classes + 1} keys but is {class_weights_dict}"
-
-    # Get the paths of the valid patches for training
-    image_patches_paths = get_image_patches_paths(
-        patches_dir_path=patches_dir_path,
-        patch_coverage_percent_limit=patch_coverage_percent_limit,
-        batch_size=batch_size,
-        test_proportion=test_proportion,
-        mapping_class_number=mapping_class_number,
-        n_patches_limit=n_patches_limit,
-    )
-
-    image_patches_masks_path = [
-        get_image_patch_masks_paths(image_patch_path)
-        for image_patch_path in image_patches_paths
-    ]
-
-    validation_limit_idx = int(len(image_patches_paths) * (1 - test_proportion))
-    train_limit_idx = int(validation_limit_idx * (1 - validation_proportion))
-
-    logger.info(
-        f"\n{validation_limit_idx}/{len(image_patches_paths)} patches taken for training and validation : validation proportion of {validation_proportion} and test proportion of {test_proportion}"
-        f"\n - {train_limit_idx}/{len(image_patches_paths)} patches for training (validation proportion of {validation_proportion} and test proportion of {test_proportion})"
-        f"\n - {validation_limit_idx - train_limit_idx}/{len(image_patches_paths)} patches for validation"
-        f"\n{(train_limit_idx // batch_size) * batch_size}/{train_limit_idx} training patches will be kept and {train_limit_idx % batch_size}/{train_limit_idx} will be dropped (drop remainder).",
-    )
-
-    # image_patches_paths = [str(i) for i in image_patches_paths]
-    # image_patches_masks_path = [
-    #     get_image_patch_masks_paths(image_patch_path)
-    #     for image_patch_path in image_patches_paths
-    # ]
-    # patches_image_and_labels_paths: List[Tuple[str, List[str]]] = [
-    #     (str(image_patch_path), get_image_patch_masks_paths(image_patch_path))
-    #     for image_patch_path in image_patches_paths
-    # ]
-    #
-    # # dataset = tf.data.Dataset.list_files(image_patches_paths)
-    # dataset = tf.data.Dataset.from_generator(
-    #     lambda: patches_image_and_labels_paths, tf.string
-    # )
-    #
-    # def process_path(patches_image_and_labels_paths) -> (tf.Tensor, tf.Tensor):
-    #     breakpoint()
-    #     # Load the raw data from the file as a string
-    #     image_tensor = tf.io.read_file(patches_image_and_labels_paths[0])
-    #     image_tensor = tf.io.decode_image(image_tensor, channels=3)
-    #
-    #     labels_tensor = tf.io.read_file(patches_image_and_labels_paths[0])
-    #     labels_tensor = one_hot_encode_image_patch_masks(
-    #         image_patch_masks_paths=patches_image_and_labels_paths[1],
-    #         n_classes=n_classes,
-    #         mapping_class_number=mapping_class_number,
-    #     )
-    #     # Resize the image to the desired size
-    #     return image_tensor
-    #
-    # dataset = dataset.map(process_path)
-    # breakpoint()
-
-    # Create image patches tensors and their associated one-hot-encoded masks tensors
-    image_tensors = [
-        decode_image(Path(image_path))
-        for image_path in tqdm(image_patches_paths, desc="Loading image tensors")
-    ]
-    mask_tensors = [
-        one_hot_encode_image_patch_masks(
-            image_patch_path=Path(image_patch_path),
-            n_classes=n_classes,
-            mapping_class_number=mapping_class_number,
-        )
-        for image_patch_path in tqdm(image_patches_paths, desc="Loading mask tensors")
-    ]
-
-    # Create a tf.data.Dataset object and batch it
-    full_dataset = tf.data.Dataset.from_tensor_slices((image_tensors, mask_tensors))
-    full_dataset = full_dataset.batch(batch_size, drop_remainder=True)
-    # todo : shuffle the whole dataset
-
-    # Split the dataset into a training and testing one
-    train_limit_idx = int(len(full_dataset) * (1 - test_proportion))
-    train_dataset = full_dataset.take(train_limit_idx)
-
-    logger.info("\nDataset built successfully.")
-    return train_dataset
-
-
 def augment_batch(
     image_tensors: [tf.Tensor],
     labels_tensors: [tf.Tensor],
     weights_tensors: [tf.Tensor],
     batch_size: int,
     image_data_generator_config_dict: dict,
-    data_augmentation_plot_path: str = None,
+    data_augmentation_plot_path: Path = None,
 ):
     image_data_generator = tf.keras.preprocessing.image.ImageDataGenerator(
         **image_data_generator_config_dict

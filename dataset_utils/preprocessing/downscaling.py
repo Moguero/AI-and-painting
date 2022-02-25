@@ -1,11 +1,8 @@
 import tensorflow as tf
-
 from pathlib import Path
 from math import ceil
 from skimage.transform import downscale_local_mean
 
-from constants import DOWNSCALE_FACTORS, IMAGE_PATH, TEST_IMAGES_DIR_PATH, TEST_IMAGES_PATHS_LIST, MAX_HEIGHT_PIXELS, \
-    MAX_WIDTH_PIXELS, DOWNSCALED_TEST_IMAGES_DIR_PATH, MIN_HEIGHT_PIXELS, MIN_WIDTH_PIXELS
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.masks_encoder import save_tensor_to_jpg
 from dataset_utils.plotting_tools import plot_image_from_array
@@ -19,7 +16,7 @@ def downscale_image(image_path: Path, downscale_factors: (int, int, int)) -> tf.
     :param downscale_factors: Factors on which we want to downscale the image.
     :return: A tensor of shape ceil(image_tensor.shape / downscale_factors).
     """
-    image_tensor = decode_image(image_path=image_path)
+    image_tensor = decode_image(file_path=image_path)
     downscaled_array = downscale_local_mean(
         image=image_tensor, factors=downscale_factors
     ).astype(int)
@@ -48,7 +45,9 @@ def plot_downscale_image(image_path: Path, downscale_factors: (int, int, int)) -
 def save_downscaled_image(
     image_path: Path, downscale_factors: (int, int, int), output_image_path: Path
 ) -> None:
-    assert not output_image_path.exists(), f"Image path already exists : {output_image_path}"
+    assert (
+        not output_image_path.exists()
+    ), f"Image path already exists : {output_image_path}"
     downscaled_tensor = downscale_image(
         image_path=image_path, downscale_factors=downscale_factors
     )
@@ -63,17 +62,21 @@ def bulk_save_downscaled_images(
     pixels_widht_limit: int,
 ) -> None:
     for image_path in target_images_paths_list:
-        height_downscale_factor = int(decode_image(image_path).shape[0] / pixels_height_limit) + 1
-        width_downscale_factor = int(decode_image(image_path).shape[1] / pixels_widht_limit) + 1
+        height_downscale_factor = (
+            int(decode_image(image_path).shape[0] / pixels_height_limit) + 1
+        )
+        width_downscale_factor = (
+            int(decode_image(image_path).shape[1] / pixels_widht_limit) + 1
+        )
         downscale_factor = max(height_downscale_factor, width_downscale_factor)
 
         downscale_factors = (downscale_factor, downscale_factor, 1)
         if not output_dir_path.exists():
             output_dir_path.mkdir(parents=True)
         output_image_path = output_dir_path / (
-                prefix_to_add
-                + get_image_name_without_extension(image_path=image_path)
-                + ".jpg"
+            prefix_to_add
+            + get_image_name_without_extension(image_path=image_path)
+            + ".jpg"
         )
         save_downscaled_image(
             image_path=image_path,
@@ -84,8 +87,8 @@ def bulk_save_downscaled_images(
 
 # ------
 # DEBUG
+
 # downscale_image(IMAGE_PATH, DOWNSCALE_FACTORS)
 # plot_downscale_image(IMAGE_PATH, DOWNSCALE_FACTORS)
-
 # bulk_save_downscaled_images(TEST_IMAGES_PATHS_LIST, DOWNSCALED_TEST_IMAGES_DIR_PATH / "max", "downscaled_max_", MAX_HEIGHT_PIXELS, MAX_WIDTH_PIXELS)
 # bulk_save_downscaled_images(TEST_IMAGES_PATHS_LIST, DOWNSCALED_TEST_IMAGES_DIR_PATH / "min", "downscaled_min_", MIN_HEIGHT_PIXELS, MIN_WIDTH_PIXELS)

@@ -1,17 +1,11 @@
-from loguru import logger
-from tqdm import tqdm
+import tensorflow as tf
+from pathlib import Path
 
 from constants import MAPPING_CLASS_NUMBER, MASK_TRUE_VALUE, MASK_FALSE_VALUE
-from dataset_utils.file_utils import save_list_to_csv, load_saved_list
 from dataset_utils.image_utils import (
     get_image_masks_paths,
     get_mask_class,
-    get_image_name_without_extension,
-    get_images_paths,
-    get_image_patch_masks_paths,
 )
-from pathlib import Path
-import tensorflow as tf
 from dataset_utils.image_utils import decode_image
 
 
@@ -104,7 +98,6 @@ def turn_mask_into_categorical_tensor(mask_path: Path) -> tf.Tensor:
     return categorical_tensor
 
 
-# todo : test write_file and read_file
 def save_tensor_to_jpg(tensor: tf.Tensor, output_filepath: Path) -> None:
     file_name = output_filepath.parts[-1]
     assert (
@@ -184,7 +177,10 @@ def stack_image_masks(
     return stacked_tensor
 
 
-# debug
+# -----
+# DEBUG
+
+
 def f():
     zeros_tensor = tf.zeros(shape=(3, 3), dtype=tf.int32)
     a = tf.constant([[1, 0, 0], [0, 1, 0], [0, 0, 1]])

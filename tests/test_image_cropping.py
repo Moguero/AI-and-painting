@@ -5,14 +5,7 @@ from dataset_utils.image_cropping import crop_tensor
 
 
 def test_crop_tensor():
-    tensor1 = tf.constant(
-        [
-            [1, 1, 1, 1],
-            [1, 2, 2, 1],
-            [1, 2, 2, 1],
-            [1, 1, 1, 1]
-        ]
-    )
+    tensor1 = tf.constant([[1, 1, 1, 1], [1, 2, 2, 1], [1, 2, 2, 1], [1, 1, 1, 1]])
     tensor1 = tf.expand_dims(tensor1, axis=2)
     cropped_tensor1 = crop_tensor(tensor=tensor1, target_width=2, target_height=3)[
         :, :, 0

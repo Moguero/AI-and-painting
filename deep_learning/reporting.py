@@ -1,20 +1,18 @@
-from pathlib import Path
-from typing import List
-
 import matplotlib
 import numpy as np
 import pandas as pd
-from loguru import logger
-from matplotlib import pyplot as plt
-from tensorflow import keras
 import tensorflow as tf
+import matplotlib.pyplot as plt
+from pathlib import Path
+from typing import List
+from loguru import logger
+from tensorflow import keras
 
 from constants import (
     PALETTE_HEXA,
     MAPPING_CLASS_NUMBER,
     MASK_TRUE_VALUE,
     MASK_FALSE_VALUE,
-    TEST_IMAGES_PATHS_LIST,
 )
 from dataset_utils.file_utils import get_formatted_time
 from dataset_utils.image_utils import (
@@ -27,11 +25,8 @@ from dataset_utils.plotting_tools import (
     map_categorical_mask_to_3_color_channels_tensor,
     turn_2d_tensor_to_3d_tensor,
 )
-from deep_learning.inference.predictions_maker import (
+from deep_learning.predictions import (
     make_predictions,
-)
-from deep_learning.postprocessing.median_filtering import (
-    save_median_filtering_comparison,
 )
 
 
@@ -77,7 +72,6 @@ def build_training_run_report(
         output_path=patch_composition_mean_plot_output_path,
         palette_hexa=palette_hexa,
     )
-    # todo : modify precision of class proportions in both patches composition plots
 
     # Save the figures with which the original composition plot was made
     patch_original_composition_output_path = (
@@ -120,8 +114,6 @@ def build_training_run_report(
         for patch_path in image_patches_paths_list:
             file.write(f"{patch_path},\n")
         file.write("]")
-
-    # todo : plot minimized patches used (array of patches)
 
     # 2. model report
 
@@ -408,6 +400,3 @@ def save_predictions_config(
         # Pass the file handle in as a lambda function to make it callable
         for key, value in predictions_config.items():
             file.write(f"{str(key)}: {str(value)} \n")
-
-
-# todo : save the data augmentation dict at each run in the report

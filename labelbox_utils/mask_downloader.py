@@ -1,8 +1,8 @@
 import argparse
 import time
-import urllib.request
 import json
 import uuid
+import urllib.request
 from loguru import logger
 from pathlib import Path
 

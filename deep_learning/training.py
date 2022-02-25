@@ -1,45 +1,23 @@
+import math
 import pandas as pd
 from loguru import logger
 from tensorflow import keras
+from pathlib import Path
 
-from constants import (
-    N_CLASSES,
-    PATCH_SIZE,
-    OPTIMIZER,
-    LOSS_FUNCTION,
-    METRICS,
-    REPORTS_ROOT_DIR_PATH,
-    N_PATCHES_LIMIT,
-    BATCH_SIZE,
-    TEST_PROPORTION,
-    PATCH_COVERAGE_PERCENT_LIMIT,
-    N_EPOCHS,
-    PATCHES_DIR_PATH,
-    ENCODER_KERNEL_SIZE,
-    DATA_AUGMENTATION,
-    MAPPING_CLASS_NUMBER,
-    PALETTE_HEXA,
-    VALIDATION_PROPORTION,
-    EARLY_STOPPING_LOSS_MIN_DELTA,
-    EARLY_STOPPING_ACCURACY_MIN_DELTA,
-)
 from dataset_utils.file_utils import timeit
 
 from dataset_utils.files_stats import (
     get_patches_labels_composition,
 )
-from deep_learning.models.unet import build_small_unet, build_small_unet_arbitrary_input
+from deep_learning.unet import build_small_unet
 from dataset_utils.dataset_builder import (
     get_image_patches_paths,
     train_dataset_generator,
 )
-from pathlib import Path
-
-from deep_learning.training.reporting import (
+from deep_learning.reporting import (
     build_training_run_report,
     init_report_paths,
 )
-import math
 
 
 @timeit
@@ -67,7 +45,6 @@ def train_model(
     add_note: bool = False,
     image_patches_paths: [Path] = None,
 ):
-    # Add a note in the report to describe the run more specifically
     """
     Build the model, compile it, create a dataset iterator, train the model and save the trained model in callbacks.
 
@@ -106,7 +83,6 @@ def train_model(
 
     # Init report paths
     report_paths_dict = init_report_paths(report_root_dir_path=report_root_dir_path)
-    # todo : check repo to see the function to init path + use of json configs
 
     # Define the model
     model = build_small_unet(
@@ -115,26 +91,6 @@ def train_model(
         batch_size=batch_size,
         encoder_kernel_size=encoder_kernel_size,
     )
-
-    # TEST to define new metrics
-    # class UpdatedMeanIoU(tf.keras.metrics.MeanIoU):
-    #     def __init__(self,
-    #                  y_true=None,
-    #                  y_pred=None,
-    #                  num_classes=None,
-    #                  name=None,
-    #                  dtype=None):
-    #         super(UpdatedMeanIoU, self).__init__(num_classes=num_classes, name=name, dtype=dtype)
-    #
-    #     def update_state(self, y_true, y_pred, sample_weight=None):
-    #         y_pred = tf.math.argmax(y_pred, axis=-1)
-    #         return super().update_state(y_true, y_pred, sample_weight)
-    #
-    # class MyMeanIOU(tf.keras.metrics.MeanIoU):
-    #     def update_state(self, y_true, y_pred, sample_weight=None):
-    #         return super().update_state(tf.argmax(y_true, axis=-1), tf.argmax(y_pred, axis=-1), sample_weight)
-
-    # metrics = [keras.metrics.categorical_accuracy, MyMeanIOU(n_classes)]
 
     # Compile the model
     model.compile(
@@ -192,7 +148,6 @@ def train_model(
         mapping_class_number=mapping_class_number,
     )
 
-    # todo : normaliser les weights ?
     class_weights_dict = get_class_weights_dict(
         patches_composition_stats=patches_composition_stats,
         mapping_class_number=mapping_class_number,
@@ -212,16 +167,10 @@ def train_model(
             mapping_class_number=mapping_class_number,
             data_augmentation=data_augmentation,
             image_data_generator_config_dict=image_data_generator_config_dict,
-            data_augmentation_plot_path=report_paths_dict["data_augmentation"]  # todo : fix this
+            data_augmentation_plot_path=report_paths_dict[
+                "data_augmentation"
+            ],  # todo : fix this
         ),
-        # validation_data=validation_dataset_generator(
-        #     image_patches_paths=image_patches_paths_list,
-        #     n_classes=n_classes,
-        #     batch_size=batch_size,
-        #     validation_proportion=validation_proportion,
-        #     test_proportion=test_proportion,
-        #     data_augmentation=data_augmentation,
-        # ),
         # class_weight=class_weights_dict,
         epochs=epochs,
         callbacks=callbacks,
@@ -233,31 +182,6 @@ def train_model(
         verbose=1,
     )
     logger.info("\nEnd of model training.")
-
-    # Evaluate the model
-    # todo : debug this call of model.evaluate()
-    # loss, metrics = model.evaluate(
-    #     test_dataset_generator(
-    #         image_patches_paths=image_patches_paths_list,
-    #         n_classes=n_classes,
-    #         batch_size=batch_size,
-    #         test_proportion=test_proportion,
-    #     ),
-    #     callbacks=callbacks,
-    # )
-
-    # image_tensors_list, labels_tensors_list = get_test_dataset(
-    #     image_patches_paths=image_patches_paths_list,
-    #     n_classes=n_classes,
-    #     batch_size=batch_size,
-    #     test_proportion=test_proportion,
-    # )
-    #
-    # metrics_values = model.evaluate(
-    #     x=image_tensors_list,
-    #     y=labels_tensors_list,
-    #     callbacks=callbacks,
-    # )
 
     # Save a run report
     report_dir_path = report_paths_dict["report_dir_path"]

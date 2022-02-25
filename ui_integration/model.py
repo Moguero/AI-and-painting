@@ -1,8 +1,8 @@
-from pathlib import Path
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from pathlib import Path
 
-import tensorflow as tf
 
 # Constants
 PADDING_TYPE = "same"

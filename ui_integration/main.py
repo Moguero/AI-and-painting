@@ -1,4 +1,6 @@
+import tensorflow as tf
 from pathlib import Path
+
 from ui_integration.predictions_maker import make_predictions
 from ui_integration.utils import (
     get_formatted_time,
@@ -6,7 +8,6 @@ from ui_integration.utils import (
     turn_2d_tensor_to_3d_tensor,
 )
 
-import tensorflow as tf
 
 # Constants
 PATCH_SIZE = 256
@@ -96,14 +97,17 @@ def main(
     return class_masks_paths_dict
 
 
-class_masks_path_dict = main(
-    model_checkpoint_dir_path=Path(
-        r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\final_models\1_model_2022_01_06__17_43_17"
-    ),
-    image_path=Path(
-        r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\test_images\downscaled_images\max\downscaled_max_4.jpg"
-    ),
-    workspace_dir_path=Path(
-        r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files"
-    ),
-)
+# -----
+# DEBUG
+
+# class_masks_path_dict = main(
+#     model_checkpoint_dir_path=Path(
+#         r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\final_models\1_model_2022_01_06__17_43_17"
+#     ),
+#     image_path=Path(
+#         r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\test_images\downscaled_images\max\downscaled_max_4.jpg"
+#     ),
+#     workspace_dir_path=Path(
+#         r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files"
+#     ),
+# )

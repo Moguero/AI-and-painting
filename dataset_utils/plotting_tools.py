@@ -1,20 +1,20 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from tensorflow import keras
 import numpy as np
+from tensorflow import keras
+from pathlib import Path
 
+from dataset_utils.file_utils import timeit
+from dataset_utils.image_utils import decode_image, get_image_name_without_extension
+from dataset_utils.image_utils import get_image_masks_paths, get_mask_class
+from dataset_utils.masks_encoder import stack_image_masks
 from constants import (
     MAPPING_CLASS_NUMBER,
     PALETTE_RGB_NORMALIZED,
     PALETTE_RGB,
     PALETTE_HEXA,
 )
-from dataset_utils.file_utils import timeit
-from dataset_utils.image_utils import decode_image, get_image_name_without_extension
-from dataset_utils.image_utils import get_image_masks_paths, get_mask_class
-from dataset_utils.masks_encoder import stack_image_masks
-from pathlib import Path
 
 
 def plot_mask_with_color(image_path: Path, mask_path: Path) -> None:
@@ -127,7 +127,6 @@ def turn_2d_tensor_to_3d_tensor(
     return array_3d
 
 
-@timeit
 def full_plot_image(
     image_path: Path,
     masks_dir: Path,
@@ -167,10 +166,6 @@ def full_plot_image(
     plt.show()
 
 
-# save_full_plot_image(IMAGE_PATH, MASKS_DIR, predictions, OUTPUT_PATH)
-
-
-@timeit
 def save_plot_predictions_only(
     image_path: Path, predictions_tensor: tf.Tensor, output_path: Path
 ) -> None:
@@ -185,11 +180,6 @@ def save_plot_predictions_only(
     plt.savefig(output_path, bbox_inches="tight", dpi=300)
 
 
-# save_plot_predictions_only(IMAGE_PATH, predictions, DATA_DIR_ROOT / "predictions/test2.jpg")
-
-
-# todo : develop this plot
-# {'loss': [2.4902284145355225, 2.272948980331421, 2.180922746658325, 2.123626708984375, 2.0806949138641357, 2.0426666736602783, 2.0098025798797607, 1.9834508895874023, 1.954201102256775, 1.9568171501159668], 'accuracy': [0.12945209443569183, 0.20466716587543488, 0.24759912490844727, 0.2723337709903717, 0.2895956039428711, 0.3004612624645233, 0.3144834637641907, 0.32735636830329895, 0.34158948063850403, 0.3489217460155487]}
 def plot_training_history(history: keras.callbacks.History) -> None:
     # summarize history for accuracy
     plt.plot(history.history["accuracy"])
@@ -218,7 +208,8 @@ def save_patch_composition_plot(
 
     classes = list(patch_composition_stats_dict.keys())
     means = [
-        round((percent * 100), 1) for percent in list(patch_composition_stats_dict.values())
+        round((percent * 100), 1)
+        for percent in list(patch_composition_stats_dict.values())
     ]
     colors = [color for color in palette_hexa.values()]
 

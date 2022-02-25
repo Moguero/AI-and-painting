@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
 import numpy as np
 import tensorflow as tf
+from pathlib import Path
 
 from constants import MAPPING_CLASS_NUMBER, MASK_FALSE_VALUE, MASK_TRUE_VALUE
 from dataset_utils.files_stats import count_mask_value_occurences_of_2d_tensor
@@ -12,8 +12,12 @@ from dataset_utils.image_utils import (
 from dataset_utils.image_utils import get_image_masks_paths
 from labelbox_utils.mask_downloader import get_full_json
 
-IMAGE_PATH = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\images\_DSC0030\_DSC0030.jpg")
-MASKS_DIR = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\labels_masks\all")
+IMAGE_PATH = Path(
+    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\images\_DSC0030\_DSC0030.jpg"
+)
+MASKS_DIR = Path(
+    r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\labels_masks\all"
+)
 IMAGES_DIR = Path("C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/images/")
 CATEGORICAL_MASKS_DIR = Path(
     "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/categorical_masks/"
@@ -27,9 +31,6 @@ JSON_PATH = Path(
 CATEGORICAL_MASK_PATH = Path(
     r"C:\Users\thiba\PycharmProjects\mission_IA_JCS\files\categorical_masks\1\categorical_mask__1.jpg"
 )
-
-
-# todo : make those tests run automatically in a shell script
 
 
 def test_mask_channels_are_equal(mask_path: Path) -> None:
@@ -73,9 +74,6 @@ def test_image_masks_do_not_overlap(image_path: Path, masks_dir: Path) -> None:
             f"\nProblematic indices : {[tf.where(tf.equal(stacked_tensor, value)).numpy() for value in set(stacked_values) - {MASK_FALSE_VALUE, MASK_TRUE_VALUE}]}"
         )
         # assert 255 not in image_first_mask, "Some masks overlap with each other."
-
-
-# todo : test that the mask is inside the picture
 
 
 def test_minimum_one_mask_per_image(json_path: str) -> None:

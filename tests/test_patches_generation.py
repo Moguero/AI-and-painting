@@ -9,14 +9,9 @@ patches = tf.image.extract_patches(
     sizes=[1, patch_size, patch_size, 1],
     strides=[1, patch_size, patch_size, 1],
     rates=[1, 1, 1, 1],
-    padding='VALID'
+    padding="VALID",
 )
 reshaped_patches = tf.reshape(
     tensor=patches,
-    shape=[
-        patches.shape[1] * patches.shape[2],
-        patch_size,
-        patch_size,
-        3
-    ]
+    shape=[patches.shape[1] * patches.shape[2], patch_size, patch_size, 3],
 )

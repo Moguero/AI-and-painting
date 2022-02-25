@@ -1,10 +1,13 @@
-from pathlib import Path
-from ui_integration.model import load_saved_model
-from ui_integration.utils import decode_image, get_image_tensor_shape, get_image_name_without_extension, \
-    get_file_name_with_extension
-
 import numpy as np
 import tensorflow as tf
+from pathlib import Path
+
+from ui_integration.model import load_saved_model
+from ui_integration.utils import (
+    decode_image,
+    get_image_tensor_shape,
+    get_image_name_without_extension,
+)
 
 
 def make_predictions(
@@ -118,9 +121,7 @@ def build_predictions_dataset(
         patch_overlap=patch_overlap,
     )
     prediction_dataset = tf.data.Dataset.from_tensor_slices(main_patches_tensors_list)
-    prediction_dataset = prediction_dataset.batch(
-        batch_size=1, drop_remainder=True
-    )
+    prediction_dataset = prediction_dataset.batch(batch_size=1, drop_remainder=True)
 
     right_side_prediction_dataset = tf.data.Dataset.from_tensor_slices(
         right_side_patches_tensors_list
@@ -264,13 +265,13 @@ def patches_predict(
 
 
 def rebuild_predictions_with_overlap(
-        main_patch_classes_list: [tf.Tensor],
-        right_side_patch_classes_list: [tf.Tensor],
-        down_side_patch_classes_list: [tf.Tensor],
-        image_tensor: tf.Tensor,
-        patch_size: int,
-        patch_overlap: int,
-        misclassification_size: int = 5,
+    main_patch_classes_list: [tf.Tensor],
+    right_side_patch_classes_list: [tf.Tensor],
+    down_side_patch_classes_list: [tf.Tensor],
+    image_tensor: tf.Tensor,
+    patch_size: int,
+    patch_overlap: int,
+    misclassification_size: int = 5,
 ) -> tf.Tensor:
     """
     Restructure the patches that were generated with the extract_patches_with_overlap() function.
@@ -286,10 +287,10 @@ def rebuild_predictions_with_overlap(
     :return: The rebuilt image tensor with dimension : [width, height, 1].
     """
     assert (
-            patch_overlap % 2 == 0
+        patch_overlap % 2 == 0
     ), f"Patch overlap argument must be a pair number. The one specified was {patch_overlap}."
     assert (
-            misclassification_size <= patch_overlap / 2
+        misclassification_size <= patch_overlap / 2
     ), f"Please increase the patch overlap (currently {patch_overlap}) to at least 2 times the misclassification size (currently {misclassification_size})."
 
     # Turns the patches in the list to a size of (patch_size, patch_size, 1)
@@ -314,7 +315,7 @@ def rebuild_predictions_with_overlap(
     )
 
     window_stride = (
-            patch_size - patch_overlap
+        patch_size - patch_overlap
     )  # number of pixels by which we shift the window at each step of predictions
     n_vertical_patches = (image_height - 2 * int(patch_overlap / 2)) // window_stride
     n_horizontal_patches = (image_width - 2 * int(patch_overlap / 2)) // window_stride
@@ -343,11 +344,11 @@ def rebuild_predictions_with_overlap(
             patch_tensor=right_side_patch_tensor, patch_overlap=patch_overlap
         )
         left_bound_limit_idx = (
-                                       n_horizontal_patches * window_stride + int(patch_overlap / 2)
-                               ) - (image_width - patch_size + int(patch_overlap / 2))
+            n_horizontal_patches * window_stride + int(patch_overlap / 2)
+        ) - (image_width - patch_size + int(patch_overlap / 2))
         resized_cropped_right_side_patch_tensor = cropped_right_side_patch_tensor[
-                                                  :, left_bound_limit_idx:
-                                                  ]
+            :, left_bound_limit_idx:
+        ]
         line_rebuilt_tensor = tf.concat(
             [line_rebuilt_tensor, resized_cropped_right_side_patch_tensor], axis=1
         )
@@ -366,11 +367,11 @@ def rebuild_predictions_with_overlap(
             patch_tensor=down_side_patch_tensor, patch_overlap=patch_overlap
         )
         up_bound_limit_idx = (
-                                     n_vertical_patches * window_stride + int(patch_overlap / 2)
-                             ) - (image_height - patch_size + int(patch_overlap / 2))
+            n_vertical_patches * window_stride + int(patch_overlap / 2)
+        ) - (image_height - patch_size + int(patch_overlap / 2))
         resized_cropped_down_side_patch_tensor = cropped_down_side_patch_tensor[
-                                                 up_bound_limit_idx:, :
-                                                 ]
+            up_bound_limit_idx:, :
+        ]
 
         if column_number == 0:
             line_rebuilt_tensor = resized_cropped_down_side_patch_tensor
@@ -384,14 +385,14 @@ def rebuild_predictions_with_overlap(
         patch_tensor=down_right_side_patch_tensor, patch_overlap=patch_overlap
     )
     left_bound_limit_idx = (
-                                   n_horizontal_patches * window_stride + int(patch_overlap / 2)
-                           ) - (image_width - patch_size + int(patch_overlap / 2))
+        n_horizontal_patches * window_stride + int(patch_overlap / 2)
+    ) - (image_width - patch_size + int(patch_overlap / 2))
     up_bound_limit_idx = (
-                                 n_vertical_patches * window_stride + int(patch_overlap / 2)
-                         ) - (image_height - patch_size + int(patch_overlap / 2))
+        n_vertical_patches * window_stride + int(patch_overlap / 2)
+    ) - (image_height - patch_size + int(patch_overlap / 2))
     resized_cropped_down_right_side_patch_tensor = cropped_down_right_side_patch_tensor[
-                                                   up_bound_limit_idx:, left_bound_limit_idx:
-                                                   ]
+        up_bound_limit_idx:, left_bound_limit_idx:
+    ]
     line_rebuilt_tensor = tf.concat(
         [line_rebuilt_tensor, resized_cropped_down_right_side_patch_tensor], axis=1
     )

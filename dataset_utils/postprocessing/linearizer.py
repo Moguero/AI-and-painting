@@ -1,14 +1,11 @@
-from pathlib import Path
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
+from pathlib import Path
 from loguru import logger
 
-from constants import PREDICTIONS_PATH, LINEARIZER_KERNEL_SIZE, PREDICTIONS_DIR_PATH
-from dataset_utils.file_utils import timeit
-from dataset_utils.image_utils import decode_image, get_tensor_dims, get_image_name_without_extension
+from dataset_utils.image_utils import decode_image, get_tensor_dims
 
 
-@timeit
 def smooth_predictions(
     predictions_path: Path, linearizer_kernel_size: int
 ) -> np.ndarray:
@@ -25,7 +22,14 @@ def smooth_predictions(
     n_rows = predictions_tensor.shape[height_index]
     n_columns = predictions_tensor.shape[width_index]
 
-    smoothed_array = np.zeros(shape=(n_rows // linearizer_kernel_size, n_columns // linearizer_kernel_size, 3), dtype=np.int32)
+    smoothed_array = np.zeros(
+        shape=(
+            n_rows // linearizer_kernel_size,
+            n_columns // linearizer_kernel_size,
+            3,
+        ),
+        dtype=np.int32,
+    )
 
     row_idx = 0
     n_sample_row = 0
@@ -36,11 +40,11 @@ def smooth_predictions(
             mean_rgb_value = list(
                 get_dominant_rgb_value(
                     predictions_tensor[
-                        row_idx: row_idx + linearizer_kernel_size,
-                        column_idx: column_idx + linearizer_kernel_size,
+                        row_idx : row_idx + linearizer_kernel_size,
+                        column_idx : column_idx + linearizer_kernel_size,
                         :,
                     ],
-                    linearizer_kernel_size
+                    linearizer_kernel_size,
                 )
             )
             smoothed_array[n_sample_row, n_sample_column, :] = mean_rgb_value
@@ -62,27 +66,19 @@ def get_dominant_rgb_value(sample: tf.Tensor, linearizer_kernel_size: int) -> tu
                 count_rgb_values_dict[rgb_value] = 1
             else:
                 count_rgb_values_dict[rgb_value] += 1
-                if count_rgb_values_dict[rgb_value] == (linearizer_kernel_size ** 2 // 2):
+                if count_rgb_values_dict[rgb_value] == (
+                    linearizer_kernel_size ** 2 // 2
+                ):
                     return rgb_value
     dominant_rgb_value = max(count_rgb_values_dict, key=count_rgb_values_dict.get)
     return dominant_rgb_value
 
 
-def save_smoothed_predictions(predictions_path: Path, linearizer_kernel_size: int, output_dir_path: Path) -> None:
+def save_smoothed_predictions(
+    predictions_path: Path, linearizer_kernel_size: int, output_dir_path: Path
+) -> None:
     predictions_array = smooth_predictions(predictions_path, linearizer_kernel_size)
-    # todo : select parent
-    # image_sub_dir = output_dir_path / f"{get_image_name_without_extension(target_image_path)}" / "predictions_only"
-    # predictions_image_name = predictions_path.parts[-1]
-    # if not image_sub_dir.exists():
-    #     image_sub_dir.mkdir()
-    # output_path = (
-    #         image_sub_dir
-    #         / predictions_image_name
-    # )
-    output_path = (
-            output_dir_path
-            / "test2.png"
-    )
+    output_path = output_dir_path / "test2.png"
     tf.keras.preprocessing.image.save_img(output_path, predictions_array)
     logger.info(f"\nFull predictions plot successfully saved at : {output_path}")
 

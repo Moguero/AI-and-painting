@@ -1,8 +1,7 @@
-from pathlib import Path
-
 import time
 import numpy as np
 import tensorflow as tf
+from pathlib import Path
 
 
 def get_formatted_time():

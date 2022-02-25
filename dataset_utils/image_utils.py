@@ -1,12 +1,9 @@
+import random
 import shutil
+import tensorflow as tf
 from typing import Union
-
 from loguru import logger
 from pathlib import Path
-import tensorflow as tf
-import random
-
-from dataset_utils.file_utils import timeit
 
 
 def get_image_name_without_extension(image_path: Path) -> str:
@@ -55,7 +52,6 @@ def get_mask_class(mask_path: Path) -> str:
     return mask_path.parts[-2]
 
 
-# todo : implement a try/except to decode only jpg or png (not based on image_type but metadata format of the images)
 def decode_image(file_path: Path) -> tf.Tensor:
     """
     Turns a png or jpeg images into its tensor 3D (for jpeg) or 4D (for png) version.
@@ -83,7 +79,6 @@ def get_image_type(image_path: Path) -> str:
     return image_path.parts[-1].split(".")[-1]
 
 
-# todo : check if still useful (I suspect it redundant with get_image_shape)
 def get_image_channels_number(image_path: Path) -> int:
     image_type = get_image_type(image_path)
     image_channels_number = None
@@ -166,10 +161,6 @@ def get_images_paths(images_dir_path: Path) -> [Path]:
 def group_images_and_all_masks_together(
     dataset_dir: Path, images_dir: Path, masks_dir: Path, categorical_masks_dir: Path
 ) -> None:
-    # Initital checks
-    # test_same_folders_of_images_and_masks(images_dir, masks_dir)
-    # test_same_folders_of_images_and_categorical_masks(images_dir, categorical_masks_dir)
-
     images_dirs_paths = get_dir_paths(images_dir)
     for image_dir_path in images_dirs_paths:
         image_dir_name = image_dir_path.parts[-1]
@@ -203,7 +194,8 @@ def group_images_and_all_masks_together(
 
 
 def get_image_patches_paths_with_limit(
-    patches_dir: Path, n_patches_limit: int = None,
+    patches_dir: Path,
+    n_patches_limit: int = None,
 ) -> [Path]:
     """
     Randomly take n_patches_limit patches in the patches_dir folder.

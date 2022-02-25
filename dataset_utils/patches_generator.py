@@ -1,10 +1,9 @@
 import time
-from pathlib import Path
 import tensorflow as tf
+from pathlib import Path
 from loguru import logger
 from tqdm import tqdm
 
-from constants import IMAGES_DIR_PATH, MASKS_DIR_PATH, PATCHES_DIR_PATH, PATCH_SIZE
 from dataset_utils.image_utils import (
     decode_image,
     get_image_name_without_extension,

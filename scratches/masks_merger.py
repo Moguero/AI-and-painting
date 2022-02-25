@@ -1,12 +1,13 @@
 import uuid
-from pathlib import Path
-
-import tensorflow as tf
 import imageio
+import tensorflow as tf
+from pathlib import Path
 from loguru import logger
 
 from dataset_utils.image_utils import decode_image
 
+
+# Variables
 MASKS_DIR = Path(
     "C:/Users/thiba/PycharmProjects/mission_IA_JCS/files/labels_masks/marie"
 )

@@ -1,41 +1,17 @@
+import scipy
+import numpy as np
+import tensorflow as tf
+from loguru import logger
 from pathlib import Path
 
-import scipy
-from loguru import logger
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-import tensorflow as tf
-
-# import scikitplot as skplt
-
-from constants import (
-    PALETTE_HEXA,
-    MAPPING_CLASS_NUMBER,
-    IMAGE_PATH,
-    MASKS_DIR_PATH,
-    PREDICTIONS_DIR_PATH,
-    PATCH_SIZE,
-    PATCH_OVERLAP,
-    N_CLASSES,
-    BATCH_SIZE,
-    ENCODER_KERNEL_SIZE,
-    DOWNSCALE_FACTORS,
-    IMAGES_DIR_PATH,
-    MASK_TRUE_VALUE,
-    MASK_FALSE_VALUE,
-    CHECKPOINT_DIR_PATH,
-    TEST_IMAGE_PATH,
-)
 from dataset_utils.dataset_builder import build_predictions_dataset
-from dataset_utils.file_utils import get_formatted_time
 from dataset_utils.image_rebuilder import (
     rebuild_predictions_with_overlap,
 )
 from dataset_utils.image_utils import decode_image, get_image_name_without_extension
 from dataset_utils.masks_encoder import stack_image_masks
-from dataset_utils.plotting_tools import map_categorical_mask_to_3_color_channels_tensor
-from deep_learning.models.unet import build_small_unet
+from deep_learning.unet import build_small_unet
+from constants import MAPPING_CLASS_NUMBER
 
 
 def make_predictions(
@@ -247,101 +223,11 @@ def make_predictions_oneshot(
 
     # Make predictions on the patches
     # predicitons : array of shape (n_patches, patch_size, patch_size, n_classes)
-
-    # todo : fix this because error :
-    #   ValueError: Dimension 1 in both shapes must be equal, but are 488 and 489.
-    #   Shapes are [8,488,752] and [8,489,752]. for '{{node U-Net/concatenate_5/concat}} = ConcatV2[N=2, T=DT_FLOAT, Tidx=DT_INT32]
-    #   (U-Net/conv2d_transpose_5/BiasAdd, U-Net/activation_15/Relu, U-Net/concatenate_5/concat/axis)' with input shapes:
-    #   [8,488,752,32], [8,489,752,32], [] and with computed input tensors: input[2] = <3>.
     predictions = model.predict(image_tensor, verbose=1)
 
     return predictions
 
 
-def save_labels_vs_predictions_comparison_plot(
-    target_image_path: Path,
-    masks_dir_path: Path,
-    report_dir_path: Path,
-    patch_size: int,
-    patch_overlap: int,
-    n_classes: int,
-    batch_size: int,
-    encoder_kernel_size: int,
-) -> None:
-    """Used for training images, that have labels in the masks_dir folder !!!"""
-    # Make predictions
-    # predictions_tensor = make_predictions(
-    #     target_image_path=target_image_path,
-    #     checkpoint_dir_path=report_dir_path / "2_model_report",
-    #     patch_size=patch_size,
-    #     patch_overlap=patch_overlap,
-    #     n_classes=n_classes,
-    #     batch_size=batch_size,
-    #     encoder_kernel_size=encoder_kernel_size,
-    # )
-    predictions_tensor = make_predictions_oneshot(
-        target_image_path=target_image_path,
-        checkpoint_dir_path=report_dir_path / "2_model_report",
-        patch_overlap=patch_overlap,
-        n_classes=n_classes,
-        patch_size=patch_size,
-        batch_size=batch_size,
-        encoder_kernel_size=encoder_kernel_size,
-    )
-
-    # Set-up plotting settings
-    image = decode_image(file_path=target_image_path).numpy()
-    categorical_tensor = stack_image_masks(
-        image_path=target_image_path, masks_dir_path=masks_dir_path
-    )
-    mapped_categorical_array = map_categorical_mask_to_3_color_channels_tensor(
-        categorical_mask_tensor=categorical_tensor
-    )
-    mapped_predictions_array = map_categorical_mask_to_3_color_channels_tensor(
-        categorical_mask_tensor=predictions_tensor
-    )
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-    fig.suptitle(get_image_name_without_extension(target_image_path))
-    ax1.set_title("Original image")
-    ax2.set_title("Predictions")
-    ax3.set_title("Labels (ground truth)")
-    ax1.imshow(image)
-    ax2.imshow(mapped_predictions_array)
-    ax3.imshow(mapped_categorical_array)
-    ax1.axis("off")
-    ax2.axis("off")
-    ax3.axis("off")
-    ax4.axis("off")
-    fontP = matplotlib.font_manager.FontProperties()
-    fontP.set_size("x-small")
-    handles = [
-        matplotlib.patches.Patch(
-            color=PALETTE_HEXA[MAPPING_CLASS_NUMBER[class_name]], label=class_name
-        )
-        for class_name in MAPPING_CLASS_NUMBER.keys()
-    ]
-    ax3.legend(handles=handles, bbox_to_anchor=(1.4, 1), loc="upper left", prop=fontP)
-
-    # Save the plot
-    predictions_dir_path = (
-        report_dir_path
-        / "3_predictions"
-        / f"{get_image_name_without_extension(target_image_path)}"
-        / get_formatted_time()
-    )
-    labels_and_predictions_sub_dir = predictions_dir_path / "predictions_only"
-    if not labels_and_predictions_sub_dir.exists():
-        labels_and_predictions_sub_dir.mkdir(parents=True)
-    output_path = (
-        labels_and_predictions_sub_dir
-        / f"{get_image_name_without_extension(target_image_path)}.png"
-    )
-    plt.savefig(output_path, bbox_inches="tight", dpi=300)
-
-    logger.info(f"\nFull predictions plot successfully saved at : {output_path}")
-
-
-# todo : save confusion matrix at each run
 def get_confusion_matrix(
     image_path: Path,
     predictions_tensor: tf.Tensor,
@@ -357,7 +243,6 @@ def get_confusion_matrix(
     :param masks_dir_path: The masks source directory path.
     :param n_classes: Total number of classes, background not included.
     """
-    # todo : remove the image_path argument from this function
 
     assert (
         patch_overlap % 2 == 0
@@ -424,45 +309,10 @@ def load_saved_model(
     return model
 
 
-# def plot_confusion_matrix(
-#     labels_tensor: tf.Tensor,
-#     predictions_tensor: tf.Tensor,
-# ) -> None:
-#     skplt.metrics.plot_confusion_matrix(
-#         y_true=labels_tensor,
-#         y_pred=predictions_tensor,
-#         figsize=(10, 10),
-#         title="Confusion matrix",
-#         x_tick_rotation=45,
-#         cmap="Greens",
-#     )
-#     plt.show()
-
-
-#
-# def save_confusion_matrix(
-#     labels_tensor: tf.Tensor,
-#     predictions_tensor: tf.Tensor,
-#     output_path: Path,
-# ) -> None:
-#     skplt.metrics.plot_confusion_matrix(
-#         y_true=labels_tensor,
-#         y_pred=predictions_tensor,
-#         figsize=(10, 10),
-#         title="Confusion matrix",
-#         x_tick_rotation=45,
-#         cmap="Greens",
-#     )
-#     plt.savefig(output_path)
-
-
 # ------
 # DEBUG
+
 # make_predictions(IMAGE_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE, DOWNSCALE_FACTORS)
-# save_full_plot_predictions(IMAGE_PATH, MASKS_DIR_PATH, OUTPUT_DIR_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE, DOWNSCALE_FACTORS)
-# save_predictions_plot_only(IMAGE_PATH, PREDICTIONS_DIR_PATH, CHECKPOINT_DIR_PATH, PATCH_SIZE, PATCH_OVERLAP, N_CLASSES, BATCH_SIZE, ENCODER_KERNEL_SIZE, DOWNSCALE_FACTORS)
-
-
 # test_image_path = Path(r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\test_images\downscaled_images\max\downscaled_max__DSC0245.jpg")
 # predictions_tensor = make_predictions(
 #     target_image_path=test_image_path,
@@ -480,13 +330,4 @@ def load_saved_model(
 #     masks_dir_path=MASKS_DIR_PATH,
 #     n_classes=N_CLASSES,
 #     patch_overlap=PATCH_OVERLAP,
-# )
-# #
-# plot_confusion_matrix(
-#     labels_tensor=labels_tensor, predictions_tensor=predictions_tensor
-# )
-# save_confusion_matrix(
-#     labels_tensor=labels_tensor,
-#     predictions_tensor=predictions_tensor,
-#     output_path=Path(""),
 # )

@@ -2,6 +2,8 @@ import argparse
 import warnings
 from pathlib import Path
 
+from deep_learning.training import train_model
+from deep_learning.reporting import build_predict_run_report
 from constants import (
     N_CLASSES,
     PATCH_SIZE,
@@ -17,18 +19,16 @@ from constants import (
     N_EPOCHS,
     PATCHES_DIR_PATH,
     ENCODER_KERNEL_SIZE,
-    DATA_AUGMENTATION,
     MAPPING_CLASS_NUMBER,
     PALETTE_HEXA,
     PATCH_OVERLAP,
-    # TEST_IMAGES_PATHS_LIST,
     DOWNSCALED_TEST_IMAGES_PATHS_LIST,
     EARLY_STOPPING_LOSS_MIN_DELTA,
     EARLY_STOPPING_ACCURACY_MIN_DELTA,
-    CORRELATE_PREDICTIONS_BOOL, CORRELATION_FILTER, IMAGE_DATA_GENERATOR_CONFIG_DICT,
+    CORRELATE_PREDICTIONS_BOOL,
+    CORRELATION_FILTER,
+    IMAGE_DATA_GENERATOR_CONFIG_DICT,
 )
-from deep_learning.training.model_runner import train_model
-from deep_learning.training.reporting import build_predict_run_report
 
 
 def main(
@@ -39,7 +39,7 @@ def main(
     n_patches_limit: int,
     n_epochs: int,
     report_dir: str,
-    data_augmentation: bool
+    data_augmentation: bool,
 ) -> None:
     if train_bool:
         report_dir_path = train_model(
@@ -181,7 +181,9 @@ if __name__ == "__main__":
         warnings.warn("--epochs parameter should only be used with --train parameter")
 
     if not args.train and args.epochs is True:
-        warnings.warn("--data-augment parameter should only be used with --train parameter")
+        warnings.warn(
+            "--data-augment parameter should only be used with --train parameter"
+        )
 
     if not args.predict and args.light:
         warnings.warn("--light parameter should only be used with --predict parameter.")
@@ -201,11 +203,3 @@ if __name__ == "__main__":
         report_dir=args.report,
         data_augmentation=args.data_augment,
     )
-
-
-# CLI command
-# python main.py --train --predict
-
-# todo : faire une liste d'improvements à la fin du README
-
-# todo : store number of patches used for training

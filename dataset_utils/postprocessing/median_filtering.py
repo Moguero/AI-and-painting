@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
-from pathlib import Path
 import matplotlib.pyplot as plt
+from pathlib import Path
+
 from dataset_utils.image_utils import get_image_name_without_extension
 
 

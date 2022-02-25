@@ -1,10 +1,8 @@
 import tensorflow as tf
 from pathlib import Path
 
-from constants import TARGET_HEIGHT, TARGET_WIDTH
 from dataset_utils.image_utils import (
     decode_image,
-    get_tensor_dims,
     get_image_tensor_shape,
 )
 

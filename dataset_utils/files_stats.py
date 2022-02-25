@@ -1,23 +1,14 @@
+import os
 import ast
-from collections import Counter
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import os
-
+from collections import Counter
+from pathlib import Path
 from loguru import logger
 from tqdm import tqdm
 
-from constants import (
-    MASK_FALSE_VALUE,
-    MASK_TRUE_VALUE,
-    IMAGE_PATCH_PATH,
-    N_CLASSES,
-    MASKS_DIR_PATH,
-    MAPPING_CLASS_NUMBER,
-)
+from constants import MASK_FALSE_VALUE, MASK_TRUE_VALUE
 from dataset_utils.file_utils import save_dict_to_csv, load_saved_dict, save_list_to_csv
 from dataset_utils.image_utils import (
     decode_image,
@@ -60,9 +51,6 @@ def count_mask_value_occurences_percent(mask_path: Path) -> {int: float}:
         zip(values_array, np.round(count_array / count_array.sum(), decimals=3))
     )
     return percent_dict
-
-
-# todo : test all those 4 functions
 
 
 def count_mask_value_occurences_percent_of_2d_tensor(tensor: tf.Tensor) -> {int: float}:
@@ -128,46 +116,6 @@ def count_mask_value_occurences_of_categorical_mask(
     return count_mask_value_occurences_of_2d_tensor(
         stack_image_masks(image_path, masks_dir, all_patch_masks_overlap_indices_path)
     )
-
-
-# todo : delete cause moved
-def count_categorical_mask_irregular_pixels(
-    image_path: Path,
-    masks_dir: Path,
-    n_classes,
-    all_patch_masks_overlap_indices_path: Path,
-) -> {int: int}:
-    mask_value_occurences_of_categorical_mask_dict = (
-        count_mask_value_occurences_of_categorical_mask(
-            image_path, masks_dir, all_patch_masks_overlap_indices_path
-        )
-    )
-    irregular_pixels_dict = {
-        key: value
-        for key, value in mask_value_occurences_of_categorical_mask_dict.items()
-        if key > n_classes
-    }
-    return irregular_pixels_dict
-
-
-def save_count_all_categorical_mask_irregular_pixels(
-    images_dir_path: Path,
-    masks_dir: Path,
-    n_classes: int,
-    output_path: Path,
-    all_patch_masks_overlap_indices_path: Path,
-) -> None:
-    dict_to_save = {
-        image_path: count_categorical_mask_irregular_pixels(
-            image_path, masks_dir, n_classes, all_patch_masks_overlap_indices_path
-        )
-        for image_path in tqdm(
-            get_images_paths(images_dir_path),
-            desc="Counting all categorical masks irregular pixels...",
-            colour="yellow",
-        )
-    }
-    save_dict_to_csv(dict_to_save, output_path)
 
 
 def get_image_with_more_than_irregular_pixels_limit(
@@ -365,6 +313,9 @@ def get_patches_labels_composition(
 
     return patches_composition_stats
 
+
+# -----
+# DEBUG
 
 # labels_patches_composition = get_patch_labels_composition(IMAGE_PATCH_PATH, N_CLASSES)
 # patch_composition_dataframe = get_patches_labels_composition([IMAGE_PATCH_PATH], N_CLASSES, MAPPING_CLASS_NUMBER)
