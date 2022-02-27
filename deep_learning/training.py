@@ -7,11 +7,13 @@ from tensorflow import keras
 from pathlib import Path
 from typing import Generator, Tuple
 
+from dataset_builder.masks_encoder import (
+    one_hot_encode_image_patch_masks,
+    stack_image_patch_masks,
+)
 from utils.image_utils import (
     decode_image,
     get_image_patch_masks_paths,
-    stack_image_patch_masks,
-    one_hot_encode_image_patch_masks,
 )
 from utils.plotting_utils import save_image_from_tensor
 from utils.time_utils import timeit
