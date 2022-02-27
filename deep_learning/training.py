@@ -175,9 +175,6 @@ def train_model(
             mapping_class_number=mapping_class_number,
             data_augmentation=data_augmentation,
             image_data_generator_config_dict=image_data_generator_config_dict,
-            data_augmentation_plot_path=report_paths_dict[
-                "data_augmentation"
-            ],  # todo : fix this
         ),
         # class_weight=class_weights_dict,
         epochs=epochs,
@@ -232,7 +229,6 @@ def train_dataset_generator(
     mapping_class_number: {str: int},
     data_augmentation: bool = False,
     image_data_generator_config_dict: dict = {},
-    data_augmentation_plot_path: Path = None,
 ) -> Generator[Tuple[tf.Tensor, tf.Tensor], None, None]:
     """
     Create a dataset generator that will be used to feed model.fit().
@@ -250,7 +246,6 @@ def train_dataset_generator(
     :param mapping_class_number: Mapping dictionary between class names and their representative number.
     :param data_augmentation: Boolean, apply data augmentation to the each batch of the training dataset if True.
     :param image_data_generator_config_dict: Dict of parameters to apply with ImageDataGenerator for data augmentation.
-    :param data_augmentation_plot_path: Path where to store the intermediate augmented patches samples.
     :return: Yield 2 tensors of size (batch_size, patch_size, patch_size, 3) and (batch_size, patch_size, patch_size, n_classes + 1),
             corresponding to image tensors and their corresponding one-hot-encoded masks tensors
     """
@@ -270,7 +265,6 @@ def train_dataset_generator(
         f"\n{n_batches} batches taken for training"
     )
 
-    save_augmented_patches_count = True
     while True:
         for n_batch in range(n_batches):
 
@@ -305,18 +299,14 @@ def train_dataset_generator(
                 weights_tensors_list.append(weights_tensor)
 
             if data_augmentation:
-                if save_augmented_patches_count is False:
-                    data_augmentation_plot_path = None
-
                 image_tensors, labels_tensors, weights_tensors = augment_batch(
                     image_tensors=image_tensors_list,
                     labels_tensors=labels_tensors_list,
                     weights_tensors=weights_tensors_list,
                     batch_size=batch_size,
                     image_data_generator_config_dict=image_data_generator_config_dict,
-                    data_augmentation_plot_path=data_augmentation_plot_path,
                 )
-                save_augmented_patches_count = False  # only save the first batch plot
+                save_augmented_patches = False  # only save the first batch plot
             else:
                 image_tensors = tf.stack(values=image_tensors_list)
                 labels_tensors = tf.stack(values=labels_tensors_list)
@@ -367,7 +357,6 @@ def augment_batch(
     weights_tensors: [tf.Tensor],
     batch_size: int,
     image_data_generator_config_dict: dict,
-    data_augmentation_plot_path: Path = None,
 ):
     image_data_generator = tf.keras.preprocessing.image.ImageDataGenerator(
         **image_data_generator_config_dict
@@ -390,34 +379,6 @@ def augment_batch(
         augmented_labels_tensors = tf.constant(augmented_labels_array, dtype=tf.int32)
         augmented_weights_tensors = tf.constant(augmented_weights_array, dtype=tf.int32)
         break
-
-    if data_augmentation_plot_path is not None:
-        for idx in range(batch_size):
-            if idx == 0:
-                concat_images_tensor = image_tensors[0]
-                concat_augmented_images_tensor = tf.cast(
-                    augmented_image_tensors[0], dtype=tf.uint8
-                )
-            else:
-                concat_images_tensor = tf.concat(
-                    [concat_images_tensor, image_tensors[idx]], axis=1
-                )
-                concat_augmented_images_tensor = tf.concat(
-                    [
-                        concat_augmented_images_tensor,
-                        tf.cast(augmented_image_tensors[idx], dtype=tf.uint8),
-                    ],
-                    axis=1,
-                )
-        comparison_tensor = tf.concat(
-            [concat_images_tensor, concat_augmented_images_tensor], axis=0
-        )
-        # plot_image_from_tensor(tensor=comparison_tensor)
-        save_image_from_tensor(
-            tensor=comparison_tensor,
-            output_path=data_augmentation_plot_path,
-            title="An augmented batch sample.",
-        )
 
     return augmented_image_tensors, augmented_labels_tensors, augmented_weights_tensors
 
