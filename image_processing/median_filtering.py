@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from dataset_utils.image_utils import get_image_name_without_extension
+from utils.image_utils import get_image_name_without_extension
 
 
 def median_filter(image: np.ndarray, kernel_filter_size: int) -> np.ndarray:

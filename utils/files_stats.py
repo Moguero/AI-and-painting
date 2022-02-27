@@ -1,3 +1,4 @@
+import csv
 import os
 import ast
 import numpy as np
@@ -8,18 +9,13 @@ from pathlib import Path
 from loguru import logger
 from tqdm import tqdm
 
-from constants import MASK_FALSE_VALUE, MASK_TRUE_VALUE
-from dataset_utils.file_utils import save_dict_to_csv, load_saved_dict, save_list_to_csv
-from dataset_utils.image_utils import (
+from dataset_builder.masks_encoder import stack_image_masks, stack_image_patch_masks
+from utils.image_utils import (
     decode_image,
     get_images_paths,
     get_file_name_with_extension,
-    get_image_masks_paths,
     get_image_patch_masks_paths,
-)
-from dataset_utils.masks_encoder import (
-    stack_image_masks,
-    stack_image_patch_masks,
+    get_image_patches_paths_with_limit,
 )
 
 
@@ -61,6 +57,83 @@ def count_mask_value_occurences_percent_of_2d_tensor(tensor: tf.Tensor) -> {int:
         zip(values_array, np.round(count_array / count_array.sum() * 100, decimals=3))
     )
     return percent_dict
+
+
+def get_patch_coverage(
+    image_patch_masks_paths: [Path],
+    mapping_class_number: {str: int},
+) -> float:
+    mask_tensor = stack_image_patch_masks(
+        image_patch_masks_paths=image_patch_masks_paths,
+        mapping_class_number=mapping_class_number,
+    )
+    count_mask_value_occurrence = count_mask_value_occurences_percent_of_2d_tensor(
+        mask_tensor
+    )
+    if 0 not in count_mask_value_occurrence.keys():
+        return 100
+    else:
+        return 100 - count_mask_value_occurrence[0]
+
+
+def get_image_patches_paths(
+    patches_dir_path: Path,
+    batch_size: int,
+    patch_coverage_percent_limit: int,
+    test_proportion: float,
+    mapping_class_number: {str: int},
+    n_patches_limit: int = None,
+    image_patches_paths: [Path] = None,
+) -> [Path]:
+    """
+    Get images patches paths on which the model will train on.
+    Also filter the valid patches above the coverage percent limit.
+
+    :param patches_dir_path: Path of the patches root folder.
+    :param n_patches_limit: Maximum number of patches used for the training.
+    :param batch_size: Size of the batches.
+    :param patch_coverage_percent_limit: Int, minimum coverage percent of a patch labels on this patch.
+    :param test_proportion: Float, used to set the proportion of the test dataset.
+    :param mapping_class_number: Mapping dictionary between class names and their representative number.
+    :param image_patches_paths: If not None, list of patches to use to make the training on.
+    :return: A list of paths of images to train on.
+    """
+    assert (
+        0 <= test_proportion < 1
+    ), f"Test proportion must be between 0 and 1 : {test_proportion} was given."
+    logger.info("\nStart to build dataset...")
+    if n_patches_limit is not None:
+        assert (n_patches_limit // batch_size) * (
+            1 - test_proportion
+        ) >= 1, f"Size of training dataset is 0. Increase the n_patches_limit parameter or decrease the batch_size."
+
+    logger.info("\nGet the paths of the valid patches for training...")
+    patches_under_coverage_percent_limit_list = list()
+
+    # if the image patches to train on are not provided, randomly select n_patches_limit patches
+    if image_patches_paths is None:
+        image_patches_paths = get_image_patches_paths_with_limit(
+            patches_dir=patches_dir_path, n_patches_limit=n_patches_limit
+        )
+
+    for image_patch_path in tqdm(
+        image_patches_paths,
+        desc="Selecting patches above the coverage percent limit...",
+    ):
+        image_patch_masks_paths = get_image_patch_masks_paths(
+            image_patch_path=image_patch_path
+        )
+        coverage_percent = get_patch_coverage(
+            image_patch_masks_paths=image_patch_masks_paths,
+            mapping_class_number=mapping_class_number,
+        )
+        if int(float(coverage_percent)) > patch_coverage_percent_limit:
+            patches_under_coverage_percent_limit_list.append(image_patch_path)
+
+    logger.info(
+        f"\n{len(patches_under_coverage_percent_limit_list)}/{len(image_patches_paths)} patches above coverage percent limit selected."
+    )
+    return patches_under_coverage_percent_limit_list
 
 
 def count_label_masks_dirs(masks_dir: Path):
@@ -133,109 +206,6 @@ def get_image_with_more_than_irregular_pixels_limit(
         if count > irregular_pixels_limit
     }
     return filtered_with_count_limit_dict
-
-
-def save_all_masks_overlap_indices(
-    images_dir_path: Path, masks_dir: Path, output_path
-) -> None:
-    masks_overlap_indices_dict = dict()
-    for image_dir_path in tqdm(
-        images_dir_path.iterdir(), desc="Getting overlap indices...", colour="yellow"
-    ):
-        for image_path in image_dir_path.iterdir():  # loop of size 1
-            image_masks_paths = get_image_masks_paths(image_path, masks_dir)
-            if len(image_masks_paths) != 1:
-                shape = decode_image(image_masks_paths[0])[:, :, 0].shape
-                stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
-                for mask_path in image_masks_paths:
-                    stacked_tensor = tf.math.add(
-                        stacked_tensor,
-                        tf.cast(decode_image(mask_path)[:, :, 0], tf.int32),
-                    )
-                stacked_values = list(
-                    tf.unique_with_counts(tf.reshape(stacked_tensor, [-1])).y.numpy()
-                )
-                values_with_count_dict = count_mask_value_occurences_of_2d_tensor(
-                    stacked_tensor
-                )
-                masks_overlap_indices_dict[image_path] = {
-                    "n_overlap_indices": sum(
-                        [
-                            value
-                            for key, value in values_with_count_dict.items()
-                            if key != MASK_FALSE_VALUE and key != MASK_TRUE_VALUE
-                        ]
-                    ),
-                    "problematic_indices": [
-                        item
-                        for indices_list in [
-                            tf.where(tf.equal(stacked_tensor, value)).numpy().tolist()
-                            for value in set(stacked_values)
-                            - {MASK_FALSE_VALUE, MASK_TRUE_VALUE}
-                        ]
-                        for item in indices_list
-                    ],
-                }
-    save_dict_to_csv(masks_overlap_indices_dict, output_path)
-
-
-def save_all_patch_masks_overlap_indices(
-    image_patches_dir_path: Path, output_path
-) -> None:
-    logger.info("\nStarting to get all patch masks overlap indices...")
-    masks_overlap_indices_list = list()
-    for image_dir_path in tqdm(
-        image_patches_dir_path.iterdir(),
-        desc="Getting overlap indices...",
-        colour="yellow",
-    ):
-        for patch_dir_path in image_dir_path.iterdir():
-            for patch_path in (patch_dir_path / "image").iterdir():  # loop of size 1
-                image_masks_paths = get_image_patch_masks_paths(patch_path)
-                if len(image_masks_paths) != 1:
-                    shape = decode_image(image_masks_paths[0])[:, :, 0].shape
-                    stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
-                    for mask_path in image_masks_paths:
-                        stacked_tensor = tf.math.add(
-                            stacked_tensor,
-                            tf.cast(decode_image(mask_path)[:, :, 0], tf.int32),
-                        )
-                    stacked_values = list(
-                        tf.unique_with_counts(
-                            tf.reshape(stacked_tensor, [-1])
-                        ).y.numpy()
-                    )
-                    values_with_count_dict = count_mask_value_occurences_of_2d_tensor(
-                        stacked_tensor
-                    )
-                    masks_overlap_indices_list.append(
-                        {
-                            "patch_path": patch_path,
-                            "n_overlap_indices": sum(
-                                [
-                                    value
-                                    for key, value in values_with_count_dict.items()
-                                    if key != MASK_FALSE_VALUE
-                                    and key != MASK_TRUE_VALUE
-                                ]
-                            ),
-                            "problematic_indices": [
-                                item
-                                for indices_list in [
-                                    tf.where(tf.equal(stacked_tensor, value))
-                                    .numpy()
-                                    .tolist()
-                                    for value in set(stacked_values)
-                                    - {MASK_FALSE_VALUE, MASK_TRUE_VALUE}
-                                ]
-                                for item in indices_list
-                            ],
-                        }
-                    )
-    save_list_to_csv(masks_overlap_indices_list, output_path)
-    logger.info(
-        f"\nAll patch masks overlap indices saved successfully at {output_path}."
-    )
 
 
 def count_all_irregular_pixels(
@@ -312,6 +282,43 @@ def get_patches_labels_composition(
     ), f'Total patches composition is {round(sum(list(patches_composition_stats.loc["mean"])), 2)}, should be 1.0'
 
     return patches_composition_stats
+
+
+def save_list_to_csv(list_to_export: list, output_path: Path) -> None:
+    assert (
+        str(output_path)[-4:] == ".csv"
+    ), f"Specified output path {output_path} is not in format .csv"
+    with open(str(output_path), "w", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(list_to_export)
+
+
+def save_dict_to_csv(dict_to_export: dict, output_path: Path) -> None:
+    assert (
+        str(output_path)[-4:] == ".csv"
+    ), f"Specified output path {output_path} is not in format .csv"
+    with open(str(output_path), "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        for key, value in dict_to_export.items():
+            writer.writerow([key, value])
+
+
+def load_saved_list(input_path: Path) -> list:
+    saved_list = list()
+    with open(str(input_path), "r") as f:
+        data = csv.reader(f)
+        for row in data:
+            saved_list += row
+    return saved_list
+
+
+def load_saved_dict(input_path: Path) -> dict:
+    saved_dict = dict()
+    with open(str(input_path), "r") as f:
+        data = csv.reader(f)
+        for row in data:
+            saved_dict[row[0]] = row[1]
+    return saved_dict
 
 
 # -----

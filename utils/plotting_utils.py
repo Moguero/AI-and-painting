@@ -5,10 +5,13 @@ import numpy as np
 from tensorflow import keras
 from pathlib import Path
 
-from dataset_utils.file_utils import timeit
-from dataset_utils.image_utils import decode_image, get_image_name_without_extension
-from dataset_utils.image_utils import get_image_masks_paths, get_mask_class
-from dataset_utils.masks_encoder import stack_image_masks
+from dataset_builder.masks_encoder import stack_image_masks
+from utils.image_utils import (
+    get_image_masks_paths,
+    get_mask_class,
+    decode_image,
+    get_image_name_without_extension,
+)
 from constants import (
     MAPPING_CLASS_NUMBER,
     PALETTE_RGB_NORMALIZED,

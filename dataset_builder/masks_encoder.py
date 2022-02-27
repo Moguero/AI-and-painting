@@ -2,11 +2,88 @@ import tensorflow as tf
 from pathlib import Path
 
 from constants import MAPPING_CLASS_NUMBER, MASK_TRUE_VALUE, MASK_FALSE_VALUE
-from dataset_utils.image_utils import (
+from utils.image_utils import (
     get_image_masks_paths,
     get_mask_class,
+    decode_image,
 )
-from dataset_utils.image_utils import decode_image
+
+
+def turn_mask_into_categorical_tensor(mask_path: Path) -> tf.Tensor:
+    tensor_first_channel = decode_image(mask_path)[:, :, 0]
+    mask_class = get_mask_class(mask_path)
+    categorical_number = MAPPING_CLASS_NUMBER[mask_class]
+    categorical_tensor = tf.where(
+        tf.equal(tensor_first_channel, MASK_TRUE_VALUE),
+        categorical_number,
+        MASK_FALSE_VALUE,
+    )
+    return categorical_tensor
+
+
+def stack_image_masks(
+    image_path: Path,
+    masks_dir_path: Path,
+) -> tf.Tensor:
+    """
+    Returns a stacked tensor, with a size corresponding to the number of pixels of image_path.
+
+    :param image_path: The source image on which to compute the stacked labels mask.
+    :param masks_dir_path: The masks source directory path.
+    :return: A 2D stacked tensor.
+    """
+    image_masks_paths = get_image_masks_paths(
+        image_path=image_path, masks_dir_path=masks_dir_path
+    )
+    shape = decode_image(image_masks_paths[0])[:, :, 0].shape
+    stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
+
+    problematic_indices_list = list()
+    zeros_tensor = tf.zeros(shape=shape, dtype=tf.int32)
+    for mask_path in image_masks_paths:
+        class_categorical_tensor = turn_mask_into_categorical_tensor(
+            mask_path=mask_path
+        )
+
+        # spotting the problematic pixels indices
+        background_mask_class_categorical_tensor = tf.logical_not(
+            tf.equal(class_categorical_tensor, zeros_tensor)
+        )
+        background_mask_stacked_tensor = tf.logical_not(
+            tf.equal(stacked_tensor, zeros_tensor)
+        )
+        logical_tensor = tf.logical_and(
+            background_mask_class_categorical_tensor, background_mask_stacked_tensor
+        )
+        non_overlapping_tensor = tf.equal(
+            logical_tensor, tf.constant(False, shape=shape)
+        )
+        problematic_indices = (
+            tf.where(tf.equal(non_overlapping_tensor, False)).numpy().tolist()
+        )
+        if problematic_indices:
+            problematic_indices_list += problematic_indices
+
+        # adding the class mask to the all-classes-stacked tensor
+        stacked_tensor = tf.math.add(stacked_tensor, class_categorical_tensor)
+
+    # setting the irregular pixels to background class
+    if problematic_indices_list:
+        categorical_array = stacked_tensor.numpy()
+        for pixels_coordinates in problematic_indices_list:
+            categorical_array[tuple(pixels_coordinates)] = MAPPING_CLASS_NUMBER[
+                "background"
+            ]
+        stacked_tensor = tf.constant(categorical_array, dtype=tf.int32)
+
+    # check that the problematic pixels were set to 0 correctly
+    for pixels_coordinates in problematic_indices_list:
+        assert (
+            stacked_tensor[tuple(pixels_coordinates)].numpy()
+            == MAPPING_CLASS_NUMBER["background"]
+        )
+
+    return stacked_tensor
 
 
 def stack_image_patch_masks(
@@ -84,97 +161,6 @@ def one_hot_encode_image_patch_masks(
         indices=categorical_mask_tensor, depth=n_classes + 1, dtype=tf.int32
     )
     return one_hot_encoded_tensor
-
-
-def turn_mask_into_categorical_tensor(mask_path: Path) -> tf.Tensor:
-    tensor_first_channel = decode_image(mask_path)[:, :, 0]
-    mask_class = get_mask_class(mask_path)
-    categorical_number = MAPPING_CLASS_NUMBER[mask_class]
-    categorical_tensor = tf.where(
-        tf.equal(tensor_first_channel, MASK_TRUE_VALUE),
-        categorical_number,
-        MASK_FALSE_VALUE,
-    )
-    return categorical_tensor
-
-
-def save_tensor_to_jpg(tensor: tf.Tensor, output_filepath: Path) -> None:
-    file_name = output_filepath.parts[-1]
-    assert (
-        file_name[-3:] == "jpg"
-        or file_name[-3:] == "JPG"
-        or file_name[-3:] == "jpeg"
-        or file_name[-3:] == "JPEG"
-    ), f"The output path {output_filepath} is not with jpg format."
-    encoded_image_tensor = tf.io.encode_jpeg(tensor)
-    tf.io.write_file(
-        filename=tf.constant(str(output_filepath)), contents=encoded_image_tensor
-    )
-
-
-def stack_image_masks(
-    image_path: Path,
-    masks_dir_path: Path,
-) -> tf.Tensor:
-    """
-    Returns a stacked tensor, with a size corresponding to the number of pixels of image_path.
-
-    :param image_path: The source image on which to compute the stacked labels mask.
-    :param masks_dir_path: The masks source directory path.
-    :return: A 2D stacked tensor.
-    """
-    image_masks_paths = get_image_masks_paths(
-        image_path=image_path, masks_dir_path=masks_dir_path
-    )
-    shape = decode_image(image_masks_paths[0])[:, :, 0].shape
-    stacked_tensor = tf.zeros(shape=shape, dtype=tf.int32)
-
-    problematic_indices_list = list()
-    zeros_tensor = tf.zeros(shape=shape, dtype=tf.int32)
-    for mask_path in image_masks_paths:
-        class_categorical_tensor = turn_mask_into_categorical_tensor(
-            mask_path=mask_path
-        )
-
-        # spotting the problematic pixels indices
-        background_mask_class_categorical_tensor = tf.logical_not(
-            tf.equal(class_categorical_tensor, zeros_tensor)
-        )
-        background_mask_stacked_tensor = tf.logical_not(
-            tf.equal(stacked_tensor, zeros_tensor)
-        )
-        logical_tensor = tf.logical_and(
-            background_mask_class_categorical_tensor, background_mask_stacked_tensor
-        )
-        non_overlapping_tensor = tf.equal(
-            logical_tensor, tf.constant(False, shape=shape)
-        )
-        problematic_indices = (
-            tf.where(tf.equal(non_overlapping_tensor, False)).numpy().tolist()
-        )
-        if problematic_indices:
-            problematic_indices_list += problematic_indices
-
-        # adding the class mask to the all-classes-stacked tensor
-        stacked_tensor = tf.math.add(stacked_tensor, class_categorical_tensor)
-
-    # setting the irregular pixels to background class
-    if problematic_indices_list:
-        categorical_array = stacked_tensor.numpy()
-        for pixels_coordinates in problematic_indices_list:
-            categorical_array[tuple(pixels_coordinates)] = MAPPING_CLASS_NUMBER[
-                "background"
-            ]
-        stacked_tensor = tf.constant(categorical_array, dtype=tf.int32)
-
-    # check that the problematic pixels were set to 0 correctly
-    for pixels_coordinates in problematic_indices_list:
-        assert (
-            stacked_tensor[tuple(pixels_coordinates)].numpy()
-            == MAPPING_CLASS_NUMBER["background"]
-        )
-
-    return stacked_tensor
 
 
 # -----

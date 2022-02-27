@@ -10,7 +10,7 @@ from dataset_utils.image_utils import (
     get_dir_paths,
 )
 from dataset_utils.image_utils import get_image_masks_paths
-from labelbox_utils.mask_downloader import get_full_json
+from dataset_builder.mask_downloader import get_full_json
 
 IMAGE_PATH = Path(
     r"C:\Users\thiba\OneDrive - CentraleSupelec\Mission_JCS_IA_peinture\files\images\_DSC0030\_DSC0030.jpg"

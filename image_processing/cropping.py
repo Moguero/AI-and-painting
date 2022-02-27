@@ -1,7 +1,7 @@
 import tensorflow as tf
 from pathlib import Path
 
-from dataset_utils.image_utils import (
+from utils.image_utils import (
     decode_image,
     get_image_tensor_shape,
 )

@@ -4,7 +4,7 @@ import tensorflow as tf
 from pathlib import Path
 from loguru import logger
 
-from dataset_utils.image_utils import decode_image
+from utils.image_utils import decode_image
 
 
 # Variables

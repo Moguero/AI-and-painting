@@ -4,14 +4,14 @@ from pathlib import Path
 from loguru import logger
 from tqdm import tqdm
 
-from dataset_utils.image_utils import (
+from utils.image_utils import (
     decode_image,
     get_image_name_without_extension,
     get_images_paths,
     get_image_masks_paths,
     get_image_tensor_shape,
+    save_tensor_to_jpg,
 )
-from dataset_utils.masks_encoder import save_tensor_to_jpg
 
 
 def extract_image_patches(

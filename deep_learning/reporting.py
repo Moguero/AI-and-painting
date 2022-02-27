@@ -8,25 +8,25 @@ from typing import List
 from loguru import logger
 from tensorflow import keras
 
-from constants import (
-    PALETTE_HEXA,
-    MAPPING_CLASS_NUMBER,
-    MASK_TRUE_VALUE,
-    MASK_FALSE_VALUE,
-)
-from dataset_utils.file_utils import get_formatted_time
-from dataset_utils.image_utils import (
+from utils.time_utils import get_formatted_time
+from utils.image_utils import (
     decode_image,
     get_image_name_without_extension,
     get_image_tensor_shape,
 )
-from dataset_utils.plotting_tools import (
+from utils.plotting_utils import (
     save_patch_composition_plot,
     map_categorical_mask_to_3_color_channels_tensor,
     turn_2d_tensor_to_3d_tensor,
 )
 from deep_learning.predictions import (
     make_predictions,
+)
+from constants import (
+    PALETTE_HEXA,
+    MAPPING_CLASS_NUMBER,
+    MASK_TRUE_VALUE,
+    MASK_FALSE_VALUE,
 )
 
 

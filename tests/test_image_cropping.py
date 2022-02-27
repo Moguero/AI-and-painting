@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from dataset_utils.image_cropping import crop_tensor
+from image_processing.cropping import crop_tensor
 
 
 def test_crop_tensor():

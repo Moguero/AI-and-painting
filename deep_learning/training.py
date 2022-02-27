@@ -1,19 +1,25 @@
 import math
+import numpy as np
 import pandas as pd
+import tensorflow as tf
 from loguru import logger
 from tensorflow import keras
 from pathlib import Path
+from typing import Generator, Tuple
 
-from dataset_utils.file_utils import timeit
-
-from dataset_utils.files_stats import (
+from utils.image_utils import (
+    decode_image,
+    get_image_patch_masks_paths,
+    stack_image_patch_masks,
+    one_hot_encode_image_patch_masks,
+)
+from utils.plotting_utils import save_image_from_tensor
+from utils.time_utils import timeit
+from utils.files_stats import (
     get_patches_labels_composition,
+    get_image_patches_paths,
 )
 from deep_learning.unet import build_small_unet
-from dataset_utils.dataset_builder import (
-    get_image_patches_paths,
-    train_dataset_generator,
-)
 from deep_learning.reporting import (
     build_training_run_report,
     init_report_paths,
@@ -214,6 +220,124 @@ def train_model(
     return report_dir_path
 
 
+def train_dataset_generator(
+    image_patches_paths: [Path],
+    n_classes: int,
+    batch_size: int,
+    validation_proportion: float,
+    test_proportion: float,
+    class_weights_dict: {int: float},
+    mapping_class_number: {str: int},
+    data_augmentation: bool = False,
+    image_data_generator_config_dict: dict = {},
+    data_augmentation_plot_path: Path = None,
+) -> Generator[Tuple[tf.Tensor, tf.Tensor], None, None]:
+    """
+    Create a dataset generator that will be used to feed model.fit().
+    This generator yields batches (acts like "drop_remainder == True") of augmented images.
+
+    Warning : this function builds a generator which is only meant to be used with "model.fit()" function.
+    Appropriate behaviour is not expected in a different context.
+
+    :param image_patches_paths: Paths of the images (already filtered) to train on.
+    :param n_classes: Number of classes, background not included.
+    :param batch_size: Size of the batches.
+    :param validation_proportion: Float, used to set the proportion of the validation images dataset.
+    :param test_proportion: Float, used to set the proportion of the training images dataset.
+    :param class_weights_dict: Mapping of classes and their global weight in the dataset : used to balance the loss function.
+    :param mapping_class_number: Mapping dictionary between class names and their representative number.
+    :param data_augmentation: Boolean, apply data augmentation to the each batch of the training dataset if True.
+    :param image_data_generator_config_dict: Dict of parameters to apply with ImageDataGenerator for data augmentation.
+    :param data_augmentation_plot_path: Path where to store the intermediate augmented patches samples.
+    :return: Yield 2 tensors of size (batch_size, patch_size, patch_size, 3) and (batch_size, patch_size, patch_size, n_classes + 1),
+            corresponding to image tensors and their corresponding one-hot-encoded masks tensors
+    """
+    assert sorted(class_weights_dict) == [
+        i for i in range(n_classes + 1)
+    ], f"Class weights dict is missing a class : should have {n_classes + 1} keys but is {class_weights_dict}"
+
+    validation_limit_idx = int(len(image_patches_paths) * (1 - test_proportion))
+    train_limit_idx = int(validation_limit_idx * (1 - validation_proportion))
+    n_batches = train_limit_idx // batch_size
+
+    logger.info(
+        f"\n{validation_limit_idx}/{len(image_patches_paths)} patches taken for training and validation : validation proportion of {validation_proportion} and test proportion of {test_proportion}"
+        f"\n - {train_limit_idx}/{len(image_patches_paths)} patches for training (validation proportion of {validation_proportion} and test proportion of {test_proportion})"
+        f"\n - {validation_limit_idx - train_limit_idx}/{len(image_patches_paths)} patches for validation"
+        f"\n{(train_limit_idx // batch_size) * batch_size}/{train_limit_idx} training patches will be kept and {train_limit_idx % batch_size}/{train_limit_idx} will be dropped (drop remainder)."
+        f"\n{n_batches} batches taken for training"
+    )
+
+    save_augmented_patches_count = True
+    while True:
+        for n_batch in range(n_batches):
+
+            # lists of length batch_size, containing :
+            # - image tensors of shape (patch_size, patch_size, 3)
+            # - labels tensors of shape (patch_size, patch_size, n_classes + 1)
+            # - weights tensors of shape (patch_size, patch_size, n_classes + 1)
+            image_tensors_list = list()
+            labels_tensors_list = list()
+            weights_tensors_list = list()
+
+            for image_patch_path in image_patches_paths[
+                n_batch * batch_size : (n_batch + 1) * batch_size
+            ]:
+                image_tensor = decode_image(file_path=image_patch_path)
+                image_patch_masks_paths = get_image_patch_masks_paths(
+                    image_patch_path=image_patch_path
+                )
+                labels_tensor = one_hot_encode_image_patch_masks(
+                    image_patch_masks_paths=image_patch_masks_paths,
+                    n_classes=n_classes,
+                    mapping_class_number=mapping_class_number,
+                )
+                weights_tensor = get_image_weights(
+                    image_patch_masks_paths=image_patch_masks_paths,
+                    mapping_class_number=mapping_class_number,
+                    class_weights_dict=class_weights_dict,
+                )
+
+                image_tensors_list.append(image_tensor)
+                labels_tensors_list.append(labels_tensor)
+                weights_tensors_list.append(weights_tensor)
+
+            if data_augmentation:
+                if save_augmented_patches_count is False:
+                    data_augmentation_plot_path = None
+
+                image_tensors, labels_tensors, weights_tensors = augment_batch(
+                    image_tensors=image_tensors_list,
+                    labels_tensors=labels_tensors_list,
+                    weights_tensors=weights_tensors_list,
+                    batch_size=batch_size,
+                    image_data_generator_config_dict=image_data_generator_config_dict,
+                    data_augmentation_plot_path=data_augmentation_plot_path,
+                )
+                save_augmented_patches_count = False  # only save the first batch plot
+            else:
+                image_tensors = tf.stack(values=image_tensors_list)
+                labels_tensors = tf.stack(values=labels_tensors_list)
+                weights_tensors = tf.stack(values=weights_tensors_list)
+
+            yield image_tensors, labels_tensors, weights_tensors
+
+
+def get_image_weights(
+    image_patch_masks_paths: [Path],
+    mapping_class_number: {str: int},
+    class_weights_dict: {int: int},
+):
+    categorical_mask_array = stack_image_patch_masks(
+        image_patch_masks_paths=image_patch_masks_paths,
+        mapping_class_number=mapping_class_number,
+    ).numpy()
+    vectorize_function = np.vectorize(lambda x: class_weights_dict[x])
+    weights_array = vectorize_function(categorical_mask_array)
+    weights_tensor = tf.constant(value=weights_array)
+    return weights_tensor
+
+
 def get_class_weights_dict(
     patches_composition_stats: pd.DataFrame,
     mapping_class_number: {str: int},
@@ -233,6 +357,67 @@ def get_class_weights_dict(
         class_weights_dict[mapping_class_number[class_name]] = weight
 
     return class_weights_dict
+
+
+def augment_batch(
+    image_tensors: [tf.Tensor],
+    labels_tensors: [tf.Tensor],
+    weights_tensors: [tf.Tensor],
+    batch_size: int,
+    image_data_generator_config_dict: dict,
+    data_augmentation_plot_path: Path = None,
+):
+    image_data_generator = tf.keras.preprocessing.image.ImageDataGenerator(
+        **image_data_generator_config_dict
+    )
+    seed = 1
+    image_data_generator.fit(image_tensors, augment=True, seed=seed)
+
+    for (
+        augmented_image_array,
+        augmented_labels_array,
+        augmented_weights_array,
+    ) in image_data_generator.flow(
+        x=tf.stack(image_tensors),
+        y=tf.stack(labels_tensors),
+        batch_size=batch_size,
+        sample_weight=tf.stack(weights_tensors),
+        shuffle=False,
+    ):
+        augmented_image_tensors = tf.constant(augmented_image_array, dtype=tf.int32)
+        augmented_labels_tensors = tf.constant(augmented_labels_array, dtype=tf.int32)
+        augmented_weights_tensors = tf.constant(augmented_weights_array, dtype=tf.int32)
+        break
+
+    if data_augmentation_plot_path is not None:
+        for idx in range(batch_size):
+            if idx == 0:
+                concat_images_tensor = image_tensors[0]
+                concat_augmented_images_tensor = tf.cast(
+                    augmented_image_tensors[0], dtype=tf.uint8
+                )
+            else:
+                concat_images_tensor = tf.concat(
+                    [concat_images_tensor, image_tensors[idx]], axis=1
+                )
+                concat_augmented_images_tensor = tf.concat(
+                    [
+                        concat_augmented_images_tensor,
+                        tf.cast(augmented_image_tensors[idx], dtype=tf.uint8),
+                    ],
+                    axis=1,
+                )
+        comparison_tensor = tf.concat(
+            [concat_images_tensor, concat_augmented_images_tensor], axis=0
+        )
+        # plot_image_from_tensor(tensor=comparison_tensor)
+        save_image_from_tensor(
+            tensor=comparison_tensor,
+            output_path=data_augmentation_plot_path,
+            title="An augmented batch sample.",
+        )
+
+    return augmented_image_tensors, augmented_labels_tensors, augmented_weights_tensors
 
 
 # --------

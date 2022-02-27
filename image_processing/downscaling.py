@@ -3,9 +3,12 @@ from pathlib import Path
 from math import ceil
 from skimage.transform import downscale_local_mean
 
-from dataset_utils.image_utils import decode_image, get_image_name_without_extension
-from dataset_utils.masks_encoder import save_tensor_to_jpg
-from dataset_utils.plotting_tools import plot_image_from_array
+from utils.image_utils import (
+    decode_image,
+    get_image_name_without_extension,
+    save_tensor_to_jpg,
+)
+from utils.plotting_utils import plot_image_from_array
 
 
 def downscale_image(image_path: Path, downscale_factors: (int, int, int)) -> tf.Tensor:

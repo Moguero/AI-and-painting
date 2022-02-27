@@ -4,11 +4,6 @@ from pathlib import Path
 from tensorflow import keras
 from scipy.signal import gaussian
 
-from dataset_utils.image_utils import (
-    turn_hexadecimal_color_into_nomalized_rgb_list,
-    turn_hexadecimal_color_into_rgb_list,
-)
-
 # local_machine = False
 local_machine = True
 
@@ -109,6 +104,18 @@ PALETTE_HEXA = {
     8: "#00FFFF",  # aqua
     9: "#FF0000",  # red
 }
+
+
+def turn_hexadecimal_color_into_nomalized_rgb_list(hexadecimal_color: str) -> [int]:
+    hexadecimal_color = hexadecimal_color.lstrip("#")
+    return tuple(int(hexadecimal_color[i : i + 2], 16) / 255 for i in (0, 2, 4))
+
+
+def turn_hexadecimal_color_into_rgb_list(hexadecimal_color: str) -> [int]:
+    hexadecimal_color = hexadecimal_color.lstrip("#")
+    return tuple(int(hexadecimal_color[i : i + 2], 16) for i in (0, 2, 4))
+
+
 PALETTE_RGB_NORMALIZED = {
     key: turn_hexadecimal_color_into_nomalized_rgb_list(value)
     for key, value in PALETTE_HEXA.items()

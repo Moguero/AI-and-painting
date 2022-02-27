@@ -7,7 +7,7 @@ from loguru import logger
 from pathlib import Path
 
 
-def get_mask_urls(json_path: Path) -> dict:
+def get_masks_urls(json_path: Path) -> dict:
     """
     Associate an images name with a list of its corresponding class mask URLs.
 
@@ -37,6 +37,15 @@ def get_mask_urls(json_path: Path) -> dict:
     return mask_urls
 
 
+def count_masks_urls(mask_urls: dict) -> int:
+    """
+
+    :param mask_urls: The dictionary returned by get_mask_urls function.
+    :return: The total number of masks URLs in the JSON.
+    """
+    return sum([len(item[1]) for item in mask_urls.items()])
+
+
 def download_mask(mask_url: str, output_path: Path) -> None:
     """
     Download a binary label mask from Labelbox online archive to the output path specified.
@@ -63,7 +72,7 @@ def download_all_masks(json_path: Path, output_dir_path: Path) -> None:
     :param json_path : The JSON exported from LabelBox.
     :param output_dir_path: The directory where we want to save the masks.
     """
-    urls_dict = get_mask_urls(json_path)
+    urls_dict = get_masks_urls(json_path)
     number_of_masks = count_masks_urls(urls_dict)
     logger.info(f"\nStarting to download {number_of_masks} masks...")
     for image_name, url_dict in urls_dict.items():
@@ -86,15 +95,6 @@ def download_all_masks(json_path: Path, output_dir_path: Path) -> None:
                     )
                 download_mask(mask_url=mask_url, output_path=output_path)
     logger.info(f"\n{number_of_masks} masks downloaded successfully")
-
-
-def count_masks_urls(mask_urls: dict) -> int:
-    """
-
-    :param mask_urls: The dictionary returned by get_mask_urls function.
-    :return: The total number of masks URLs in the JSON.
-    """
-    return sum([len(item[1]) for item in mask_urls.items()])
 
 
 # Creation of the CLI command

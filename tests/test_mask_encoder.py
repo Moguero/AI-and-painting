@@ -3,8 +3,8 @@ import tensorflow as tf
 from pathlib import Path
 
 from constants import MAPPING_CLASS_NUMBER
-from dataset_utils.image_utils import get_image_patch_masks_paths, decode_image
-from dataset_utils.masks_encoder import turn_mask_into_categorical_tensor
+from utils.image_utils import get_image_patch_masks_paths, decode_image
+from dataset_builder.masks_encoder import turn_mask_into_categorical_tensor
 
 
 def stack_image_patch_masks_reformatted(
