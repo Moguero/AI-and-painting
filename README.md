@@ -4,11 +4,21 @@
 
 This project aims at creating from scratch an AI pipeline designed to feed a robot with images and their classification maps, in order to assist a painter in his painting process 🎨
 
+The AI algorithm solves a semantic segmentation problem, 
+and produces a classification map like the one just below.
 
+![classification map example](predictions_example.png)
+
+Note that the classification maps are far from perfect.
+Admittedly, technical limitations are one of the causes.
+But most importantly, the painter wanted to produce misclassifications 
+in order to create an artistic effect for his paintings.
+Also note that an UI tool was designed for him
+to modify the previous classifications in various ways.
 
 ### Requirements
-Firstly, clone this GitHub repository on your machine.
-To install the environment I used for this challenge, you will need a virtual environment manager, for example [Anaconda](https://docs.anaconda.com/anaconda/install/).
+Clone this GitHub repository on your machine.
+To install the appropriate environment, you will need a virtual environment manager, for example [Anaconda](https://docs.anaconda.com/anaconda/install/).
 In your terminal, navigate to the cloned repository and execute the following command line to reproduce the environment used :
 
 ```
@@ -17,7 +27,7 @@ conda env create -f environment_lin.yml
 
 If you're on Linux, use environment_lin.yml file. On Windows, use environment_win.yml.
 
-Once you're done, don't forget to remove the environment by running :
+Once you're done with the project, don't forget to remove the environment by running :
 
 ```
 conda env remove -n ai-and-painting
@@ -25,7 +35,7 @@ conda env remove -n ai-and-painting
 
 ### Getting started
 
-The `main.py` script should be used for training and predicting.
+The `main.py` script should be used both for training and predicting.
 
 You can get some help on how to use it with : 
 ```
@@ -88,8 +98,12 @@ d. Upload images with masks (images_utils).
 
 e. stack image masks (save_all_categorical_masks)
 
-### Improvements
+### Limits
 
-- track patches used for training with more detail (save used patches number, save minimized images)
+Of course, the project comes with its limits.
+Here are some non-exhaustive leads to keep improving
+the pipeline :
+
 - track data augmentation more closely during training
-- increase number of unet encoder/decoder blocks
+- increase number of UNet encoder/decoder blocks
+- track patches used for training with more detail (save used patches number, save minimized images...)
